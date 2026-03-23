@@ -17,21 +17,21 @@ m = uniform(1, 1, 0)
 for i:=0; i<Nx; i++{
 defregion(i,xrange(-(Nx*c/2)+i*c,-(Nx*c/2)+(i+1)*c).intersect(layer(0)))
 Ku1.setregion(i,1e6*(1-(i/Nx)))
-anisu.setregion(i, vector(1-1*(1-(i/Nx)), 1*(1-(i/Nx)), 0))
+anisu.setregion(i, vector(1-(1-(i/Nx)), (1-(i/Nx)), 0))
 }
 
 defregion(255,layer(1))
 Ku1.setregion(255,0)
 
 B_ext = vector(0, 0.10, 0)
-relax()
+run(1e-12)
 originalmy1:= m.average()[1]
 originalEanis1:=E_anis
 print(originalmy1)
 print(originalEanis1)
 
 B_ext = vector(0, 0.30, 0)
-relax()
+run(1e-12)
 originalmy2:= m.average()[1]
 originalEanis2:=E_anis
 print(originalmy2)
@@ -68,10 +68,10 @@ for i:=0; i<Nx; i++{
 		y := r.Y()
 		z := r.Z()
 		
-		firstterm:=pow(  (1-1*(1-(i/Nx))),2)
-		secondterm:= pow(1*(1-(i/Nx)),2)
+		firstterm:=pow(  (1-(1-(i/Nx))),2)
+		secondterm:= pow((1-(i/Nx)),2)
 		normalizedenom:=pow(firstterm+secondterm,0.5)
-		vecmask.setVector(i, j, k, vector( (1-1*(1-(i/Nx)))/normalizedenom, 1*(1-(i/Nx))/normalizedenom, 0))
+		vecmask.setVector(i, j, k, vector( (1-(1-(i/Nx)))/normalizedenom, (1-(i/Nx))/normalizedenom, 0))
 		}
 	}
 }
@@ -89,7 +89,7 @@ AddEdensTerm(Mul(Const(-0.5),Dot(anisFieldMasked,M_full)))
 
 m = uniform(1, 1, 0)
 B_ext = vector(0, 0.10, 0)
-relax()
+run(1e-12)
 expect("my", m.average()[1],   originalmy1, 1e-3)
 print(E_custom)
 print(E_anis)
@@ -97,7 +97,7 @@ expect("E_custom", E_custom, E_anis, 1e-22)
 
 
 B_ext = vector(0, 0.30, 0)
-relax()
+run(1e-12)
 expect("my", m.average()[1], originalmy2, 1e-3)
 print(E_custom)
 print(E_anis)

@@ -7,7 +7,7 @@ import (
 )
 
 func init() {
-	DeclFunc("CustomQuantity", CustomQuantity, "Creates a custom Quantity from the user provided (scalar or vector) slice.")
+	DeclFunc("CustomQuantity", CustomQuantity, "Creates a custom Quantity from a user provided (scalar or vector) slice. The slice should match the simulation grid size, and can be created with NewScalarMask or NewVectorMask.")
 }
 
 func CustomQuantity(inSlice *data.Slice) Quantity {
