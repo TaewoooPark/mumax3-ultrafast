@@ -127,7 +127,7 @@ Click on the arrows below to expand the installation instructions:<br><sub><sup>
 
     ```bash
     export GOPATH=$HOME/go
-    export PATH=$PATH:$GOPATH/bin
+    export PATH=$GOPATH/bin:$PATH
     ```
 
     After editing the file, apply the changes by running `source ~/.bashrc`.
