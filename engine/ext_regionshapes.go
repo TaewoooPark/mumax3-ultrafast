@@ -5,10 +5,10 @@ import (
 )
 
 func init() {
-	DeclFunc("AllRegionShapes", AllRegionShapes, "Returns a function that gives the shape of each region.")
+	DeclFunc("ext_AllRegionShapes", ext_AllRegionShapes, "Returns a function that gives the shape of each region. Does not automatically update if the region is redefined or moved with Shift.")
 }
 
-func AllRegionShapes() func(int) Shape {
+func ext_AllRegionShapes() func(int) Shape {
 	mesh := Mesh()
 	arr := regions.HostList()
 	n := mesh.Size()
