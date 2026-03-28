@@ -185,7 +185,7 @@ func Minimize() bool {
 
 	RunWhile(cond)
 	pause = true
-	MinimizeConverged = WallclockTimer(TimerStart, MinimizeWallClockTime)
+	MinimizeConverged = !(mini.lastDm.count < DmSamples || mini.lastDm.Max() > StopMaxDm) // if the loop ended because of convergence, then MinimizeConverged is true. If the loop ended because of wall-clock time, then MinimizeConverged is false.
 	stepper.Free()
 	return MinimizeConverged
 }

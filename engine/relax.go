@@ -26,15 +26,15 @@ func init() {
 // are we relaxing?
 var relaxing = false
 
-func Relax() (converged bool) {
+func Relax() (Relaxconverged bool) {
 
 	// if wall-clock time is zero, skip Relaxing entirely (zero steps), and don't change any settings
-	converged = false
+	Relaxconverged = false
 	TimerStart := time.Now()
-	wallclock := false
+
 	if RelaxWallClockTime == 0 {
-		converged = false
-		return converged
+		Relaxconverged = false
+		return Relaxconverged
 	}
 
 	SanityCheck()
@@ -118,9 +118,9 @@ func Relax() (converged bool) {
 	}
 
 	pause = true
-	converged = wallclock
+	Relaxconverged = (RelaxTorqueThreshold > 0 && (maxTorque() <= RelaxTorqueThreshold || MaxErr < 1e-9)) || (RelaxTorqueThreshold <= 0 && MaxErr <= 1e-9)
 	stepper.Free()
-	return converged
+	return Relaxconverged
 }
 
 // take n steps without setting pause when done or advancing time
