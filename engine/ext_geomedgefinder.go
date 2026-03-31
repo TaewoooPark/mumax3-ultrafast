@@ -9,10 +9,10 @@ import (
 )
 
 func init() {
-	DeclFunc("ext_GeometryEdge", ext_GeometryEdge, "Returns an edge (+x, -x, +y, -y, +z, -z) of the geometry as a Shape. The Shape may not update automatically after changes to the mesh or geometry; rerun the function to refresh.")
+	DeclFunc("ext_GeomEdge", ext_GeomEdge, "Returns an edge (+x, -x, +y, -y, +z, -z) of the geometry as a Shape. The Shape may not update automatically after changes to the mesh or geometry; rerun the function to refresh.")
 }
 
-func ext_GeometryEdge(axis string) Shape {
+func ext_GeomEdge(axis string) Shape {
 
 	s, r := geometry.Slice()
 	if r {
