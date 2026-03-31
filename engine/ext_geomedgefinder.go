@@ -2,6 +2,7 @@ package engine
 
 import (
 	"math"
+	"strings"
 
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/util"
@@ -26,7 +27,7 @@ func ext_GeometryEdge(axis string) Shape {
 	edgemask := make([]bool, Nx*Ny*Nz)
 
 	var offx, offy, offz int
-	switch axis {
+	switch strings.ToLower(axis) {
 	case "+x":
 		offx, offy, offz = 1, 0, 0
 	case "-x":
