@@ -5,7 +5,7 @@ import (
 )
 
 func init() {
-	DeclFunc("ext_AllRegionShapes", ext_AllRegionShapes, "Returns a function that gives the shape of each region. Does not automatically update if the region is redefined or moved with Shift.")
+	DeclFunc("ext_AllRegionShapes", ext_AllRegionShapes, "Returns a function that gives the shape of each region. Does not automatically update if the region is redefined or moved with Shift. Call as: allregions := ext_AllRegionShapes(); shape := allregions(i); on seperate lines. Note: double parentheses as ext_AllRegionShapes()(i) are not supported in mx3 scripts and must be split across two lines.")
 }
 
 func ext_AllRegionShapes() func(int) Shape {
