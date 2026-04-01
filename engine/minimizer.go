@@ -140,7 +140,6 @@ func Minimize() bool {
 	// if wall-clock time is zero, skip minimization entirely (zero steps), and don't change any settings
 	MinimizeConverged = false
 	TimerStart := time.Now()
-
 	if MinimizeWallClockTime == 0 {
 		MinimizeConverged = false
 		return MinimizeConverged
@@ -185,7 +184,8 @@ func Minimize() bool {
 
 	RunWhile(cond)
 	pause = true
-	MinimizeConverged = !(mini.lastDm.count < DmSamples || mini.lastDm.Max() > StopMaxDm) // if the loop ended because of convergence, then MinimizeConverged is true. If the loop ended because of wall-clock time, then MinimizeConverged is false.
+	// if the loop ended because of convergence, then MinimizeConverged is true. If the loop ended because of wall-clock time, then MinimizeConverged is false.
+	MinimizeConverged = !(mini.lastDm.count < DmSamples || mini.lastDm.Max() > StopMaxDm)
 	stepper.Free()
 	return MinimizeConverged
 }

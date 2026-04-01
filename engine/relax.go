@@ -26,12 +26,11 @@ func init() {
 // are we relaxing?
 var relaxing = false
 
-func Relax() (RelaxConverged bool) {
+func Relax() bool {
 
 	// if wall-clock time is zero, skip Relaxing entirely (zero steps), and don't change any settings
 	RelaxConverged = false
 	TimerStart := time.Now()
-
 	if RelaxWallClockTime == 0 {
 		RelaxConverged = false
 		return RelaxConverged
@@ -71,7 +70,7 @@ func Relax() (RelaxConverged bool) {
 	E0 := GetTotalEnergy()
 	relaxSteps(N)
 	E1 := GetTotalEnergy()
-	for E1 < E0 && !pause {
+	for (E1 < E0 && !pause) && WallclockTimer(TimerStart, RelaxWallClockTime) {
 		relaxSteps(N)
 		E0, E1 = E1, GetTotalEnergy()
 	}
@@ -90,10 +89,8 @@ func Relax() (RelaxConverged bool) {
 
 	if RelaxTorqueThreshold > 0 {
 		// run as long as the max torque is above threshold. Then increase the accuracy and step more.
-
 		for !pause {
-
-			for (maxTorque() > RelaxTorqueThreshold) && WallclockTimer(TimerStart, RelaxWallClockTime) {
+			for (maxTorque() > RelaxTorqueThreshold && !pause) && WallclockTimer(TimerStart, RelaxWallClockTime) {
 				relaxSteps(N)
 			}
 			MaxErr /= math.Sqrt2
@@ -106,7 +103,7 @@ func Relax() (RelaxConverged bool) {
 		// if MaxErr < 1e-9, this code won't run.
 		var T0, T1 float32 = 0, avgTorque()
 		// Step as long as torque goes down. Then increase the accuracy and step more.
-		for MaxErr > 1e-9 && !pause && WallclockTimer(TimerStart, RelaxWallClockTime) {
+		for (MaxErr > 1e-9 && !pause) && WallclockTimer(TimerStart, RelaxWallClockTime) {
 			MaxErr /= math.Sqrt2
 			relaxSteps(N) // TODO: Play with other values
 			T0, T1 = T1, avgTorque()
