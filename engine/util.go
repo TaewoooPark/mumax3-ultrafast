@@ -7,7 +7,6 @@ import (
 	"path"
 	"sort"
 	"strings"
-	"unsafe"
 
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
@@ -186,8 +185,14 @@ func paramDiv(dst, a, b [][NREGION]float32) {
 }
 
 // Converts true to 1.0, false to 0.0
-func bool2float(b bool) float64 {
-	return float64(*(*byte)(unsafe.Pointer(&b)))
+func bool2float(b bool) float64 { // A bit verbose to allow optimization by compiler
+	var i float64
+	if b {
+		i = 1
+	} else {
+		i = 0
+	}
+	return i
 }
 
 // returns an array with the prime factors of n (n >= 1)
