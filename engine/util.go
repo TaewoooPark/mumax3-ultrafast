@@ -72,8 +72,7 @@ func ExpectV(msg string, have, want data.Vector, maxErr float64) {
 }
 
 func ExpectB(msg string, have, want bool) {
-	haveInt, wantInt := bool2float(have), bool2float(want) // Fast boolean conversion
-	Expect(msg, haveInt, wantInt, 0)                       // Reuse Expect() to reuse same logging
+	Expect(msg, bool2float(have), bool2float(want), 0) // Reuse Expect() to reuse same logging
 }
 
 // Append msg to file. Used to write aggregated output of many simulations in one file.
