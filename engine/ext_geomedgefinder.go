@@ -23,6 +23,7 @@ func ext_GeomEdge(axis string) Shape {
 
 	n := Mesh().Size()
 	Nx, Ny, Nz := n[X], n[Y], n[Z]
+	PBC := Mesh().PBC()
 
 	edgemask := make([]bool, Nx*Ny*Nz)
 
@@ -44,11 +45,6 @@ func ext_GeomEdge(axis string) Shape {
 		util.Log("GeometryEdge: invalid direction '" + axis + "'. Use +x, -x, +y, -y, +z, or -z")
 	}
 
-	PBCc := Mesh().PBC_code()
-	PBCx := (PBCc >> X) & 1
-	PBCy := (PBCc >> Y) & 1
-	PBCz := (PBCc >> Z) & 1
-
 	for k := 0; k < Nz; k++ {
 		for j := 0; j < Ny; j++ {
 			for i := 0; i < Nx; i++ {
@@ -57,14 +53,14 @@ func ext_GeomEdge(axis string) Shape {
 					continue
 				}
 
-				wrapPBC := func(i, N int, PBC byte) int {
+				wrapPBC := func(i, N, PBC int) int {
 					if PBC == 0 {
 						return i // Don't wrap
 					}
 					return ((i % N) + N) % N // Wrap in integer range [0, N-1]
 				}
 
-				nx, ny, nz := wrapPBC(i+offx, Nx, PBCx), wrapPBC(j+offy, Ny, PBCy), wrapPBC(k+offz, Nz, PBCz)
+				nx, ny, nz := wrapPBC(i+offx, Nx, PBC[X]), wrapPBC(j+offy, Ny, PBC[Y]), wrapPBC(k+offz, Nz, PBC[Z])
 				if nx < 0 || nx >= Nx || ny < 0 || ny >= Ny || nz < 0 || nz >= Nz || arr3d[nz][ny][nx] == 0 {
 					edgemask[(k*Ny+j)*Nx+i] = true
 				}
@@ -72,11 +68,11 @@ func ext_GeomEdge(axis string) Shape {
 		}
 	}
 
-	if PBCc != 0 { // Account for PBC in case of Grid resize by repeating GeomEdge
+	if PBC[X] != 0 || PBC[Y] != 0 || PBC[Z] != 0 { // Account for PBC in case of Grid resize by repeating GeomEdge
 		d := Mesh().CellSize()
-		Rx := float64(Nx) * d[X] * float64(PBCx)
-		Ry := float64(Ny) * d[Y] * float64(PBCy)
-		Rz := float64(Nz) * d[Z] * float64(PBCz)
+		Rx := float64(Nx) * d[X] * float64(PBC[X]&1)
+		Ry := float64(Ny) * d[Y] * float64(PBC[Y]&1)
+		Rz := float64(Nz) * d[Z] * float64(PBC[Z]&1)
 		return maskToShape(edgemask).Repeat(Rx, Ry, Rz)
 	} else { // No PBC
 		return maskToShape(edgemask)
