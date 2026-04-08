@@ -41,4 +41,4 @@ torqueResult:= Vector(
     STTorque.hostCopy().Get(1,0,0,0),
     STTorque.hostCopy().Get(2,0,0,0))
 
-expectv("sttorque",torqueResult,torqueWanted,1e-8 )
+expectv("sttorque",torqueResult,torqueWanted,0)
