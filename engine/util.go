@@ -144,6 +144,17 @@ func Index2Coord(ix, iy, iz int) data.Vector {
 	return data.Vector{x, y, z}
 }
 
+// Wraps cell index in case of PBC, otherwise returns the original value i.
+func wrapPBC(i, axis int) int {
+	mesh := Mesh()
+	PBC := mesh.PBC()[axis]
+	if PBC == 0 {
+		return i // Don't wrap
+	}
+	N := mesh.Size()[axis]
+	return ((i % N) + N) % N // Wrap in integer range [0, N-1]
+}
+
 func sign(x float64) float64 {
 	switch {
 	case x > 0:

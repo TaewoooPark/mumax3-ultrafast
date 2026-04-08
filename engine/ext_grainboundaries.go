@@ -60,9 +60,9 @@ func ext_grainboundaries(startregion, numgrains, offset, boundarythickness, zero
 
 				isBoundary := false
 				for i := 0; i < len(dx); i++ {
-					nx := ix + dx[i]
-					ny := iy + dy[i]
-					nz := iz + dz[i]
+					nx := wrapPBC(ix+dx[i], X)
+					ny := wrapPBC(iy+dy[i], Y)
+					nz := wrapPBC(iz+dz[i], Z)
 
 					if nx < 0 || nx >= Nx || ny < 0 || ny >= Ny || nz < 0 || nz >= Nz {
 						continue
