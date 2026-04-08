@@ -20,6 +20,7 @@ import (
 func init() {
 	DeclFunc("Expect", Expect, "Used for automated tests: checks if a value is close enough to the expected value")
 	DeclFunc("ExpectV", ExpectV, "Used for automated tests: checks if a vector is close enough to the expected value")
+	DeclFunc("ExpectB", ExpectB, "Used for automated tests: checks if two booleans are equal")
 	DeclFunc("Fprintln", Fprintln, "Print to file")
 	DeclFunc("Sign", sign, "Signum function")
 	DeclFunc("Vector", Vector, "Constructs a vector with given components")
@@ -68,6 +69,10 @@ func ExpectV(msg string, have, want data.Vector, maxErr float64) {
 	for c := 0; c < 3; c++ {
 		Expect(fmt.Sprintf("%v[%v]", msg, c), have[c], want[c], maxErr)
 	}
+}
+
+func ExpectB(msg string, have, want bool) {
+	Expect(msg, bool2float(have), bool2float(want), 0) // Reuse Expect() to reuse same logging
 }
 
 // Append msg to file. Used to write aggregated output of many simulations in one file.
@@ -176,6 +181,17 @@ func paramDiv(dst, a, b [][NREGION]float32) {
 	for i := 0; i < NREGION; i++ { // not regions.maxreg
 		dst[0][i] = safediv(a[0][i], b[0][i])
 	}
+}
+
+// Converts true to 1.0, false to 0.0
+func bool2float(b bool) float64 { // A bit verbose to allow optimization by compiler
+	var i float64
+	if b {
+		i = 1
+	} else {
+		i = 0
+	}
+	return i
 }
 
 // returns an array with the prime factors of n (n >= 1)
