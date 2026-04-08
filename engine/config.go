@@ -3,9 +3,10 @@ package engine
 // Utilities for setting magnetic configurations.
 
 import (
-	"github.com/mumax/3/data"
 	"math"
 	"math/rand"
+
+	"github.com/mumax/3/data"
 )
 
 func init() {
@@ -21,6 +22,7 @@ func init() {
 	DeclFunc("Conical", Conical, "Conical state for given wave vector, cone direction, and cone angle")
 	DeclFunc("Helical", Helical, "Helical state for given wave vector")
 	DeclFunc("HopfionCompactSupport", HopfionCompactSupport, "Hopfion texture from skyrmion, with compact support (smooth and magnetization exactly along z-axis outside of finite region)")
+	DeclFunc("CurrentMag", CurrentMag, "Returns the current magnetization as a Config. E.g. CurrentMag().Add(0.1, RandomMagSeed(123)) will return a Config with the current magnetization plus some noise.")
 }
 
 // Magnetic configuration returns m vector for position (x,y,z)
@@ -211,6 +213,53 @@ func HopfionCompactSupport(major_radius, minor_radius float64) Config {
 
 		return data.Vector{mx, my, mz}
 	}
+}
+
+func CurrentMag() Config {
+
+	d := Mesh().CellSize()
+	size := Mesh().Size()
+
+	Nx, Ny, Nz := size[X], size[Y], size[Z]
+
+	Lx := float64(Nx) * d[X]
+	Ly := float64(Ny) * d[Y]
+	Lz := float64(Nz) * d[Z]
+
+	mSlice := (&M).Buffer().HostCopy()
+
+	return func(x, y, z float64) data.Vector {
+
+		ix := int(math.Floor((x + 0.5*Lx) / d[X]))
+		iy := int(math.Floor((y + 0.5*Ly) / d[Y]))
+		iz := int(math.Floor((z + 0.5*Lz) / d[Z]))
+
+		if ix < 0 {
+			ix = 0
+		}
+		if ix >= Nx {
+			ix = Nx - 1
+		}
+		if iy < 0 {
+			iy = 0
+		}
+		if iy >= Ny {
+			iy = Ny - 1
+		}
+		if iz < 0 {
+			iz = 0
+		}
+		if iz >= Nz {
+			iz = Nz - 1
+		}
+
+		return data.Vector{
+			mSlice.Get(X, ix, iy, iz),
+			mSlice.Get(Y, ix, iy, iz),
+			mSlice.Get(Z, ix, iy, iz),
+		}
+	}
+
 }
 
 // Transl returns a translated copy of configuration c. E.g.:

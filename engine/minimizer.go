@@ -3,19 +3,24 @@ package engine
 // Minimize follows the steepest descent method as per Exl et al., JAP 115, 17D118 (2014).
 
 import (
+	"time"
+
 	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
 )
 
 var (
-	DmSamples int     = 10   // number of dm to keep for convergence check
-	StopMaxDm float64 = 1e-6 // stop minimizer if sampled dm is smaller than this
+	DmSamples             int     = 10   // number of dm to keep for convergence check
+	StopMaxDm             float64 = 1e-6 // stop minimizer if sampled dm is smaller than this
+	MinimizeWallClockTime float64 = -1.0 // wall-clock time limit for minimization
+	MinimizeConverged     bool           // true if minimize converged, and false if the maximum wall-clock time is reached
 )
 
 func init() {
-	DeclFunc("Minimize", Minimize, "Use steepest conjugate gradient method to minimize the total energy")
+	DeclFunc("Minimize", Minimize, "Use steepest conjugate gradient method to minimize the total energy. Returns true if convergence is reached, or false if the wall-clock time limit is exceeded. The wall-clock time limit is disabled by default.")
 	DeclVar("MinimizerStop", &StopMaxDm, "Stopping max dM for Minimize")
 	DeclVar("MinimizerSamples", &DmSamples, "Number of max dM to collect for Minimize convergence check.")
+	DeclVar("MinimizeWallClockTime", &MinimizeWallClockTime, "Wall-clock time limit (seconds) for Minimize that will interrupt the minimization if exceeded. Set to -1 (default) to disable. An interrupted minimization does not guarantee a correct solution.")
 }
 
 // fixed length FIFO. Items can be added but not removed
@@ -119,7 +124,27 @@ func (mini *Minimizer) Free() {
 	mini.k.Free()
 }
 
-func Minimize() {
+// helper function that returns false if the wall clock time limit is exceeded. If the wall-clock time is negative, this function always returns true.
+func WallclockTimer(start time.Time, WallClockTime float64) bool {
+	if WallClockTime < 0 {
+		return true
+	}
+	if WallClockTime == 0 {
+		return false
+	}
+	return time.Since(start) < time.Duration(WallClockTime*float64(time.Second))
+}
+
+func Minimize() bool {
+
+	// if wall-clock time is zero, skip minimization entirely (zero steps), and don't change any settings
+	MinimizeConverged = false
+	TimerStart := time.Now()
+	if MinimizeWallClockTime == 0 {
+		MinimizeConverged = false
+		return MinimizeConverged
+	}
+
 	Refer("exl2014")
 	SanityCheck()
 	// Save the settings we are changing...
@@ -154,9 +179,13 @@ func Minimize() {
 	stepper = &mini
 
 	cond := func() bool {
-		return (mini.lastDm.count < DmSamples || mini.lastDm.Max() > StopMaxDm)
+		return (mini.lastDm.count < DmSamples || mini.lastDm.Max() > StopMaxDm) && WallclockTimer(TimerStart, MinimizeWallClockTime)
 	}
 
 	RunWhile(cond)
 	pause = true
+	// if the loop ended because of convergence, then MinimizeConverged is true. If the loop ended because of wall-clock time, then MinimizeConverged is false.
+	MinimizeConverged = !(mini.lastDm.count < DmSamples || mini.lastDm.Max() > StopMaxDm)
+	stepper.Free()
+	return MinimizeConverged
 }
