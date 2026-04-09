@@ -2,19 +2,20 @@ package engine
 
 import (
 	"math"
-
-	"github.com/mumax/3/util"
 )
 
 func init() {
 	DeclFunc("ext_grainboundaries", ext_grainboundaries, "(startregion, numgrains, offset, boundarythickness, zeroflag). Given existing regions, reassigns grain boundaries of boundarythickness to new region values, starting at offset. Zeroflag: 1 = region0 is normal, 0 = region0 acts as edge but no boundary itself, -1 = ignore region0 entirely.")
 }
 
-func ext_grainboundaries(startregion, numgrains, offset, boundarythickness, zeroflag int) {
+func ext_grainboundaries(startregion, numgrains, offset int, boundarythickness float64, zeroflag int) {
 	r := &regions
 
-	size := r.Mesh().Size()
+	mesh := r.Mesh()
+	size := mesh.Size()
 	Nx, Ny, Nz := size[X], size[Y], size[Z]
+	cellsize := mesh.CellSize()
+	cx, cy, cz := cellsize[X], cellsize[Y], cellsize[Z]
 
 	host := r.HostList()
 
@@ -22,21 +23,18 @@ func ext_grainboundaries(startregion, numgrains, offset, boundarythickness, zero
 	copy(orig, host)
 	origArr := reshapeBytes(orig, size)
 
-	if boundarythickness < 1 {
-		util.Log("boundarythickness must be >= 1")
-		return
-	}
+	rx, ry, rz := boundarythickness/cx, boundarythickness/cy, boundarythickness/cz
+	Rx, Ry, Rz := int(rx), int(ry), int(rz)                      // Round down to nearest integer for optimal for loops
+	rxSqInv, rySqInv, rzSqInv := 1/(rx*rx), 1/(ry*ry), 1/(rz*rz) // Axes of the circle in cell lengths (squared inverse)
 
-	R := boundarythickness
+	dx := make([]int, 0, (2*Rx+1)*(2*Ry+1)*(2*Rz+1))
+	dy := make([]int, 0, (2*Rx+1)*(2*Ry+1)*(2*Rz+1))
+	dz := make([]int, 0, (2*Rx+1)*(2*Ry+1)*(2*Rz+1))
 
-	dx := make([]int, 0, (2*R+1)*(2*R+1)*(2*R+1))
-	dy := make([]int, 0, (2*R+1)*(2*R+1)*(2*R+1))
-	dz := make([]int, 0, (2*R+1)*(2*R+1)*(2*R+1))
-
-	for k := -R; k <= R; k++ {
-		for j := -R; j <= R; j++ {
-			for i := -R; i <= R; i++ {
-				if i*i+j*j+k*k <= R*R {
+	for k := -Rz; k <= Rz; k++ {
+		for j := -Ry; j <= Ry; j++ {
+			for i := -Rx; i <= Rx; i++ {
+				if float64(i*i)*rxSqInv+float64(j*j)*rySqInv+float64(k*k)*rzSqInv <= 1. {
 					dx = append(dx, i)
 					dy = append(dy, j)
 					dz = append(dz, k)
