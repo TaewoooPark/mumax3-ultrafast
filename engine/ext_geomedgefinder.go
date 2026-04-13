@@ -53,14 +53,7 @@ func ext_GeomEdge(axis string) Shape {
 					continue
 				}
 
-				wrapPBC := func(i, N, PBC int) int {
-					if PBC == 0 {
-						return i // Don't wrap
-					}
-					return ((i % N) + N) % N // Wrap in integer range [0, N-1]
-				}
-
-				nx, ny, nz := wrapPBC(i+offx, Nx, PBC[X]), wrapPBC(j+offy, Ny, PBC[Y]), wrapPBC(k+offz, Nz, PBC[Z])
+				nx, ny, nz := wrapPBC(i+offx, X), wrapPBC(j+offy, Y), wrapPBC(k+offz, Z)
 				if nx < 0 || nx >= Nx || ny < 0 || ny >= Ny || nz < 0 || nz >= Nz || arr3d[nz][ny][nx] == 0 {
 					edgemask[(k*Ny+j)*Nx+i] = true
 				}
