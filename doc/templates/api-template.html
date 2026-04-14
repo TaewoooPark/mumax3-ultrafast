@@ -484,7 +484,7 @@ FixDt = 1e-15
 	<hr/>
 	
 	{{range .FilterName "run" "steps" "runwhile" "relax" "minimize"}} {{template "entry" .}} {{end}}
-	{{range .FilterName "t" "dt" "MinDt" "MaxDt" "FixDt" "HeadRoom" "MaxErr" "step" "NEval" "peakErr" "lastErr" "minimizerstop" "minimizersamples" "relaxtorquethreshold"}} {{template "entry" .}} {{end}}
+	{{range .FilterName "t" "dt" "MinDt" "MaxDt" "FixDt" "HeadRoom" "MaxErr" "step" "NEval" "peakErr" "lastErr" "minimizerstop" "minimizersamples" "MinimizeWallClockTime" "relaxtorquethreshold" "RelaxWallClockTime"}} {{template "entry" .}} {{end}}
 	{{range .FilterName "SetSolver"}} {{template "entry" . }} {{end}}
 
 </div>
@@ -561,7 +561,7 @@ saveas(chargeDensity, "chargeDensity.ovf")
 
 	<hr/>
 
-	{{range .FilterName "Add" "Const" "ConstVector" "Cross" "Div" "Dot" "MAdd" "Masked" "Mul" "MulMV" "Normalized" "Shifted" "RunningAverage" "Sum" "SumVector"}} {{template "entry" .}} {{end}}
+	{{range .FilterName "Add" "Const" "ConstVector" "Cross" "CustomQuantity" "Div" "Dot" "MAdd" "Masked" "Mul" "MulMV" "Normalized" "Shifted" "RunningAverage" "Sum" "SumVector"}} {{template "entry" .}} {{end}}
 
 </div>
 
