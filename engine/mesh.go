@@ -61,7 +61,8 @@ func SetMesh(Nx, Ny, Nz int, cellSizeX, cellSizeY, cellSizeZ float64, pbcx, pbcy
 	}
 	if cellSizeChanged {
 		warnStr := " WARNING: cell size was set to a high aspect ratio.\n" + // First "//" gets added by LogOut()
-			"//          Calculation of demag kernel may take longer than usual."
+			"//          Calculation of demag kernel may take longer than usual.\n" +
+			"//          Note that this can exacerbate discretization anisotropy."
 		if min(cellSizeX, cellSizeY, cellSizeZ) < max(cellSizeX, cellSizeY, cellSizeZ)/4 {
 			LogOut(warnStr)
 		}
