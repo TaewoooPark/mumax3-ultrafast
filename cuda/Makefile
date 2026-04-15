@@ -32,7 +32,7 @@ endif
 
 # When CUDA_CC is not an environment variable and is not set on the command line, use compute capability 3.0
 ifeq ($(CUDA_CC),)
-	CUDA_CC = 50 # Lowest supported CC for mumax3.11
+	CUDA_CC = 50 # Lowest supported CC for mumax3.12
 endif
 
 # The gcc host compiler for nvcc
