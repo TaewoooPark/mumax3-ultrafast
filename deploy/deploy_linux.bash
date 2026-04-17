@@ -59,7 +59,7 @@ for CUDAVERSION in "${INPUT_CUDA_VERSIONS[@]}"; do
     export CGO_CFLAGS="-I${CUDA_HOME}/include"
 
     # (Re)build everything
-    (cd .. && make realclean && make -j 4 || exit 1)
+    (cd ../cuda && make realclean && cd .. && make -j 4 || exit 1)
     
     # Copy the executable and the cuda libraries to the output directory
     cp $GOPATH/bin/mumax3 $BUILDDIR 

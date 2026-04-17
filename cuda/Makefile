@@ -72,6 +72,7 @@ wrappers: $(WRAPPERS)
 	done
 	@ ./cuda2go $< > /dev/null
 	@ gofmt -w -s -l $@ > /dev/null
+	@ cp $(basename $<)_wrapper.go $(basename $<)_wrapper.go_linux_cuda${CUDA_VERSION}.tmp
 
 
 cuda2go: cuda2go.go
@@ -79,7 +80,7 @@ cuda2go: cuda2go.go
 
 
 clean:
-	rm -vf *.ptx
+	rm -vf *.ptx *.tmp
 
 
 realclean:
