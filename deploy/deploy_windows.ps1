@@ -3,12 +3,13 @@
 param ( # Optional arguments. Example usage: ./deploy_windows.ps1 -CUDA_VERSIONS 12.6 -CUDA_CC 86
     [String[]]$CUDA_VERSIONS = ("10.0","10.1","10.2","11.0","12.0","12.6","12.9"), # The cuda versions against which we will compile mumax3
     [Int[]]$CUDA_CC, # The compute capabilities for which PTX will be compiled. Default: all CC supported by the CUDA version.
-    [String[]]$CUDA_KERNELS # List of which CUDA kernels in ../cuda should be (re)compiled. Default: all of them.
+    [String[]]$CUDA_KERNELS, # List of which CUDA kernels in ../cuda should be (re)compiled. Default: all of them.
+    [switch]$REUSE_WRAPPERS # Whether to use files like "zhangli2_wrapper.go_win_cuda12.9.tmp" as wrappers without recompiling. Linux wrappers are prioritized if present.
 )
 
 foreach ($CUDA_VERSION_STR in $CUDA_VERSIONS ) {
     # The final location of executables and libraries ready to be shipped to the user.
-    $builddir = "build/mumax3.11.1_windows_cuda$CUDA_VERSION_STR"
+    $builddir = "build/mumax3.12_windows_cuda$CUDA_VERSION_STR"
 
     # The nvidia toolkit installer for CUDA 12.6 should have set the environment 
     # variable CUDA_PATH_V12_6 which points to the root directory of the 
@@ -35,6 +36,8 @@ foreach ($CUDA_VERSION_STR in $CUDA_VERSIONS ) {
     if ( -not ( Test-Path $CCBIN ) ) {
         Write-Output "CCBIN for nvcc not found at $CCBIN"
         exit
+    } else {
+        Write-Output "Using CCBIN=$CCBIN"
     }
 
     # We will compile the kernels for all supported architectures
@@ -64,22 +67,44 @@ foreach ($CUDA_VERSION_STR in $CUDA_VERSIONS ) {
     # Enter the cuda directory to (re)compile the cuda kernels
     Set-Location ../cuda
         go build .\cuda2go.go
+
         if ($CUDA_KERNELS.Length -eq 0) {
             $cudafiles = Get-ChildItem -filter "*.cu"
         } else {
             $cudafiles = Get-ChildItem -Filter "*.cu" | Where-Object {$CUDA_KERNELS -contains $_.BaseName}
         }
+
         foreach ($cudafile in $cudafiles) {
             $kernelname = $cudafile.basename
             Remove-Item "${kernelname}_*.ptx"
             Remove-Item "${kernelname}_*wrapper.go"
-            foreach ($cc in $CUDA_CC) {
-                & $NVCC -ccbin "`"${CCBIN}`"" -Xptxas -O3 -ptx `
-                    -gencode="arch=compute_${cc},code=sm_${cc}" `
-                    "${cudafile}" -o "${kernelname}_${cc}.ptx"
+
+            $tmpname_win = "${kernelname}_wrapper.go_win_cuda${CUDA_VERSION_STR}.tmp"
+            $tmpname_linux = $tmpname_win -replace '_win_', '_linux_'
+            $wrappername = "${kernelname}_wrapper.go"
+            $wrappercopied = $false
+
+            if ($REUSE_WRAPPERS) { # Building wrappers on Windows for all CC/CUDA takes hours, but only minutes on Linux
+                if (Test-Path $tmpname_linux) { # Linux wrappers can only exist if they were manually put there, so these have highest priority
+                    Copy-Item $tmpname_linux $wrappername -Force
+                    $wrapperCopied = $true
+                    Write-Output "Reusing ${tmpname_linux} for ${wrappername}"
+                } elseif (Test-Path $tmpname_win) {
+                    Copy-Item $tmpname_win $wrappername -Force
+                    $wrapperCopied = $true
+                    Write-Output "Reusing ${tmpname_win} for ${wrappername}"
+                }
             }
-            & .\cuda2go $cudafile
-            gofmt -w "${kernelname}_wrapper.go"
+            if (-not $wrappercopied) {
+                foreach ($cc in $CUDA_CC) {
+                    & $NVCC -ccbin "`"${CCBIN}`"" -Xptxas -O3 -ptx `
+                        -gencode="arch=compute_${cc},code=sm_${cc}" `
+                        "${cudafile}" -o "${kernelname}_${cc}.ptx"
+                }
+                & .\cuda2go $cudafile
+                gofmt -w $wrappername
+                Copy-Item $wrappername -Destination $tmpname_win
+            }
         }
     Set-Location ../deploy
 

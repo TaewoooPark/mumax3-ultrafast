@@ -4,23 +4,38 @@ package engine
 
 import (
 	"math"
+	"time"
 
 	"github.com/mumax/3/cuda"
 )
 
-// Stopping relax Maxtorque in T. The user can check MaxTorque for sane values (e.g. 1e-3).
-// If set to <=0, relax() will stop when the average torque is steady or increasing.
-var RelaxTorqueThreshold float64 = -1.
+var (
+	// Stopping relax Maxtorque in T. The user can check MaxTorque for sane values (e.g. 1e-3).
+	// If set to <=0, relax() will stop when the average torque is steady or increasing.
+	RelaxTorqueThreshold float64 = -1.
+	RelaxWallClockTime   float64 = -1.0 // wall-clock time limit for Relax
+	RelaxConverged       bool           // true if Relax converged, and false if the maximum wall-clock time is reached
+)
 
 func init() {
-	DeclFunc("Relax", Relax, "Try to minimize the total energy")
+	DeclFunc("Relax", Relax, "Try to minimize the total energy. Returns true if convergence is reached, or false if the wall-clock time limit is exceeded. The wall-clock time limit is disabled by default.")
 	DeclVar("RelaxTorqueThreshold", &RelaxTorqueThreshold, "MaxTorque threshold for relax(). If set to -1 (default), relax() will stop when the average torque is steady or increasing.")
+	DeclVar("RelaxWallClockTime", &RelaxWallClockTime, "Wall-clock time limit (seconds) for Relax that will interrupt the relaxation if exceeded. Set to -1 (default) to disable.")
 }
 
 // are we relaxing?
 var relaxing = false
 
-func Relax() {
+func Relax() bool {
+
+	// if wall-clock time is zero, skip Relaxing entirely (zero steps), and don't change any settings
+	RelaxConverged = false
+	TimerStart := time.Now()
+	if RelaxWallClockTime == 0 {
+		RelaxConverged = false
+		return RelaxConverged
+	}
+
 	SanityCheck()
 	pause = false
 
@@ -55,7 +70,7 @@ func Relax() {
 	E0 := GetTotalEnergy()
 	relaxSteps(N)
 	E1 := GetTotalEnergy()
-	for E1 < E0 && !pause {
+	for (E1 < E0 && !pause) && WallclockTimer(TimerStart, RelaxWallClockTime) {
 		relaxSteps(N)
 		E0, E1 = E1, GetTotalEnergy()
 	}
@@ -75,7 +90,7 @@ func Relax() {
 	if RelaxTorqueThreshold > 0 {
 		// run as long as the max torque is above threshold. Then increase the accuracy and step more.
 		for !pause {
-			for maxTorque() > RelaxTorqueThreshold && !pause {
+			for (maxTorque() > RelaxTorqueThreshold && !pause) && WallclockTimer(TimerStart, RelaxWallClockTime) {
 				relaxSteps(N)
 			}
 			MaxErr /= math.Sqrt2
@@ -88,7 +103,7 @@ func Relax() {
 		// if MaxErr < 1e-9, this code won't run.
 		var T0, T1 float32 = 0, avgTorque()
 		// Step as long as torque goes down. Then increase the accuracy and step more.
-		for MaxErr > 1e-9 && !pause {
+		for (MaxErr > 1e-9 && !pause) && WallclockTimer(TimerStart, RelaxWallClockTime) {
 			MaxErr /= math.Sqrt2
 			relaxSteps(N) // TODO: Play with other values
 			T0, T1 = T1, avgTorque()
@@ -98,7 +113,11 @@ func Relax() {
 			}
 		}
 	}
+
 	pause = true
+	RelaxConverged = (RelaxTorqueThreshold > 0 && (maxTorque() <= RelaxTorqueThreshold || MaxErr < 1e-9)) || (RelaxTorqueThreshold <= 0 && MaxErr <= 1e-9)
+	stepper.Free()
+	return RelaxConverged
 }
 
 // take n steps without setting pause when done or advancing time

@@ -15,6 +15,7 @@ mx3
 mumax3.*linux*cuda*
 *.*~
 tmp/
+*.tmp
 *.out
 .idea/
 .vscode/

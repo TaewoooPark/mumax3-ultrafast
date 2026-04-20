@@ -32,7 +32,7 @@
 <div class="api-menu">
 
   <div style="margin: 0px; margin-bottom: 5ex;">
-  	<h2 style="text-align: center; margin: 5px;">mumax3.11 API</h2>
+  	<h2 style="text-align: center; margin: 5px;">mumax3.12 API</h2>
   	<input style="text-align: center; margin: auto; display: block" type="text" id="searchInput" onclick="onSearch()" onkeyup="onSearch()" placeholder="Enter a search term" title="Type in a name" size=15>
   </div>
 
@@ -62,7 +62,8 @@
     <li class="pure-menu-item"><a href="#" class="pure-menu-link api-section-link" onclick="openSection(event, 'misc')">Misc</a></li>
   </ul>
 
-  <p class="oldlink" style="margin-top: 4em"><a href="api310.html"> Go to mumax3.10 API</a></p>
+  <p class="oldlink" style="margin-top: 4em"><a href="api3111.html"> Go to mumax3.11.1 API</a></p>
+  <p class="oldlink"><a href="api310.html"> Go to mumax3.10 API</a></p>
   <p class="oldlink"><a href="api39c.html"> Go to mumax3.9c API</a></p>
 
   <h3 id="api-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
@@ -211,7 +212,7 @@ tableAdd(m.Region(1))    // add average m over region 1 to table
 
 	<hr/>
 	
-	{{range .FilterName "DefRegion" "DefRegionCell" "ReDefRegion" "regions"}} {{template "entry" .}} {{end}}
+	{{range .FilterName "DefRegion" "DefRegionCell" "ReDefRegion" "regions" "NREGION"}} {{template "entry" .}} {{end}}
 
 </div>
 
@@ -484,7 +485,7 @@ FixDt = 1e-15
 	<hr/>
 	
 	{{range .FilterName "run" "steps" "runwhile" "relax" "minimize"}} {{template "entry" .}} {{end}}
-	{{range .FilterName "t" "dt" "MinDt" "MaxDt" "FixDt" "HeadRoom" "MaxErr" "step" "NEval" "peakErr" "lastErr" "minimizerstop" "minimizersamples" "relaxtorquethreshold"}} {{template "entry" .}} {{end}}
+	{{range .FilterName "t" "dt" "MinDt" "MaxDt" "FixDt" "HeadRoom" "MaxErr" "step" "NEval" "peakErr" "lastErr" "minimizerstop" "minimizersamples" "MinimizeWallClockTime" "relaxtorquethreshold" "RelaxWallClockTime"}} {{template "entry" .}} {{end}}
 	{{range .FilterName "SetSolver"}} {{template "entry" . }} {{end}}
 
 </div>
@@ -561,7 +562,7 @@ saveas(chargeDensity, "chargeDensity.ovf")
 
 	<hr/>
 
-	{{range .FilterName "Add" "Const" "ConstVector" "Cross" "Div" "Dot" "MAdd" "Masked" "Mul" "MulMV" "Normalized" "Shifted" "RunningAverage" "Sum" "SumVector"}} {{template "entry" .}} {{end}}
+	{{range .FilterName "Add" "Const" "ConstVector" "Cross" "CustomQuantity" "Div" "Dot" "MAdd" "Masked" "Mul" "MulMV" "Normalized" "Shifted" "RunningAverage" "Sum" "SumVector"}} {{template "entry" .}} {{end}}
 
 </div>
 

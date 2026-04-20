@@ -14,7 +14,7 @@ __device__ inline float triangleCharge(float3 mi, float3 mj, float3 mk) {
     return 2.0f * atan2(numer, denom);
 }
 
-// Set s to the toplogogical charge density for lattices based on the solid angle 
+// Set s to the topological charge density for lattices based on the solid angle 
 // subtended by triangle associated with three spins: a,b,c
 //
 // 	  s = 2 atan[(a . b x c /(1 + a.b + a.c + b.c)] / (dx dy)

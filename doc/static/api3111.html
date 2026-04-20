@@ -1,48 +1,63 @@
+
+
+
 <!DOCTYPE html>
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 	<title>mumax3</title>
+	<link rel="icon" type="image/x-icon" href="nimble-cubes128.png">
 	<link rel="stylesheet" href="https://unpkg.com/purecss@1.0.1/build/pure-min.css">
 	<link rel="stylesheet" type="text/css" href="style.css">
 
-<script>
-  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-  ga('create', 'UA-50169601-1', 'mumax.github.io');
-  ga('send', 'pageview');
-
-</script>
+	<!-- Google tag (gtag.js) -->
+	<script async src="https://www.googletagmanager.com/gtag/js?id=G-29YY0Q5W95"></script>
+	<script>
+		window.dataLayer = window.dataLayer || [];
+		function gtag(){dataLayer.push(arguments);}
+		gtag('js', new Date());
+		gtag('config', 'G-29YY0Q5W95');
+	</script>
 </head>
 
 <body>
-<p id="deprecated-page">Warning! This is the API for mumax3.10, which is no longer supported. If you like to use mumax3, we strongly recommend to use <a href="download.html">mumax3.12</a>.</p>
+<p id="deprecated-page">Warning! This is the API for mumax3.11.1, which is no longer supported. If you like to use mumax3, we strongly recommend to use <a href="download.html">mumax3.12</a>.</p>
 
-<div style="float:left">
-	<img src="nimble-cubes128.png"/>
+<div id="header" style="display:flex;flex-direction:row;margin:0;">
+
+<div>
+	<a href="index.html"><img id="header_img" src="nimble-cubes128.png" href="index.html" /></a>
 </div>
+<script src="header.js"></script>
 
-<div style="float:left">
-<span style="font-size:48px"><b>mumax</b><sup>3</sup><br/></span>
-	GPU-accelerated micromagnetism <br/><br/>
+<div style="flex:1;position:relative;">
+	<a href="index.html" style="color:black"><span style="font-size:48px"><b>mumax</b><sup>3</sup><br /></span>
+		GPU-accelerated micromagnetism <br /><br /></a>
 	<a class="pure-button pure-button-primary" href="index.html">Home</a>
 	<a class="pure-button pure-button-primary" href="download.html">Download</a>
 	<a class="pure-button pure-button-primary" href="examples.html">Examples</a>
+	<a class="pure-button pure-button-primary" href="https://mumax.ugent.be/mumax3-workshop/">Tutorial</a>
 	<a class="pure-button pure-button-primary" href="api.html">API</a>
 	<a class="pure-button pure-button-primary" href="https://groups.google.com/forum/#!forum/mumax2">Forum</a>
-</div>
-<br style="clear:both"/> 
 
-<hr/>
+	<a class="pure-button pure-button-primary" href="https://mumax.github.io/plus" id="mumaxplusbutton">
+		<div style="float:left;margin:0;">
+			See also:<br>
+			mumax<sup>+</sup>
+		</div>
+		<img src="https://mumax.github.io/plus/_static/nimble-plus.png">
+	</a>
+</div>
+
+</div>
+
+<hr />
 
 <div class="api-container">
 <div class="api-menu">
 
   <div style="margin: 0px; margin-bottom: 5ex;">
-  	<h2 style="text-align: center; margin: 5px;">mumax3.10 API</h2>
+  	<h2 style="text-align: center; margin: 5px;">mumax3.11 API</h2>
   	<input style="text-align: center; margin: auto; display: block" type="text" id="searchInput" onclick="onSearch()" onkeyup="onSearch()" placeholder="Enter a search term" title="Type in a name" size=15>
   </div>
 
@@ -68,10 +83,18 @@
     <li class="pure-menu-item"><a href="#" class="pure-menu-link api-section-link" onclick="openSection(event, 'extensions')">Extensions</a></li>
     <li class="pure-menu-item"><a href="#" class="pure-menu-link api-section-link" onclick="openSection(event, 'customquantities')">Custom quantities</a></li>
     <li class="pure-menu-item"><a href="#" class="pure-menu-link api-section-link" onclick="openSection(event, 'customfields')">Custom effective field terms</a></li>
+    <li class="pure-menu-item"><a href="#" class="pure-menu-link api-section-link" onclick="openSection(event, 'math')">Math</a></li>
     <li class="pure-menu-item"><a href="#" class="pure-menu-link api-section-link" onclick="openSection(event, 'misc')">Misc</a></li>
   </ul>
 
-  <p style="font-size:8px; margin-top: 4em"><a href="api39c.html"> Go to mumax3.9c API</a></p>
+  <p class="oldlink" style="margin-top: 4em"><a href="api310.html"> Go to mumax3.10 API</a></p>
+  <p class="oldlink"><a href="api39c.html"> Go to mumax3.9c API</a></p>
+
+  <h3 id="api-to-top" onclick="window.scrollTo({top: 0, behavior: 'smooth'})">
+	<sup><span class="api-to-top-arrow">&uarr;</span></sup>
+	  &nbsp; Back to top &nbsp;
+	<sup><span class="api-to-top-arrow">&uarr;</span></sup>
+  </h3>
 </div>
 
 <div class="api-content">
@@ -84,7 +107,7 @@
 	<h1> Syntax </h1>
 	
 	<p>
-	The mumax<sup>3</sup> input syntax is a subset of <a href=http://golang.org>Go</a>'s syntax, somewhat similar to C. It is case-independent however, so msat is the same as Msat or MSAT.</p>
+	The mumax<sup>3</sup> input syntax is a subset of <a href=http://golang.org>Go</a>'s syntax, somewhat similar to C. It is case-independent however, so <code>msat</code> is the same as <code>Msat</code> or <code>MSAT</code>.</p>
 	
 	<h3>Defining variables</h3>
 	
@@ -99,7 +122,7 @@ str := "hello" // defines str, type automatically is string
 </code></pre>
 	
 	<h3>Arithmetic</h3>
-	Most common arithmetic operations are possible. Also Go's <a href=http://golang.org/pkg/math>math</a> library and some common constants are available. For raise-to-the-power, pow(x,y) should be used.
+	Most common arithmetic operations are possible. Also Go's <a href=http://golang.org/pkg/math>math</a> library and some common constants are available. For raise-to-the-power, <code>pow(<i>x</i>,<i>y</i>)</code> should be used.
 	
 <pre><code>x := pi*(3+4)/5
 x = pow(x, 3)
@@ -116,7 +139,7 @@ y := abs(cbrt(cosh(erf(erfc(gamma(J0(Y0(2))))))))
 	
 	<h3>Implicit functions</h3>
 	
-	Some of the API features accept a function as argument (e.g.: <code>RunWhile(func()bool)</code>, or all input parameters). In that case, and <i>only</i> in this case, the argument is implicitly converted to a function, which is re-evaluated each time it's needed. E.g.:
+	Some of the API features accept a function as argument (e.g.: <code>RunWhile(<i>func()bool</i>)</code>, or all input parameters). In that case, and <i>only</i> in this case, the argument is implicitly converted to a function, which is re-evaluated each time it's needed. E.g.:
 	
 <pre><code>value := sin(pi*t)  // value is a float64, RHS evaluated only once
 Msat = value        // time-independent Msat
@@ -127,8 +150,8 @@ Msat = value        // time-independent Msat
 
 	<h3>Methods</h3>
 
-	Some of the API instances have methods defined on them. You can call methods on an instance by using '.' as in most object oriented programming languages. 
-	E.g.: a material parameter such as <code>Msat</code> has the method <code>SetRegion(int, float)</code> to set the value of the material parameter in a certain region:
+	Some of the API instances have methods defined on them. You can call methods on an instance by using '<code>.</code>' as in most object oriented programming languages. 
+	E.g.: a material parameter such as <code>Msat</code> has the method <code>SetRegion(<i>int</i>, <i>float</i>)</code> to set the value of the material parameter in a certain region:
 
 	<pre><code>Msat.SetRegion(1, 800e3) // Set Msat=520e3 in region 1 </code></pre>
 
@@ -166,8 +189,8 @@ SetCellSize(5e-9, 5e-9, 5e-9)
 
 	<h2> Setting the geometry </h2>
 
-	Optionally a magnet Shape other than the full simulation box can be specified. In order to set the geometry, you first need to <a href="#" onclick="openSection(event, 'geometry')">define a shape</a>.
-<pre><code> geometryShape := cylinder(400e-9, 20e-9).RotX(45*pi/180).Transl(1e-6,0,0)
+	Optionally a magnet <code>Shape</code> other than the full simulation box can be specified. In order to set the geometry, you first need to <a href="#" onclick="openSection(event, 'geometry')">define a shape</a>.
+<pre><code>geometryShape := cylinder(400e-9, 20e-9).RotX(45*pi/180).Transl(1e-6,0,0)
 SetGeom(geometryShape)
 </code></pre>
 
@@ -343,7 +366,7 @@ SetGeom(geometryShape)
 
 	A shape is an abstract object which outlines an area in a 3D universe. Shapes are useful for different tasks, e.g.: to define the geometry of a magnet, to define material regions, or to set locally a specific initial magnetization configuration.
 	One can specify primitive shapes, constructed at the origin (box center), and translate/rotate them if needed. All positions are specified in meters and the origin lies in the center of the simulation box. E.g.:
-<pre><code>myShape := cylinder(400e-9, 20e-9).RotX(45*pi/180).Transl(1e-6,0,0))
+<pre><code>myShape := cylinder(400e-9, 20e-9).RotX(45*pi/180).Transl(1e-6,0,0)
 anotherShape := Circle(400e-9).sub(Circle(200e-9))
 </code></pre>
 
@@ -428,7 +451,7 @@ anotherShape := Circle(400e-9).sub(Circle(200e-9))
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Cone</b>(float64, float64) Shape </span> 
-	 <p style="margin-left:40px" class="api-docstring"> 3D Cone with diameter and height in meter. The top of the cone points in the +z direction. </p> 
+	 <p style="margin-left:40px" class="api-docstring"> 3D Cone with diameter and height in meter. The base is at z=0. If the height is positive, the tip points in the +z direction. </p> 
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
@@ -655,6 +678,21 @@ anotherShape := Circle(400e-9).sub(Circle(200e-9))
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Triangle</b>(float64, float64, float64, float64, float64, float64) Shape </span> 
+	 <p style="margin-left:40px" class="api-docstring"> 2D triangle with vertices (x0, y0), (x1, y1) and (x2, y2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Add( Shape ) &nbsp; Intersect( Shape ) &nbsp; Inverse( ) &nbsp; Repeat( float64 float64 float64 ) &nbsp; RotX( float64 ) &nbsp; RotY( float64 ) &nbsp; RotZ( float64 ) &nbsp; Scale( float64 float64 float64 ) &nbsp; Sub( Shape ) &nbsp; Transl( float64 float64 float64 ) &nbsp; Xor( Shape ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Universe</b>() Shape </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Entire space </p> 
 
@@ -773,6 +811,17 @@ tableAdd(m.Region(1))    // add average m over region 1 to table
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">RedefRegion</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Reassign all cells with a given region (first argument) to a new region (second argument) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">regions</b> </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Outputs the region index for each cell </p> 
 
@@ -804,7 +853,7 @@ tableAdd(m.Region(1))    // add average m over region 1 to table
 
 	<h1> Initial magnetization </h1>
 	
-	The initial magnetization is set by assigning a <code>Config</code> to m, setting it in separate regions, or by loading a file directly.
+	The initial magnetization is set by assigning a <code>Config</code> to <code>m</code>, setting it in separate regions, or by loading a file directly.
 <pre><code>m = uniform(1, 0, 0)
 m.SetRegion(1, vortex(1, 1))
 m.LoadFile("config.ovf")
@@ -916,6 +965,21 @@ m.SetInShape(circle(50e-9), uniform(0,0,1))
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Helical</b>(data.Vector) Config </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Helical state for given wave vector </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Add( float64 Config ) &nbsp; RotZ( float64 ) &nbsp; Scale( float64 float64 float64 ) &nbsp; Transl( float64 float64 float64 ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">HopfionCompactSupport</b>(float64, float64) Config </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopfion texture from skyrmion, with compact support (smooth and magnetization exactly along z-axis outside of finite region) </p> 
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
@@ -1618,10 +1682,11 @@ Ku1 = 500 * sin(2*pi*f*t)
 <pre><code>B_ext = vector(0.01, 1e-6*sin(2*pi*f*t), 0)
 B_ext.SetRegion(1, vector(0, 0, 0.1))
 </code></pre>
-	Additionally, an arbitrary number of time- and space-dependent vector fields of the form <code> g(x,y,z) * f(t) </code> may be added. (E.g., to simulate the field of an antenna or an arbitrary current running through the magnet)
+	Additionally, an arbitrary number of time- and space-dependent vector fields of the form <code> g(<i>x</i>,<i>y</i>,<i>z</i>) * f(<i>t</i>) </code> may be added. (E.g., to simulate the field of an antenna or an arbitrary current running through the magnet)
 <pre><code>B_ext.Add(LoadFile("antenna.ovf"), sin(2*pi*f*t))
 J.Add(LoadFile("current.ovf"), 1)
 </code></pre>
+	Excitations can be defined using standard mathematical functions, or loaded from a <code>.csv</code> file with <code>FunctionFromDatafile</code>.
 
 	<hr/>
 	
@@ -1701,6 +1766,21 @@ J.Add(LoadFile("current.ovf"), 1)
 	</div>
  
 
+	<hr/>
+
+	 
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">FunctionFromDatafile</b>(string, int, int, string) func(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Creates an interpolation function using data from two columns in a csv file. Arguments: filename, xColumnIdx, yColumnIdx, method ("linear", "nearest" or "step"). </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+ 
+
 </div>
 
 
@@ -1711,7 +1791,7 @@ J.Add(LoadFile("current.ovf"), 1)
 	<h1> Spin currents </h1>
 
 	The effect of spin-polarized currents on the magnetization dynamics can be modelled in different ways. 
-	In Mumax3 you can use the Zhang-Li model or the Slonczewski model.
+	In mumax<sup>3</sup> you can use the Zhang-Li model or the Slonczewski model.
 	For both models, a spin-polarized current field needs to be defined. This is done by setting the current density field <code>J</code>
 	and the polarization <code>Pol</code>.
 	
@@ -1960,9 +2040,11 @@ Lambda = 1
 
 	<h1> Magnetic Force Microscopy </h1>
 	
-	<p>Mumax3 has built-in generation of MFM images from a 2D magnetization. The MFM tip lift can be freely chosen. By default the tip magnetization is modeled as a point monopole at the apex. This is sufficient for most situations. Nevertheless, it is also possible to model partially magnetized tips by setting MFMDipole to the magnetized portion of the tip, in meters. E.g., if only the first 20nm of the tip is (vertically) magnetized, set MFMDipole=20e-9.</p>
+	<p>mumax<sup>3</sup> has built-in generation of MFM images from a 2D magnetization. The MFM tip lift can be freely chosen. By default, the tip magnetization is modeled as a point monopole at the apex. This is sufficient for most situations. Nevertheless, it is also possible to model partially magnetized tips by setting <code>MFMDipole</code> to the magnetized portion of the tip, in meters. E.g., if only the first 20nm of the tip is (vertically) magnetized, set <code>MFMDipole=20e-9</code>.</p>
 	
 	<p><img width=400px src="mfm.svg" /></p>
+
+	<hr/>
 	
 	 
 	<div class="api-entry">
@@ -2022,13 +2104,23 @@ Lambda = 1
 
 	<h1> Output quantities </h1>
 	
-	The quantities listed below can be output. Also, derived quantities can be produced: the quantity restricted to a certain region or a single component. E.g.:
+	The quantities listed below can be output.<br>
+	Also, derived quantities can be produced: the quantity restricted to a certain region or a single component. E.g.:
 	
 <code><pre>m           // magnetization quantity
 m.Comp(0)   // x-component
 m.Region(1) // magnetization in region 1 (0 elsewhere)
 </pre></code>
-	
+
+	<h2> Averaging behavior </h2>
+	<code>.Average()</code> yields the average over the entire simulation grid, except for <code>m</code> which is always averaged over the geometry.<br>
+	For vector quantities, an average over the magnet geometry can still be obtained with the <code>.Comp()</code> method. E.g.:
+
+<code><pre>B_demag.Average()          // Average vector over entire simulation grid
+B_demag.Comp(1).Average()  // Average y-component over geometry
+m.Average()                // Average magnetization over geometry
+</pre></code>
+
 	<hr/>
 
 	 
@@ -2453,7 +2545,7 @@ m.Region(1) // magnetization in region 1 (0 elsewhere)
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
-			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Gpu( ) &nbsp;
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; GetCell( int int int ) &nbsp; Gpu( ) &nbsp;
 		</span> </p> 
 	
 
@@ -2506,6 +2598,54 @@ m.Region(1) // magnetization in region 1 (0 elsewhere)
 		</span> </p> 
 	
 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">m</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Reduced magnetization (unit length) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; Buffer( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; GetCell( int int int ) &nbsp; LoadFile( string ) &nbsp; Quantity( ) &nbsp; Region( int ) &nbsp; Set( Config ) &nbsp; SetArray( Slice ) &nbsp; SetCell( int int int data.Vector ) &nbsp; SetInShape( Shape Config ) &nbsp; SetRegion( int Config ) &nbsp;
+		</span> </p> 
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example1">[1]</a> 
+		 
+			<a href="examples.html#example2">[2]</a> 
+		 
+			<a href="examples.html#example3">[3]</a> 
+		 
+			<a href="examples.html#example4">[4]</a> 
+		 
+			<a href="examples.html#example5">[5]</a> 
+		 
+			<a href="examples.html#example6">[6]</a> 
+		 
+			<a href="examples.html#example7">[7]</a> 
+		 
+			<a href="examples.html#example8">[8]</a> 
+		 
+			<a href="examples.html#example9">[9]</a> 
+		 
+			<a href="examples.html#example10">[10]</a> 
+		 
+			<a href="examples.html#example11">[11]</a> 
+		 
+			<a href="examples.html#example12">[12]</a> 
+		 
+			<a href="examples.html#example13">[13]</a> 
+		 
+			<a href="examples.html#example14">[14]</a> 
+		 
+			<a href="examples.html#example15">[15]</a> 
+		 
+		</p> 
 	
 
 	</p>
@@ -2661,7 +2801,7 @@ m.Region(1) // magnetization in region 1 (0 elsewhere)
 
 	<h1>Slicing and dicing output</h1>
 	
-	To save storage space, it's possible to save only the part of the output we're interested in. This works on all output quantities (not only m)
+	To save storage space, it's possible to save only the part of the output we're interested in. This works on all output quantities (not only <code>m</code>).
 	
 <code><pre>
 save(m)                         // save full magnetization
@@ -2791,7 +2931,7 @@ tableAdd(mx13)
 
 	<h1> Scheduling output </h1>
 	
-	All input and output quantities (as described above) can be saved in a space-dependent way (".ovf" file), or as spatial averages (table output). The data table ("table.txt") contains by default the time and average magnetization. More columns can be added with <code>TableAdd()</code>. 
+	All input and output quantities (as described above) can be saved in a space-dependent way (<code>.ovf</code> file), or as spatial averages (table output). The data table (<code>table.txt</code>) contains by default the time and average magnetization. More columns can be added with <code>TableAdd()</code>. 
 <pre><code>save(B_ext)
 
 tableadd(B_ext)
@@ -3172,7 +3312,7 @@ myField = ...
 
 	<h1> Running </h1>
 	
-	<code>Run(time)</code> runs the simulation for a given time in seconds, using sensible error settings. 
+	<code>Run(<i>time</i>)</code> runs the simulation for a given time in seconds, using sensible error settings. 
 <pre><code>Run(1e-9)
 </code></pre>
 	More fine-grained control is provided by <code>RunWhile(<i>condition</i>)</code>, which runs as long as an arbitrary condition is met. E.g.: 
@@ -3185,7 +3325,7 @@ MinDt = 1e-15
 MaxErr = 1e-6
 </code></pre>
 	
-	Optionally, a different solver may be chosen (at any point) with <code>SetSolver(int)</code>. Currently available solver types:
+	Optionally, a different solver may be chosen (at any point) with <code>SetSolver(<i>int</i>)</code>. Currently available solver types:
 	<ul>
 		<li> <code>6</code>: RK56 (Fehlberg) solver. This is the highest order solver available, but which is typically not faster than the RK45 solver.</li> 
 		<li> <code>5</code>: RK45 (Dormand-Prince) solver (the default). An accurate solver, very fast for magnetization dynamics at the cost of some memory usage. </li> 
@@ -3524,7 +3664,7 @@ FixDt = 1e-15
 	 
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">SetSolver</b>(int) </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Set solver type. 1:Euler, 2:Heun, 3:Bogaki-Shampine, 4: Runge-Kutta (RK45), 5: Dormand-Prince, 6: Fehlberg, -1: Backward Euler </p> 
+	 <p style="margin-left:40px" class="api-docstring"> Set solver type.<br>1: Euler<br>2: Heun<br>3: Bogacki-Shampine<br>4: Runge-Kutta (RK4)<br>5: Dormand-Prince<br>6: Fehlberg<br>-1: Backward Euler </p> 
 
 	
 
@@ -3543,7 +3683,7 @@ FixDt = 1e-15
 
 	<h1> Moving simulation window </h1>
 	
-	Mumax<sup>3</sup> can automatically shift the magnetization so that the simulation "window" stays centered on a region of interest. Shifting is done to keep a freely chosen magnetization component nearly zero. E.g.
+	mumax<sup>3</sup> can automatically shift the magnetization so that the simulation "window" stays centered on a region of interest. Shifting is done to keep a freely chosen magnetization component nearly zero. E.g.
 	
 <pre><code>ext_centerwall(0)
 ext_rmSurfaceCharge(0, -1, 1)
@@ -3566,6 +3706,98 @@ TableAdd(TotalShift)
 			<a href="examples.html#example15">[15]</a> 
 		 
 		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">TotalShift</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Amount by which the simulation has been shifted along the x-axis (m). </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+ 
+	 
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerBubble</b>() </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerBubble shifts m after each step to keep the bubble position close to the center of the window </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerWall</b>(int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerWall(c) shifts m after each step to keep m_c close to zero </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example10">[10]</a> 
+		 
+			<a href="examples.html#example11">[11]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerWallInLayer</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerWallInLayer(L, c) shifts m after each step to keep m_c in layer L close to zero </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerWallInRegion</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerWallInRegion(R, c) shifts m after each step to keep m_c in region R close to zero </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_rmSurfaceCharge</b>(int, float64, float64) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Compensate magnetic charges on the left and right sides of an in-plane magnetized wire. Arguments: region, mx on left and right side, resp. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example11">[11]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+ 
+	<hr/>
+	 
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">EdgeCarryShift</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Whether to use the current magnetization at the border for the cells inserted by Shift (default=false) </p> 
+
+	
+
 	
 
 	</p>
@@ -3673,17 +3905,6 @@ TableAdd(TotalShift)
 
 	</p>
 	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">TotalShift</b> </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Amount by which the simulation has been shifted (m). </p> 
-
-	
-
-	
-
-	</p>
-	</div>
  
 
 </div>
@@ -3700,6 +3921,17 @@ TableAdd(TotalShift)
 	<hr/>
 	
 	 
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_BackGroundTilt</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Size of in-plane component of background magnetization. All values below this one are rounded down to perfectly out-of-plane to improve position calculation  (default = 0.25) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_bubbledist</b> </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Bubble traveled distance (m) </p> 
@@ -3786,6 +4018,28 @@ TableAdd(TotalShift)
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerWallInLayer</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerWallInLayer(L, c) shifts m after each step to keep m_c in layer L close to zero </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerWallInRegion</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerWallInRegion(R, c) shifts m after each step to keep m_c in region R close to zero </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_corepos</b> </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Vortex core position (x,y) + polarization (z) (m) </p> 
 
@@ -3866,8 +4120,202 @@ TableAdd(TotalShift)
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_emergentmagneticfield_fivepointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Emergent magnetic field calculated using five-point stencil (1/m2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; HostCopy( ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_emergentmagneticfield_solidangle</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Emergent magnetic field computed using Berg-Lüscher lattice method (1/m2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; HostCopy( ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_emergentmagneticfield_twopointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Emergent magnetic field calculated using two-point stencil (1/m2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; HostCopy( ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_enableCenterBubbleX</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Enables centering along the X-axis during ext_centerBubble (default=true) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_enableCenterBubbleY</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Enables centering along the Y-axis during ext_centerBubble (default=true) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_EnableUnsafe</b>() </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Deprecated. Only here to ensure maximal backwards compatibility with mumax3.9c. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_grainCutShape</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Whether to add the complete (3D) voronoi grain, only if its centre lies within the shape (default=false) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_fivepointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using five-point stencil </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_solidangle</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using Berg-Lüscher lattice method </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_solidanglefourier</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using Berg-Lüscher lattice method to calculate emergent field, with emergent field Fourier transformed </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_twopointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using two-point stencil </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindexdensity_fivepointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index density calculated using five-point stencil (1/m3) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindexdensity_solidangle</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index density computed using Berg-Lüscher lattice method (1/m3) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindexdensity_twopointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index density calculated using two-point stencil (1/m3) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_InitGeomFromOVF</b>(string) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Initialize geometry, cell count and cell size given a pattern from OVF </p> 
 
 	
 
@@ -4278,12 +4726,73 @@ saveas(chargeDensity, "chargeDensity.ovf")
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Normalized</b>(Quantity) Quantity </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Normalize quantity </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 EvalTo( ) &nbsp;
+		</span> </p> 
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example12">[12]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">RunningAverage</b>(Quantity) Quantity </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Records the time-average of a quantity from the moment this function is called.<br>Note: this may impact performance since the Quantity will be evaluated after every step. </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 EvalTo( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Shifted</b>(Quantity, int, int, int) Quantity </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Shifted quantity </p> 
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
 			 EvalTo( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Sum</b>(Quantity) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Sum of Quantity over all cells in the grid. For a vector Quantity, all components are added together. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">SumVector</b>(Quantity) data.Vector </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Sum of vector Quantity over all cells in the grid. </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Add( data.Vector ) &nbsp; Cross( data.Vector ) &nbsp; Div( float64 ) &nbsp; Dot( data.Vector ) &nbsp; Len( ) &nbsp; MAdd( float64 data.Vector ) &nbsp; Mul( float64 ) &nbsp; Sub( data.Vector ) &nbsp; X( ) &nbsp; Y( ) &nbsp; Z( ) &nbsp;
 		</span> </p> 
 	
 
@@ -4303,7 +4812,7 @@ saveas(chargeDensity, "chargeDensity.ovf")
 	<h1> Custom effective field terms </h1>
 	It is possible to define additional effective field terms by promoting a custom quantity to an effective field term. 
 	The corresponding energy density term can also be added by promoting a custom quantity. 
-	E.g.: instead of using the existing anistropy field in mumax3, you could define the uniaxial anisotropy field 
+	E.g.: instead of using the existing anistropy field in mumax<sup>3</sup>, you could define the uniaxial anisotropy field 
 	(and the corresponding energy density) yourselves:
 
 <pre><code>
@@ -4390,8 +4899,815 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">RemoveCustomEnergies</b>() </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Removes all custom energies </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">RemoveCustomFields</b>() </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Removes all custom fields again </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+ 
+
+</div>
+
+
+
+
+<div id="math" class="api-section" >
+
+	<h1> Math </h1>
+
+	Mathematical functions from the Go standard library.
+
+	<hr/>
+
+	 
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">abs</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Abs returns the absolute value of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">acos</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Acos returns the arccosine, in radians, of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">acosh</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Acosh returns the inverse hyperbolic cosine of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">asin</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Asin returns the arcsine, in radians, of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">asinh</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Asinh returns the inverse hyperbolic sine of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atan</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Atan returns the arctangent, in radians, of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atan2</b>(float64, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Atan2 returns the arc tangent of y/x, using the signs of the two to     determine the quadrant of the return value. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atanh</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Atanh returns the inverse hyperbolic tangent of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cbrt</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Cbrt returns the cube root of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ceil</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Ceil returns the least integer value greater than or equal to x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cos</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Cos returns the cosine of the radian argument x. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example6">[6]</a> 
+		 
+			<a href="examples.html#example13">[13]</a> 
+		 
+			<a href="examples.html#example14">[14]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cosh</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Cosh returns the hyperbolic cosine of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">erf</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Erf returns the error function of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">erfc</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Erfc returns the complementary error function of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">exp</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Exp returns e**x, the base-e exponential of x. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example15">[15]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">exp2</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Exp2 returns 2**x, the base-2 exponential of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">expm1</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Expm1 returns e**x - 1, the base-e exponential of x minus 1. It is more     accurate than Exp(x) - 1 when x is near zero. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">floor</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Floor returns the greatest integer value less than or equal to x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">gamma</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Gamma returns the Gamma function of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">heaviside</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Returns 1 if x>0, 0 if x<0, and 0.5 if x==0 </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">hypot</b>(float64, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Hypot returns Sqrt(p*p + q*q), taking care to avoid unnecessary overflow and     underflow. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ilogb</b>(float64) int </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Ilogb returns the binary exponent of x as an integer. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example2">[2]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">isInf</b>(float64, int) bool </span> 
+	 <p style="margin-left:40px" class="api-docstring">     IsInf reports whether f is an infinity, according to sign. If sign > 0,     IsInf reports whether f is positive infinity. If sign < 0, IsInf reports     whether f is negative infinity. If sign == 0, IsInf reports whether f is     either infinity. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">isNaN</b>(float64) bool </span> 
+	 <p style="margin-left:40px" class="api-docstring">     IsNaN reports whether f is an IEEE 754 “not-a-number” value. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">j0</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     J0 returns the order-zero Bessel function of the first kind. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">j1</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     J1 returns the order-one Bessel function of the first kind. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">jn</b>(int, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Jn returns the order-n Bessel function of the first kind. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ldexp</b>(float64, int) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Ldexp is the inverse of Frexp. It returns frac × 2**exp. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Log returns the natural logarithm of x. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example2">[2]</a> 
+		 
+			<a href="examples.html#example4">[4]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log10</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Log10 returns the decimal logarithm of x. The special cases are the same as     for Log. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log1p</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Log1p returns the natural logarithm of 1 plus its argument x. It is more     accurate than Log(1 + x) when x is near zero. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log2</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Log2 returns the binary logarithm of x. The special cases are the same as     for Log. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">logb</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Logb returns the binary exponent of x. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example2">[2]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">max</b>(float64, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Max returns the larger of x or y. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example3">[3]</a> 
+		 
+			<a href="examples.html#example12">[12]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">min</b>(float64, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Min returns the smaller of x or y. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example3">[3]</a> 
+		 
+			<a href="examples.html#example6">[6]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">mod</b>(float64, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Mod returns the floating-point remainder of x/y. The magnitude of the result     is less than y and its sign agrees with that of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">norm</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Standard normal distribution </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example5">[5]</a> 
+		 
+			<a href="examples.html#example12">[12]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pow</b>(float64, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Pow returns x**y, the base-x exponential of y. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example2">[2]</a> 
+		 
+			<a href="examples.html#example15">[15]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pow10</b>(int) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Pow10 returns 10**n, the base-10 exponential of n. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">rand</b>() float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Random number between 0 and 1 </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example3">[3]</a> 
+		 
+			<a href="examples.html#example5">[5]</a> 
+		 
+			<a href="examples.html#example12">[12]</a> 
+		 
+			<a href="examples.html#example15">[15]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randExp</b>() float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Exponentially distributed random number between 0 and +inf, mean=1 </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randInt</b>(int) int </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Random non-negative integer </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randNorm</b>() float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Standard normal random number </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example12">[12]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">remainder</b>(float64, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Remainder returns the IEEE 754 floating-point remainder of x/y. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Sign</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Signum function </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sin</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Sin returns the sine of the radian argument x. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example5">[5]</a> 
+		 
+			<a href="examples.html#example6">[6]</a> 
+		 
+			<a href="examples.html#example13">[13]</a> 
+		 
+			<a href="examples.html#example14">[14]</a> 
+		 
+			<a href="examples.html#example15">[15]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sinc</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Sinc returns sin(x)/x. If x=0, then Sinc(x) returns 1. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sinh</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Sinh returns the hyperbolic sine of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sqrt</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Sqrt returns the square root of x. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example2">[2]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Sum</b>(Quantity) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Sum of Quantity over all cells in the grid. For a vector Quantity, all components are added together. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">tan</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Tan returns the tangent of the radian argument x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">tanh</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Tanh returns the hyperbolic tangent of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">trunc</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Trunc returns the integer value of x. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">y0</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Y0 returns the order-zero Bessel function of the second kind. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">y1</b>(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Y1 returns the order-one Bessel function of the second kind. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">yn</b>(int, float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Yn returns the order-n Bessel function of the second kind. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+ 
+	 
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">inf</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring">     Inf returns positive infinity if sign >= 0, negative infinity if sign < 0. </p> 
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example4">[4]</a> 
+		 
+			<a href="examples.html#example7">[7]</a> 
+		 
+			<a href="examples.html#example11">[11]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pi</b> </span> 
+	
+
+	
+
+	 <p style="margin-left:40px; color:grey"> examples: 
+		 
+			<a href="examples.html#example4">[4]</a> 
+		 
+			<a href="examples.html#example5">[5]</a> 
+		 
+			<a href="examples.html#example6">[6]</a> 
+		 
+			<a href="examples.html#example11">[11]</a> 
+		 
+			<a href="examples.html#example13">[13]</a> 
+		 
+			<a href="examples.html#example14">[14]</a> 
+		 
+			<a href="examples.html#example15">[15]</a> 
+		 
+		</p> 
+	
+
+	</p>
+	</div>
+ 
+	 
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">false</b> </span> 
+	
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">true</b> </span> 
+	
 
 	
 
@@ -4416,138 +5732,8 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 
 	 
 	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">abs</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Abs returns the absolute value of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">acos</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Acos returns the arccosine, in radians, of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">acosh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Acosh returns the inverse hyperbolic cosine of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">asin</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Asin returns the arcsine, in radians, of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">asinh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Asinh returns the inverse hyperbolic sine of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atan</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Atan returns the arctangent, in radians, of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atan2</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Atan2 returns the arc tangent of y/x, using the signs of the two to     determine the quadrant of the return value. </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atanh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Atanh returns the inverse hyperbolic tangent of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cbrt</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Cbrt returns the cube root of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ceil</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Ceil returns the least integer value greater than or equal to x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cos</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Cos returns the cosine of the radian argument x.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example6">[6]</a> 
-		 
-			<a href="examples.html#example13">[13]</a> 
-		 
-			<a href="examples.html#example14">[14]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cosh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Cosh returns the hyperbolic cosine of x.  </p> 
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ClearPostSteps</b>() </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Clear the postStep array, which contains functions that are executed after each solver step. This includes running averages, centering routines to track skyrmions and domain walls etc. </p> 
 
 	
 
@@ -4590,57 +5776,8 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">erf</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Erf returns the error function of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">erfc</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Erfc returns the complementary error function of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Exit</b>() </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Exit from the program </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">exp</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Exp returns e**x, the base-e exponential of x.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example15">[15]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">exp2</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Exp2 returns 2**x, the base-2 exponential of x.  </p> 
 
 	
 
@@ -4663,17 +5800,6 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ExpectV</b>(string, data.Vector, data.Vector, float64) </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Used for automated tests: checks if a vector is close enough to the expected value </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">expm1</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Expm1 returns e**x - 1, the base-e exponential of x minus 1. It is more     accurate than Exp(x) - 1 when x is near zero. </p> 
 
 	
 
@@ -4773,82 +5899,11 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">false</b> </span> 
-	
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">floor</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Floor returns the greatest integer value less than or equal to x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">gamma</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Gamma returns the Gamma function of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">GammaLL</b> </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Gyromagnetic ratio in rad/Ts </p> 
 
 	
 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">heaviside</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Returns 1 if x>0, 0 if x<0, and 0.5 if x==0 </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">hypot</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Hypot returns Sqrt(p*p + q*q), taking care to avoid unnecessary overflow and     underflow. </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ilogb</b>(float64) int </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Ilogb returns the binary exponent of x as an integer.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example2">[2]</a> 
-		 
-		</p> 
 	
 
 	</p>
@@ -4875,92 +5930,6 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">inf</b> </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Inf returns positive infinity if sign >= 0, negative infinity if sign < 0.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example4">[4]</a> 
-		 
-			<a href="examples.html#example7">[7]</a> 
-		 
-			<a href="examples.html#example11">[11]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">isInf</b>(float64, int) bool </span> 
-	 <p style="margin-left:40px" class="api-docstring">     IsInf reports whether f is an infinity, according to sign. If sign > 0,     IsInf reports whether f is positive infinity. If sign < 0, IsInf reports </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">isNaN</b>(float64) bool </span> 
-	 <p style="margin-left:40px" class="api-docstring">     IsNaN reports whether f is an IEEE 754 “not-a-number” value.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">j0</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     J0 returns the order-zero Bessel function of the first kind.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">j1</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     J1 returns the order-one Bessel function of the first kind.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">jn</b>(int, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Jn returns the order-n Bessel function of the first kind.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ldexp</b>(float64, int) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Ldexp is the inverse of Frexp. It returns frac × 2**exp.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">LoadFile</b>(string) Slice </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Load a data file (ovf or dump) </p> 
 
@@ -4975,120 +5944,6 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 			<a href="examples.html#example5">[5]</a> 
 		 
 		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Log returns the natural logarithm of x.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example2">[2]</a> 
-		 
-			<a href="examples.html#example4">[4]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log10</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Log10 returns the decimal logarithm of x. The special cases are the same as     for Log. </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log1p</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Log1p returns the natural logarithm of 1 plus its argument x. It is more     accurate than Log(1 + x) when x is near zero. </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log2</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Log2 returns the binary logarithm of x. The special cases are the same as     for Log. </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">logb</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Logb returns the binary exponent of x.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example2">[2]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">max</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Max returns the larger of x or y.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example3">[3]</a> 
-		 
-			<a href="examples.html#example12">[12]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">min</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Min returns the smaller of x or y.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example3">[3]</a> 
-		 
-			<a href="examples.html#example6">[6]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">mod</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Mod returns the floating-point remainder of x/y. The magnitude of the result     is less than y and its sign agrees with that of x. </p> 
-
-	
-
 	
 
 	</p>
@@ -5161,50 +6016,12 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">norm</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Standard normal distribution </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example5">[5]</a> 
-		 
-			<a href="examples.html#example12">[12]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Normalized</b>(Quantity) Quantity </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Normalize quantity </p> 
-
-	 
-		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
-			 EvalTo( ) &nbsp;
-		</span> </p> 
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example12">[12]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">now</b>() time.Time </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Returns the current time </p> 
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
-			 Add( time.Duration ) &nbsp; AddDate( int int int ) &nbsp; After( time.Time ) &nbsp; AppendFormat( []uint8 string ) &nbsp; Before( time.Time ) &nbsp; Clock( ) &nbsp; Date( ) &nbsp; Day( ) &nbsp; Equal( time.Time ) &nbsp; Format( string ) &nbsp; GobEncode( ) &nbsp; Hour( ) &nbsp; ISOWeek( ) &nbsp; In( *time.Location ) &nbsp; IsZero( ) &nbsp; Local( ) &nbsp; Location( ) &nbsp; MarshalBinary( ) &nbsp; MarshalJSON( ) &nbsp; MarshalText( ) &nbsp; Minute( ) &nbsp; Month( ) &nbsp; Nanosecond( ) &nbsp; Round( time.Duration ) &nbsp; Second( ) &nbsp; Sub( time.Time ) &nbsp; Truncate( time.Duration ) &nbsp; UTC( ) &nbsp; Unix( ) &nbsp; UnixNano( ) &nbsp; Weekday( ) &nbsp; Year( ) &nbsp; YearDay( ) &nbsp; Zone( ) &nbsp;
+			 Add( time.Duration ) &nbsp; AddDate( int int int ) &nbsp; After( time.Time ) &nbsp; AppendFormat( []uint8 string ) &nbsp; Before( time.Time ) &nbsp; Clock( ) &nbsp; Compare( time.Time ) &nbsp; Date( ) &nbsp; Day( ) &nbsp; Equal( time.Time ) &nbsp; Format( string ) &nbsp; GoString( ) &nbsp; GobEncode( ) &nbsp; Hour( ) &nbsp; ISOWeek( ) &nbsp; In( *time.Location ) &nbsp; IsDST( ) &nbsp; IsZero( ) &nbsp; Local( ) &nbsp; Location( ) &nbsp; MarshalBinary( ) &nbsp; MarshalJSON( ) &nbsp; MarshalText( ) &nbsp; Minute( ) &nbsp; Month( ) &nbsp; Nanosecond( ) &nbsp; Round( time.Duration ) &nbsp; Second( ) &nbsp; Sub( time.Time ) &nbsp; Truncate( time.Duration ) &nbsp; UTC( ) &nbsp; Unix( ) &nbsp; UnixMicro( ) &nbsp; UnixMilli( ) &nbsp; UnixNano( ) &nbsp; Weekday( ) &nbsp; Year( ) &nbsp; YearDay( ) &nbsp; Zone( ) &nbsp; ZoneBounds( ) &nbsp;
 		</span> </p> 
 	
 
@@ -5225,182 +6042,8 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pi</b> </span> 
-	
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example4">[4]</a> 
-		 
-			<a href="examples.html#example5">[5]</a> 
-		 
-			<a href="examples.html#example6">[6]</a> 
-		 
-			<a href="examples.html#example11">[11]</a> 
-		 
-			<a href="examples.html#example13">[13]</a> 
-		 
-			<a href="examples.html#example14">[14]</a> 
-		 
-			<a href="examples.html#example15">[15]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pow</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Pow returns x**y, the base-x exponential of y.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example2">[2]</a> 
-		 
-			<a href="examples.html#example15">[15]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pow10</b>(int) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Pow10 returns 10**n, the base-10 exponential of n.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">rand</b>() float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Random number between 0 and 1 </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example3">[3]</a> 
-		 
-			<a href="examples.html#example5">[5]</a> 
-		 
-			<a href="examples.html#example12">[12]</a> 
-		 
-			<a href="examples.html#example15">[15]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randExp</b>() float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Exponentially distributed random number between 0 and +inf, mean=1 </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randInt</b>(int) int </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Random non-negative integer </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randNorm</b>() float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Standard normal random number </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example12">[12]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randSeed</b>(int) </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Sets the random number seed </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">remainder</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Remainder returns the IEEE 754 floating-point remainder of x/y.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Sign</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Signum function </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sin</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Sin returns the sine of the radian argument x.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example5">[5]</a> 
-		 
-			<a href="examples.html#example6">[6]</a> 
-		 
-			<a href="examples.html#example13">[13]</a> 
-		 
-			<a href="examples.html#example14">[14]</a> 
-		 
-			<a href="examples.html#example15">[15]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sinc</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Sinc returns sin(x)/x. If x=0, then Sinc(x) returns 1. </p> 
+	 <p style="margin-left:40px" class="api-docstring"> Sets the random number seed for rand(), randExp(), randNorm() and randInt(). </p> 
 
 	
 
@@ -5415,57 +6058,8 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
-			 Hours( ) &nbsp; Microseconds( ) &nbsp; Milliseconds( ) &nbsp; Minutes( ) &nbsp; Nanoseconds( ) &nbsp; Round( time.Duration ) &nbsp; Seconds( ) &nbsp; Truncate( time.Duration ) &nbsp;
+			 Abs( ) &nbsp; Hours( ) &nbsp; Microseconds( ) &nbsp; Milliseconds( ) &nbsp; Minutes( ) &nbsp; Nanoseconds( ) &nbsp; Round( time.Duration ) &nbsp; Seconds( ) &nbsp; Truncate( time.Duration ) &nbsp;
 		</span> </p> 
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sinh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Sinh returns the hyperbolic sine of x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sqrt</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Sqrt returns the square root of x.  </p> 
-
-	
-
-	 <p style="margin-left:40px; color:grey"> examples: 
-		 
-			<a href="examples.html#example2">[2]</a> 
-		 
-		</p> 
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">tan</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Tan returns the tangent of the radian argument x.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">tanh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Tanh returns the hyperbolic tangent of x.  </p> 
-
 	
 
 	
@@ -5476,28 +6070,6 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ThermSeed</b>(int) </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Set a random seed for thermal noise </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">true</b> </span> 
-	
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">trunc</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Trunc returns the integer value of x.  </p> 
 
 	
 
@@ -5541,39 +6113,6 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 
 	</p>
 	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">y0</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Y0 returns the order-zero Bessel function of the second kind.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">y1</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Y1 returns the order-one Bessel function of the second kind.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
-  
-	<div class="api-entry">
-	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">yn</b>(int, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Yn returns the order-n Bessel function of the second kind.  </p> 
-
-	
-
-	
-
-	</p>
-	</div>
  
 
 </div>
@@ -5585,7 +6124,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	 
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">abs</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Abs returns the absolute value of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Abs returns the absolute value of x. </p> 
 
 	
 
@@ -5596,7 +6135,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">acos</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Acos returns the arccosine, in radians, of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Acos returns the arccosine, in radians, of x. </p> 
 
 	
 
@@ -5607,7 +6146,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">acosh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Acosh returns the inverse hyperbolic cosine of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Acosh returns the inverse hyperbolic cosine of x. </p> 
 
 	
 
@@ -5829,7 +6368,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">asin</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Asin returns the arcsine, in radians, of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Asin returns the arcsine, in radians, of x. </p> 
 
 	
 
@@ -5840,7 +6379,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">asinh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Asinh returns the inverse hyperbolic sine of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Asinh returns the inverse hyperbolic sine of x. </p> 
 
 	
 
@@ -5851,7 +6390,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atan</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Atan returns the arctangent, in radians, of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Atan returns the arctangent, in radians, of x. </p> 
 
 	
 
@@ -5873,7 +6412,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">atanh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Atanh returns the inverse hyperbolic tangent of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Atanh returns the inverse hyperbolic tangent of x. </p> 
 
 	
 
@@ -6098,7 +6637,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cbrt</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Cbrt returns the cube root of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Cbrt returns the cube root of x. </p> 
 
 	
 
@@ -6109,7 +6648,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ceil</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Ceil returns the least integer value greater than or equal to x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Ceil returns the least integer value greater than or equal to x. </p> 
 
 	
 
@@ -6195,8 +6734,19 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ClearPostSteps</b>() </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Clear the postStep array, which contains functions that are executed after each solver step. This includes running averages, centering routines to track skyrmions and domain walls etc. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Cone</b>(float64, float64) Shape </span> 
-	 <p style="margin-left:40px" class="api-docstring"> 3D Cone with diameter and height in meter. The top of the cone points in the +z direction. </p> 
+	 <p style="margin-left:40px" class="api-docstring"> 3D Cone with diameter and height in meter. The base is at z=0. If the height is positive, the tip points in the +z direction. </p> 
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
@@ -6256,7 +6806,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cos</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Cos returns the cosine of the radian argument x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Cos returns the cosine of the radian argument x. </p> 
 
 	
 
@@ -6276,7 +6826,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">cosh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Cosh returns the hyperbolic cosine of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Cosh returns the hyperbolic cosine of x. </p> 
 
 	
 
@@ -6871,6 +7421,17 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">EdgeCarryShift</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Whether to use the current magnetization at the border for the cells inserted by Shift (default=false) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">EdgeSmooth</b> </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Geometry edge smoothing with edgeSmooth^3 samples per cell, 0=staircase, ~8=very smooth </p> 
 
@@ -6959,7 +7520,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">erf</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Erf returns the error function of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Erf returns the error function of x. </p> 
 
 	
 
@@ -6970,7 +7531,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">erfc</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Erfc returns the complementary error function of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Erfc returns the complementary error function of x. </p> 
 
 	
 
@@ -7012,7 +7573,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">exp</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Exp returns e**x, the base-e exponential of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Exp returns e**x, the base-e exponential of x. </p> 
 
 	
 
@@ -7028,7 +7589,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">exp2</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Exp2 returns 2**x, the base-2 exponential of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Exp2 returns 2**x, the base-2 exponential of x. </p> 
 
 	
 
@@ -7062,6 +7623,17 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">expm1</b>(float64) float64 </span> 
 	 <p style="margin-left:40px" class="api-docstring">     Expm1 returns e**x - 1, the base-e exponential of x minus 1. It is more     accurate than Exp(x) - 1 when x is near zero. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_BackGroundTilt</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Size of in-plane component of background magnetization. All values below this one are rounded down to perfectly out-of-plane to improve position calculation  (default = 0.25) </p> 
 
 	
 
@@ -7156,6 +7728,28 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerWallInLayer</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerWallInLayer(L, c) shifts m after each step to keep m_c in layer L close to zero </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_centerWallInRegion</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> centerWallInRegion(R, c) shifts m after each step to keep m_c in region R close to zero </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_corepos</b> </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Vortex core position (x,y) + polarization (z) (m) </p> 
 
@@ -7236,8 +7830,202 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_emergentmagneticfield_fivepointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Emergent magnetic field calculated using five-point stencil (1/m2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; HostCopy( ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_emergentmagneticfield_solidangle</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Emergent magnetic field computed using Berg-Lüscher lattice method (1/m2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; HostCopy( ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_emergentmagneticfield_twopointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Emergent magnetic field calculated using two-point stencil (1/m2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; HostCopy( ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_enableCenterBubbleX</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Enables centering along the X-axis during ext_centerBubble (default=true) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_enableCenterBubbleY</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Enables centering along the Y-axis during ext_centerBubble (default=true) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_EnableUnsafe</b>() </span> 
 	 <p style="margin-left:40px" class="api-docstring"> Deprecated. Only here to ensure maximal backwards compatibility with mumax3.9c. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_grainCutShape</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Whether to add the complete (3D) voronoi grain, only if its centre lies within the shape (default=false) </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_fivepointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using five-point stencil </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_solidangle</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using Berg-Lüscher lattice method </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_solidanglefourier</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using Berg-Lüscher lattice method to calculate emergent field, with emergent field Fourier transformed </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindex_twopointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index calculated using two-point stencil </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Get( ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindexdensity_fivepointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index density calculated using five-point stencil (1/m3) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindexdensity_solidangle</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index density computed using Berg-Lüscher lattice method (1/m3) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_hopfindexdensity_twopointstencil</b> </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopf index density calculated using two-point stencil (1/m3) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ext_InitGeomFromOVF</b>(string) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Initialize geometry, cell count and cell size given a pattern from OVF </p> 
 
 	
 
@@ -7627,7 +8415,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">floor</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Floor returns the greatest integer value less than or equal to x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Floor returns the greatest integer value less than or equal to x. </p> 
 
 	
 
@@ -7689,8 +8477,19 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">FunctionFromDatafile</b>(string, int, int, string) func(float64) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Creates an interpolation function using data from two columns in a csv file. Arguments: filename, xColumnIdx, yColumnIdx, method ("linear", "nearest" or "step"). </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">gamma</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Gamma returns the Gamma function of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Gamma returns the Gamma function of x. </p> 
 
 	
 
@@ -7716,7 +8515,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
-			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; Gpu( ) &nbsp;
+			 Average( ) &nbsp; EvalTo( Slice ) &nbsp; GetCell( int int int ) &nbsp; Gpu( ) &nbsp;
 		</span> </p> 
 	
 
@@ -7797,6 +8596,21 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	</div>
   
 	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">HopfionCompactSupport</b>(float64, float64) Config </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Hopfion texture from skyrmion, with compact support (smooth and magnetization exactly along z-axis outside of finite region) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Add( float64 Config ) &nbsp; RotZ( float64 ) &nbsp; Scale( float64 float64 float64 ) &nbsp; Transl( float64 float64 float64 ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">hypot</b>(float64, float64) float64 </span> 
 	 <p style="margin-left:40px" class="api-docstring">     Hypot returns Sqrt(p*p + q*q), taking care to avoid unnecessary overflow and     underflow. </p> 
 
@@ -7809,7 +8623,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ilogb</b>(float64) int </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Ilogb returns the binary exponent of x as an integer.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Ilogb returns the binary exponent of x as an integer. </p> 
 
 	
 
@@ -7865,7 +8679,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">inf</b> </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Inf returns positive infinity if sign >= 0, negative infinity if sign < 0.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Inf returns positive infinity if sign >= 0, negative infinity if sign < 0. </p> 
 
 	
 
@@ -7885,7 +8699,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">isInf</b>(float64, int) bool </span> 
-	 <p style="margin-left:40px" class="api-docstring">     IsInf reports whether f is an infinity, according to sign. If sign > 0,     IsInf reports whether f is positive infinity. If sign < 0, IsInf reports </p> 
+	 <p style="margin-left:40px" class="api-docstring">     IsInf reports whether f is an infinity, according to sign. If sign > 0,     IsInf reports whether f is positive infinity. If sign < 0, IsInf reports     whether f is negative infinity. If sign == 0, IsInf reports whether f is     either infinity. </p> 
 
 	
 
@@ -7896,7 +8710,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">isNaN</b>(float64) bool </span> 
-	 <p style="margin-left:40px" class="api-docstring">     IsNaN reports whether f is an IEEE 754 “not-a-number” value.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     IsNaN reports whether f is an IEEE 754 “not-a-number” value. </p> 
 
 	
 
@@ -7937,7 +8751,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">j0</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     J0 returns the order-zero Bessel function of the first kind.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     J0 returns the order-zero Bessel function of the first kind. </p> 
 
 	
 
@@ -7948,7 +8762,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">j1</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     J1 returns the order-one Bessel function of the first kind.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     J1 returns the order-one Bessel function of the first kind. </p> 
 
 	
 
@@ -7959,7 +8773,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">jn</b>(int, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Jn returns the order-n Bessel function of the first kind.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Jn returns the order-n Bessel function of the first kind. </p> 
 
 	
 
@@ -8138,7 +8952,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">ldexp</b>(float64, int) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Ldexp is the inverse of Frexp. It returns frac × 2**exp.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Ldexp is the inverse of Frexp. It returns frac × 2**exp. </p> 
 
 	
 
@@ -8184,7 +8998,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">log</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Log returns the natural logarithm of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Log returns the natural logarithm of x. </p> 
 
 	
 
@@ -8235,7 +9049,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">logb</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Logb returns the binary exponent of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Logb returns the binary exponent of x. </p> 
 
 	
 
@@ -8344,7 +9158,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">max</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Max returns the larger of x or y.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Max returns the larger of x or y. </p> 
 
 	
 
@@ -8461,7 +9275,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">min</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Min returns the smaller of x or y.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Min returns the smaller of x or y. </p> 
 
 	
 
@@ -8785,7 +9599,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
-			 Add( time.Duration ) &nbsp; AddDate( int int int ) &nbsp; After( time.Time ) &nbsp; AppendFormat( []uint8 string ) &nbsp; Before( time.Time ) &nbsp; Clock( ) &nbsp; Date( ) &nbsp; Day( ) &nbsp; Equal( time.Time ) &nbsp; Format( string ) &nbsp; GobEncode( ) &nbsp; Hour( ) &nbsp; ISOWeek( ) &nbsp; In( *time.Location ) &nbsp; IsZero( ) &nbsp; Local( ) &nbsp; Location( ) &nbsp; MarshalBinary( ) &nbsp; MarshalJSON( ) &nbsp; MarshalText( ) &nbsp; Minute( ) &nbsp; Month( ) &nbsp; Nanosecond( ) &nbsp; Round( time.Duration ) &nbsp; Second( ) &nbsp; Sub( time.Time ) &nbsp; Truncate( time.Duration ) &nbsp; UTC( ) &nbsp; Unix( ) &nbsp; UnixNano( ) &nbsp; Weekday( ) &nbsp; Year( ) &nbsp; YearDay( ) &nbsp; Zone( ) &nbsp;
+			 Add( time.Duration ) &nbsp; AddDate( int int int ) &nbsp; After( time.Time ) &nbsp; AppendFormat( []uint8 string ) &nbsp; Before( time.Time ) &nbsp; Clock( ) &nbsp; Compare( time.Time ) &nbsp; Date( ) &nbsp; Day( ) &nbsp; Equal( time.Time ) &nbsp; Format( string ) &nbsp; GoString( ) &nbsp; GobEncode( ) &nbsp; Hour( ) &nbsp; ISOWeek( ) &nbsp; In( *time.Location ) &nbsp; IsDST( ) &nbsp; IsZero( ) &nbsp; Local( ) &nbsp; Location( ) &nbsp; MarshalBinary( ) &nbsp; MarshalJSON( ) &nbsp; MarshalText( ) &nbsp; Minute( ) &nbsp; Month( ) &nbsp; Nanosecond( ) &nbsp; Round( time.Duration ) &nbsp; Second( ) &nbsp; Sub( time.Time ) &nbsp; Truncate( time.Duration ) &nbsp; UTC( ) &nbsp; Unix( ) &nbsp; UnixMicro( ) &nbsp; UnixMilli( ) &nbsp; UnixNano( ) &nbsp; Weekday( ) &nbsp; Year( ) &nbsp; YearDay( ) &nbsp; Zone( ) &nbsp; ZoneBounds( ) &nbsp;
 		</span> </p> 
 	
 
@@ -8931,7 +9745,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pow</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Pow returns x**y, the base-x exponential of y.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Pow returns x**y, the base-x exponential of y. </p> 
 
 	
 
@@ -8949,7 +9763,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">pow10</b>(int) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Pow10 returns 10**n, the base-10 exponential of n.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Pow10 returns 10**n, the base-10 exponential of n. </p> 
 
 	
 
@@ -9073,7 +9887,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">randSeed</b>(int) </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Sets the random number seed </p> 
+	 <p style="margin-left:40px" class="api-docstring"> Sets the random number seed for rand(), randExp(), randNorm() and randInt(). </p> 
 
 	
 
@@ -9107,6 +9921,17 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 			<a href="examples.html#example15">[15]</a> 
 		 
 		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">RedefRegion</b>(int, int) </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Reassign all cells with a given region (first argument) to a new region (second argument) </p> 
+
+	
+
 	
 
 	</p>
@@ -9173,7 +9998,18 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">remainder</b>(float64, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Remainder returns the IEEE 754 floating-point remainder of x/y.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Remainder returns the IEEE 754 floating-point remainder of x/y. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">RemoveCustomEnergies</b>() </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Removes all custom energies </p> 
 
 	
 
@@ -9216,6 +10052,21 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 			<a href="examples.html#example15">[15]</a> 
 		 
 		</p> 
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">RunningAverage</b>(Quantity) Quantity </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Records the time-average of a quantity from the moment this function is called.<br>Note: this may impact performance since the Quantity will be evaluated after every step. </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 EvalTo( ) &nbsp;
+		</span> </p> 
+	
+
 	
 
 	</p>
@@ -9440,7 +10291,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">SetSolver</b>(int) </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Set solver type. 1:Euler, 2:Heun, 3:Bogaki-Shampine, 4: Runge-Kutta (RK45), 5: Dormand-Prince, 6: Fehlberg, -1: Backward Euler </p> 
+	 <p style="margin-left:40px" class="api-docstring"> Set solver type.<br>1: Euler<br>2: Heun<br>3: Bogacki-Shampine<br>4: Runge-Kutta (RK4)<br>5: Dormand-Prince<br>6: Fehlberg<br>-1: Backward Euler </p> 
 
 	
 
@@ -9596,7 +10447,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sin</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Sin returns the sine of the radian argument x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Sin returns the sine of the radian argument x. </p> 
 
 	
 
@@ -9635,7 +10486,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
-			 Hours( ) &nbsp; Microseconds( ) &nbsp; Milliseconds( ) &nbsp; Minutes( ) &nbsp; Nanoseconds( ) &nbsp; Round( time.Duration ) &nbsp; Seconds( ) &nbsp; Truncate( time.Duration ) &nbsp;
+			 Abs( ) &nbsp; Hours( ) &nbsp; Microseconds( ) &nbsp; Milliseconds( ) &nbsp; Minutes( ) &nbsp; Nanoseconds( ) &nbsp; Round( time.Duration ) &nbsp; Seconds( ) &nbsp; Truncate( time.Duration ) &nbsp;
 		</span> </p> 
 	
 
@@ -9646,7 +10497,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sinh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Sinh returns the hyperbolic sine of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Sinh returns the hyperbolic sine of x. </p> 
 
 	
 
@@ -9727,7 +10578,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">sqrt</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Sqrt returns the square root of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Sqrt returns the square root of x. </p> 
 
 	
 
@@ -9797,6 +10648,32 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 	 
 		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
 			 Average( ) &nbsp; Comp( int ) &nbsp; EvalTo( Slice ) &nbsp; HostCopy( ) &nbsp; Region( int ) &nbsp;
+		</span> </p> 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Sum</b>(Quantity) float64 </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Sum of Quantity over all cells in the grid. For a vector Quantity, all components are added together. </p> 
+
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">SumVector</b>(Quantity) data.Vector </span> 
+	 <p style="margin-left:40px" class="api-docstring"> Sum of vector Quantity over all cells in the grid. </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Add( data.Vector ) &nbsp; Cross( data.Vector ) &nbsp; Div( float64 ) &nbsp; Dot( data.Vector ) &nbsp; Len( ) &nbsp; MAdd( float64 data.Vector ) &nbsp; Mul( float64 ) &nbsp; Sub( data.Vector ) &nbsp; X( ) &nbsp; Y( ) &nbsp; Z( ) &nbsp;
 		</span> </p> 
 	
 
@@ -9931,7 +10808,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">tan</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Tan returns the tangent of the radian argument x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Tan returns the tangent of the radian argument x. </p> 
 
 	
 
@@ -9942,7 +10819,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">tanh</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Tanh returns the hyperbolic tangent of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Tanh returns the hyperbolic tangent of x. </p> 
 
 	
 
@@ -9994,8 +10871,23 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">TotalShift</b> </span> 
-	 <p style="margin-left:40px" class="api-docstring"> Amount by which the simulation has been shifted (m). </p> 
+	 <p style="margin-left:40px" class="api-docstring"> Amount by which the simulation has been shifted along the x-axis (m). </p> 
 
+	
+
+	
+
+	</p>
+	</div>
+  
+	<div class="api-entry">
+	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">Triangle</b>(float64, float64, float64, float64, float64, float64) Shape </span> 
+	 <p style="margin-left:40px" class="api-docstring"> 2D triangle with vertices (x0, y0), (x1, y1) and (x2, y2) </p> 
+
+	 
+		<p style="margin-left:40px"> <span style="color:grey"> <b>methods:</b> 
+			 Add( Shape ) &nbsp; Intersect( Shape ) &nbsp; Inverse( ) &nbsp; Repeat( float64 float64 float64 ) &nbsp; RotX( float64 ) &nbsp; RotY( float64 ) &nbsp; RotZ( float64 ) &nbsp; Scale( float64 float64 float64 ) &nbsp; Sub( Shape ) &nbsp; Transl( float64 float64 float64 ) &nbsp; Xor( Shape ) &nbsp;
+		</span> </p> 
 	
 
 	
@@ -10016,7 +10908,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">trunc</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Trunc returns the integer value of x.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Trunc returns the integer value of x. </p> 
 
 	
 
@@ -10228,7 +11120,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">y0</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Y0 returns the order-zero Bessel function of the second kind.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Y0 returns the order-zero Bessel function of the second kind. </p> 
 
 	
 
@@ -10239,7 +11131,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">y1</b>(float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Y1 returns the order-one Bessel function of the second kind.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Y1 returns the order-one Bessel function of the second kind. </p> 
 
 	
 
@@ -10250,7 +11142,7 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
   
 	<div class="api-entry">
 	<p><span style="color:#000088; font-size:1.5em; font-family: monospace"> <b class="api-identifier">yn</b>(int, float64) float64 </span> 
-	 <p style="margin-left:40px" class="api-docstring">     Yn returns the order-n Bessel function of the second kind.  </p> 
+	 <p style="margin-left:40px" class="api-docstring">     Yn returns the order-n Bessel function of the second kind. </p> 
 
 	
 
@@ -10329,7 +11221,23 @@ tableAdd(E_custom)  // Add a column with the energy related to the custom field
 		document.getElementById("searchInput").value = "";
 		document.getElementById("searchInput").click();
 		document.getElementById("searchInput").focus();
-	}	
+	}
+
+	document.addEventListener("DOMContentLoaded", () => {
+		const toTop = document.getElementById("api-to-top");
+
+		window.addEventListener('scroll', function(e){
+			var buttonTop = toTop.getBoundingClientRect().top;
+			var visible = toTop.classList.contains("visible")
+			console.log(buttonTop, visible)
+			if (buttonTop <= 0 && !visible) {
+				toTop.classList.add("visible");
+			}
+			else if (buttonTop > 0 && visible) {
+				toTop.classList.remove("visible")
+			}
+		});
+	});
 </script>
 
 

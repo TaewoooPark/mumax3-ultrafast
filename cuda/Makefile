@@ -32,7 +32,7 @@ endif
 
 # When CUDA_CC is not an environment variable and is not set on the command line, use compute capability 3.0
 ifeq ($(CUDA_CC),)
-	CUDA_CC = 50 # Lowest supported CC for mumax3.11
+	CUDA_CC = 50 # Lowest supported CC for mumax3.12
 endif
 
 # The gcc host compiler for nvcc
@@ -72,6 +72,7 @@ wrappers: $(WRAPPERS)
 	done
 	@ ./cuda2go $< > /dev/null
 	@ gofmt -w -s -l $@ > /dev/null
+	@ cp $(basename $<)_wrapper.go $(basename $<)_wrapper.go_linux_cuda${CUDA_VERSION}.tmp
 
 
 cuda2go: cuda2go.go
@@ -79,7 +80,7 @@ cuda2go: cuda2go.go
 
 
 clean:
-	rm -vf *.ptx
+	rm -vf *.ptx *.tmp
 
 
 realclean:

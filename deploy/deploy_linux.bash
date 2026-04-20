@@ -17,7 +17,7 @@ for CUDAVERSION in "${INPUT_CUDA_VERSIONS[@]}"; do
     fi
 
     # The final location of the mumax3 executables and libs
-    MUMAX3UNAME=mumax3.11.1_linux_cuda${CUDAVERSION}
+    MUMAX3UNAME=mumax3.12_linux_cuda${CUDAVERSION}
     BUILDDIR=./build/${MUMAX3UNAME}
     rm -rf $BUILDDIR
     mkdir -p $BUILDDIR
@@ -59,7 +59,7 @@ for CUDAVERSION in "${INPUT_CUDA_VERSIONS[@]}"; do
     export CGO_CFLAGS="-I${CUDA_HOME}/include"
 
     # (Re)build everything
-    (cd .. && make realclean && make -j 4 || exit 1)
+    (cd ../cuda && make realclean && cd .. && make -j 4 || exit 1)
     
     # Copy the executable and the cuda libraries to the output directory
     cp $GOPATH/bin/mumax3 $BUILDDIR 
