@@ -12,13 +12,12 @@ d := 20*c
 
 SetGeom(circle(d).repeat(2*d, d, 0))
 
-m = uniform(1, 0, 0)
-
-Msat = 800e3
-Aex  = 13e-12
-alpha = 1
-
-steps(1000)
-
-expectv("m", m.average(), vector(0.525,  0, 0),  1e-2)
-
+// Test the repeated geometry directly. The old test compared the magnetic
+// state after 1000 adaptive time steps, which made this shape test depend on
+// backend-specific time-step histories.
+expect("fill fraction", geom.average(), 0.375732421875, 0)
+expect("origin",        geom.getcell(64, 64, 0),  1, 0)
+expect("circle edge",   geom.getcell(74, 64, 0),  0, 0)
+expect("x gap",         geom.getcell(84, 64, 0),  0, 0)
+expect("x repetition",  geom.getcell(104, 64, 0), 1, 0)
+expect("y repetition",  geom.getcell(64, 84, 0),  1, 0)

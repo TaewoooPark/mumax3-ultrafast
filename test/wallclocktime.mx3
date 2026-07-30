@@ -17,16 +17,21 @@ ExpectB("Minimize converged", Minimize(), true) // Takes an additional 0.003s to
 
 //// Interrupt relax/minimize
 B_ext = Vector(0, 0, 0)
-t_range := 0.01
+wallclockLimit := 0.5
+maxOvershoot := 0.25 // An in-flight GPU step cannot be interrupted.
 
 m = RandomMag()
-RelaxWallclockTime = 0.1 // Takes 49s to converge
+RelaxWallclockTime = wallclockLimit // Takes 49s to converge without a limit.
 t0 := now()
 ExpectB("Relax not converged", Relax(), false)
-Expect("Relax stopped in time", since(t0).Seconds(), RelaxWallclockTime + t_range/2, t_range/2)
+relaxElapsed := since(t0).Seconds()
+ExpectB("Relax ran until limit", relaxElapsed >= RelaxWallclockTime, true)
+ExpectB("Relax bounded overshoot", relaxElapsed <= RelaxWallclockTime + maxOvershoot, true)
 
 m = RandomMag()
-MinimizeWallclockTime = 0.1 // Takes 5.5s to converge
+MinimizeWallclockTime = wallclockLimit // Takes 5.5s to converge without a limit.
 t0 = now()
 ExpectB("Minimize not converged", Minimize(), false)
-Expect("Minimize stopped in time", since(t0).Seconds(), MinimizeWallclockTime + t_range/2, t_range/2)
+minimizeElapsed := since(t0).Seconds()
+ExpectB("Minimize ran until limit", minimizeElapsed >= MinimizeWallclockTime, true)
+ExpectB("Minimize bounded overshoot", minimizeElapsed <= MinimizeWallclockTime + maxOvershoot, true)
