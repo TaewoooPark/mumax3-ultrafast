@@ -14,6 +14,7 @@ type DemagConvolution struct {
 	fftKernLogicSize [3]int            // logic size FFTed kernel, real parts only, we store less
 	fftRBuf          [3]*data.Slice    // FFT input buf; 2D: Z shares storage with X.
 	fftCBuf          [3]*data.Slice    // FFT output buf; 2D: Z shares storage with X.
+	fftBwBuf         *data.Slice       // inverse FFT output, see bwFFT
 	kern             [3][3]*data.Slice // FFT kernel on device
 	fwPlan           fft3DR2CPlan      // Forward FFT (1 component)
 	bwPlan           fft3DC2RPlan      // Backward FFT (1 component)
@@ -93,18 +94,28 @@ func zero1_async(dst *data.Slice) {
 }
 
 // forward FFT component i
+//
+// copyPadMul writes exactly the inputSize corner of the padded buffer and
+// leaves the rest untouched, so the zero padding only has to be written once.
+// The inverse transform is what used to destroy it, by writing the whole padded
+// buffer; it now targets fftBwBuf instead. That removes one full padded-buffer
+// clear plus one dispatch per component per field evaluation, which is 18
+// dispatches per RK45DP step.
 func (c *DemagConvolution) fwFFT(i int, inp, vol *data.Slice, Msat MSlice) {
-	zero1_async(c.fftRBuf[i])
 	in := inp.Comp(i)
 	copyPadMul(c.fftRBuf[i], in, vol, c.realKernSize, c.inputSize, Msat)
 	c.fwPlan.ExecAsync(c.fftRBuf[i], c.fftCBuf[i])
 }
 
 // backward FFT component i
+//
+// All components share one output buffer: each inverse transform is fully
+// consumed by its copyUnPad before the next one is encoded on the same ordered
+// queue.
 func (c *DemagConvolution) bwFFT(i int, outp *data.Slice) {
-	c.bwPlan.ExecAsync(c.fftCBuf[i], c.fftRBuf[i])
+	c.bwPlan.ExecAsync(c.fftCBuf[i], c.fftBwBuf)
 	out := outp.Comp(i)
-	copyUnPad(out, c.fftRBuf[i], c.inputSize, c.realKernSize)
+	copyUnPad(out, c.fftBwBuf, c.inputSize, c.realKernSize)
 }
 
 func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
@@ -126,6 +137,10 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 	} else {
 		c.fftRBuf[Z] = NewSlice(1, c.realKernSize)
 	}
+
+	// Dedicated inverse-FFT output, so the forward buffers keep their zero
+	// padding for the whole run. See fwFFT.
+	c.fftBwBuf = NewSlice(1, c.realKernSize)
 
 	// init FFT plans
 	c.fwPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z])
@@ -175,6 +190,15 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 			}
 		}
 	}
+
+	// The kernel transforms above copied full-size kernels through
+	// fftRBuf[0], so restore the zero padding that fwFFT now relies on.
+	// NewSlice already zeroes, so only the buffers used here need clearing.
+	zero1_async(c.fftRBuf[X])
+	zero1_async(c.fftRBuf[Y])
+	if !c.is2D() {
+		zero1_async(c.fftRBuf[Z])
+	}
 }
 
 func (c *DemagConvolution) Free() {
@@ -183,6 +207,8 @@ func (c *DemagConvolution) Free() {
 	}
 	c.inputSize = [3]int{}
 	c.realKernSize = [3]int{}
+	c.fftBwBuf.Free()
+	c.fftBwBuf = nil
 	for i := 0; i < 3; i++ {
 		c.fftCBuf[i].Free()
 		c.fftRBuf[i].Free()
