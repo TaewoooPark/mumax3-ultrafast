@@ -1,0 +1,26 @@
+# Comparable-cost pairings for the 4.194304e6 cell benchmark, read by
+# bench/apple_svg.py to draw bench/apple-price-tiers.svg.
+#
+# Prices are approximate US launch prices in dollars and are here for
+# orientation only. Two things make them soft:
+#
+#   - A GPU is not a computer. The NVIDIA rows add a flat 800 USD for a modest
+#     host (CPU, board, RAM, PSU, case, storage), so both columns describe a
+#     whole machine. Change HOST_USD in apple_svg.py to re-do the arithmetic
+#     with a different assumption.
+#   - Street prices move, and the RTX 50 series has spent much of its life well
+#     above MSRP; the RTX 5090 in particular has traded far above its 1999 USD
+#     launch price. Using MSRP therefore flatters the NVIDIA column.
+#
+# Apple throughputs come from bench/apple.txt, so only the M4 one is measured.
+# NVIDIA throughputs come from bench/gpus.txt and are all measured.
+#
+# columns: tier  vendor  price_usd  throughput_M_cells_per_s  "label"
+entry   apple    599   90.6   "Mac mini M4"
+entry   nvidia   499  300.0   "RTX 4060 Ti PC"
+mid     apple   1399  181.1   "Mac mini M4 Pro"
+mid     nvidia   599  498.8   "RTX 4070 PC"
+high    apple   2499  362.2   "Mac Studio M4 Max"
+high    nvidia   999  926.2   "RTX 5080 PC"
+top     apple   5299  525.5   "Mac Studio M3 Ultra"
+top     nvidia  1999 1917.1   "RTX 5090 PC"

@@ -20,9 +20,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 FONT = "DejaVu Sans, Helvetica, Arial, sans-serif"
 # Measured bars are saturated, projections are pale, so the distinction survives
 # printing in greyscale as well as on screen.
-COLOR_MEASURED = "#0b6bcb"
-COLOR_PROJECTED = "#9dc4ea"
-COLOR_OTHER = "#b9bcc0"
+COLOR_MEASURED = "#0b4f9e"    # Apple, measured: darkest
+COLOR_PROJECTED = "#4b9ae8"   # Apple, projected: mid blue, plus a hatch overlay
+COLOR_OTHER = "#8d9299"       # NVIDIA, measured: neutral grey
+HOST_USD = 800                # host machine added to every GPU card price
 COLOR_AXIS = "#5f6368"
 COLOR_TEXT = "#202124"
 
@@ -137,6 +138,12 @@ def render(rows, title, subtitle, path, legend):
         f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
         f'height="{height}" viewBox="0 0 {width} {height}">'
     )
+    add(
+        '<defs><pattern id="hatch" width="5" height="5" '
+        'patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+        f'<line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" '
+        'stroke-width="2.1"/></pattern></defs>'
+    )
     add(f'<rect width="{width}" height="{height}" fill="#ffffff"/>')
     add(
         f'<text x="{left}" y="30" font-family="{FONT}" font-size="15" '
@@ -189,6 +196,11 @@ def render(rows, title, subtitle, path, legend):
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" '
             f'height="{top + plot_h - y:.1f}" fill="{palette[row["status"]]}"/>'
         )
+        if row["status"] == "projected":
+            add(
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w:.1f}" '
+                f'height="{top + plot_h - y:.1f}" fill="url(#hatch)"/>'
+            )
         text_x = x + bar_w / 2
         text_y = top + plot_h + 7
         weight = ' font-weight="600"' if row["status"] == "measured" else ""
@@ -207,6 +219,11 @@ def render(rows, title, subtitle, path, legend):
             f'<rect x="{lx}" y="{ly - 9}" width="11" height="11" '
             f'fill="{palette[status]}"/>'
         )
+        if status == "projected":
+            add(
+                f'<rect x="{lx}" y="{ly - 9}" width="11" height="11" '
+                f'fill="url(#hatch)"/>'
+            )
         add(
             f'<text x="{lx + 17}" y="{ly}" font-family="{FONT}" '
             f'font-size="11" fill="{COLOR_TEXT}">{escape(label)}</text>'
@@ -217,6 +234,190 @@ def render(rows, title, subtitle, path, legend):
     with open(path, "w") as handle:
         handle.write("\n".join(out) + "\n")
     print(f"wrote {path} ({len(rows)} bars)")
+
+
+TIER_TITLES = {
+    "entry": "entry",
+    "mid": "mid",
+    "high": "high",
+    "top": "top",
+}
+
+COLOR_NVIDIA_PRICE = "#5f6f7a"
+
+
+def read_tiers(path):
+    tiers = []
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            tier, vendor, price, throughput, label = shlex.split(line)
+            price = int(price)
+            total = price + (HOST_USD if vendor == "nvidia" else 0)
+            tiers.append(
+                {
+                    "tier": tier,
+                    "vendor": vendor,
+                    "total": total,
+                    "value": float(throughput),
+                    "label": label,
+                }
+            )
+    order = []
+    for row in tiers:
+        if row["tier"] not in order:
+            order.append(row["tier"])
+    return tiers, order
+
+
+def render_price_tiers(path, tiers, order):
+    """Grouped bars: one Apple machine against one NVIDIA machine per tier."""
+    left, right, top = 78, 26, 96
+    group_w, bar_w, gap = 236, 84, 12
+    plot_w = group_w * len(order)
+    plot_h = 300
+    width = left + plot_w + right
+    height = top + plot_h + 148
+
+    axis_max = 2000.0
+    ticks = [0, 500, 1000, 1500, 2000]
+
+    def y_of(value):
+        return top + plot_h - (value / axis_max) * plot_h
+
+    out = []
+    add = out.append
+    add(
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" '
+        f'height="{height}" viewBox="0 0 {width} {height}">'
+    )
+    add(
+        '<defs><pattern id="hatch" width="5" height="5" '
+        'patternTransform="rotate(45)" patternUnits="userSpaceOnUse">'
+        '<line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" '
+        'stroke-width="2.1"/></pattern></defs>'
+    )
+    add(f'<rect width="{width}" height="{height}" fill="#ffffff"/>')
+    add(
+        f'<text x="{left}" y="30" font-family="{FONT}" font-size="15" '
+        f'font-weight="600" fill="{COLOR_TEXT}">MuMax3 at 4.19M cells: '
+        f'comparable-cost Mac vs PC</text>'
+    )
+    for index, line in enumerate(
+        [
+            "Whole machines, so every NVIDIA price adds "
+            f"{HOST_USD} USD for a host. Approximate US launch prices; the "
+            "RTX 50 series has",
+            "traded well above MSRP, which flatters the PC column. Apple "
+            "figures are projections except the measured Mac mini M4.",
+        ]
+    ):
+        add(
+            f'<text x="{left}" y="{50 + 15 * index}" font-family="{FONT}" '
+            f'font-size="11" fill="{COLOR_AXIS}">{escape(line)}</text>'
+        )
+
+    for tick in ticks:
+        y = y_of(tick)
+        add(
+            f'<line x1="{left}" y1="{y:.1f}" x2="{left + plot_w}" y2="{y:.1f}" '
+            f'stroke="#e4e6e9" stroke-width="1"/>'
+        )
+        add(
+            f'<text x="{left - 8}" y="{y + 4:.1f}" font-family="{FONT}" '
+            f'font-size="10" fill="{COLOR_AXIS}" text-anchor="end">{tick}</text>'
+        )
+    add(
+        f'<line x1="{left}" y1="{top}" x2="{left}" y2="{top + plot_h}" '
+        f'stroke="{COLOR_AXIS}" stroke-width="1"/>'
+    )
+    add(
+        f'<line x1="{left}" y1="{top + plot_h}" x2="{left + plot_w}" '
+        f'y2="{top + plot_h}" stroke="{COLOR_AXIS}" stroke-width="1"/>'
+    )
+    label_y = top + plot_h / 2
+    add(
+        f'<text x="18" y="{label_y:.1f}" font-family="{FONT}" font-size="11" '
+        f'fill="{COLOR_TEXT}" text-anchor="middle" '
+        f'transform="rotate(-90 18 {label_y:.1f})">throughput (M cells/s)</text>'
+    )
+
+    for group, tier in enumerate(order):
+        members = [row for row in tiers if row["tier"] == tier]
+        members.sort(key=lambda row: 0 if row["vendor"] == "apple" else 1)
+        base = left + group * group_w
+        for slot, row in enumerate(members):
+            x = base + (group_w - (2 * bar_w + gap)) / 2 + slot * (bar_w + gap)
+            y = y_of(row["value"])
+            fill = COLOR_PROJECTED if row["vendor"] == "apple" else COLOR_NVIDIA_PRICE
+            if row["label"] == "Mac mini M4":
+                fill = COLOR_MEASURED
+            add(
+                f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w}" '
+                f'height="{top + plot_h - y:.1f}" fill="{fill}"/>'
+            )
+            if row["vendor"] == "apple" and row["label"] != "Mac mini M4":
+                add(
+                    f'<rect x="{x:.1f}" y="{y:.1f}" width="{bar_w}" '
+                    f'height="{top + plot_h - y:.1f}" fill="url(#hatch)"/>'
+                )
+            # throughput, then per-1000-USD efficiency
+            add(
+                f'<text x="{x + bar_w / 2:.1f}" y="{y - 17:.1f}" '
+                f'font-family="{FONT}" font-size="10" font-weight="600" '
+                f'fill="{COLOR_TEXT}" text-anchor="middle">'
+                f'{row["value"]:.0f}</text>'
+            )
+            add(
+                f'<text x="{x + bar_w / 2:.1f}" y="{y - 5:.1f}" '
+                f'font-family="{FONT}" font-size="9" fill="{COLOR_AXIS}" '
+                f'text-anchor="middle">'
+                f'{row["value"] / row["total"] * 1000:.0f}/$1k</text>'
+            )
+            caption = wrap(row["label"], 15) + [f'${row["total"]:,}']
+            for offset, text in enumerate(caption):
+                is_price = offset == len(caption) - 1
+                add(
+                    f'<text x="{x + bar_w / 2:.1f}" '
+                    f'y="{top + plot_h + 16 + 12 * offset:.1f}" '
+                    f'font-family="{FONT}" font-size="10" '
+                    f'fill="{COLOR_AXIS if is_price else COLOR_TEXT}" '
+                    f'text-anchor="middle">{escape(text)}</text>'
+                )
+        ratio = (
+            [r for r in members if r["vendor"] == "nvidia"][0]["value"]
+            / [r for r in members if r["vendor"] == "apple"][0]["value"]
+        )
+        add(
+            f'<text x="{base + group_w / 2:.1f}" '
+            f'y="{top + plot_h + 66:.1f}" font-family="{FONT}" font-size="10" '
+            f'fill="{COLOR_AXIS}" text-anchor="middle">'
+            f'PC is {ratio:.1f}x</text>'
+        )
+
+    lx, ly = left, height - 22
+    for label, fill, hatched in [
+        ("Apple, measured", COLOR_MEASURED, False),
+        ("Apple, projected", COLOR_PROJECTED, True),
+        ("NVIDIA, measured", COLOR_NVIDIA_PRICE, False),
+    ]:
+        add(f'<rect x="{lx}" y="{ly - 9}" width="11" height="11" fill="{fill}"/>')
+        if hatched:
+            add(
+                f'<rect x="{lx}" y="{ly - 9}" width="11" height="11" '
+                f'fill="url(#hatch)"/>'
+            )
+        add(
+            f'<text x="{lx + 17}" y="{ly}" font-family="{FONT}" font-size="11" '
+            f'fill="{COLOR_TEXT}">{escape(label)}</text>'
+        )
+        lx += 26 + 7.0 * len(label)
+    add("</svg>")
+    with open(path, "w") as handle:
+        handle.write("\n".join(out) + "\n")
+    print(f"wrote {path} ({len(order)} tiers)")
 
 
 def main():
@@ -246,6 +447,9 @@ def main():
             ("NVIDIA, measured", "other"),
         ],
     )
+
+    tiers, order = read_tiers(os.path.join(HERE, "price_tiers.txt"))
+    render_price_tiers(os.path.join(HERE, "apple-price-tiers.svg"), tiers, order)
 
 
 if __name__ == "__main__":

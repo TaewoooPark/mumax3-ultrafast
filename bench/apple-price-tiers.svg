@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1048" height="544" viewBox="0 0 1048 544">
+<defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" stroke-width="2.1"/></pattern></defs>
+<rect width="1048" height="544" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">MuMax3 at 4.19M cells: comparable-cost Mac vs PC</text>
+<text x="78" y="50" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">Whole machines, so every NVIDIA price adds 800 USD for a host. Approximate US launch prices; the RTX 50 series has</text>
+<text x="78" y="65" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">traded well above MSRP, which flatters the PC column. Apple figures are projections except the measured Mac mini M4.</text>
+<line x1="78" y1="396.0" x2="1022" y2="396.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="400.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
+<line x1="78" y1="321.0" x2="1022" y2="321.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="325.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">500</text>
+<line x1="78" y1="246.0" x2="1022" y2="246.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="250.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1000</text>
+<line x1="78" y1="171.0" x2="1022" y2="171.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="175.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1500</text>
+<line x1="78" y1="96.0" x2="1022" y2="96.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="100.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2000</text>
+<line x1="78" y1="96" x2="78" y2="396" stroke="#5f6368" stroke-width="1"/>
+<line x1="78" y1="396" x2="1022" y2="396" stroke="#5f6368" stroke-width="1"/>
+<text x="18" y="246.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 246.0)">throughput (M cells/s)</text>
+<rect x="106.0" y="382.4" width="84" height="13.6" fill="#0b4f9e"/>
+<text x="148.0" y="365.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">91</text>
+<text x="148.0" y="377.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">151/$1k</text>
+<text x="148.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">Mac mini M4</text>
+<text x="148.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$599</text>
+<rect x="202.0" y="351.0" width="84" height="45.0" fill="#5f6f7a"/>
+<text x="244.0" y="334.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">300</text>
+<text x="244.0" y="346.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">231/$1k</text>
+<text x="244.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">RTX 4060 Ti PC</text>
+<text x="244.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$1,299</text>
+<text x="196.0" y="462.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">PC is 3.3x</text>
+<rect x="342.0" y="368.8" width="84" height="27.2" fill="#4b9ae8"/>
+<rect x="342.0" y="368.8" width="84" height="27.2" fill="url(#hatch)"/>
+<text x="384.0" y="351.8" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">181</text>
+<text x="384.0" y="363.8" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">129/$1k</text>
+<text x="384.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">Mac mini M4 Pro</text>
+<text x="384.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$1,399</text>
+<rect x="438.0" y="321.2" width="84" height="74.8" fill="#5f6f7a"/>
+<text x="480.0" y="304.2" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">499</text>
+<text x="480.0" y="316.2" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">357/$1k</text>
+<text x="480.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">RTX 4070 PC</text>
+<text x="480.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$1,399</text>
+<text x="432.0" y="462.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">PC is 2.8x</text>
+<rect x="578.0" y="341.7" width="84" height="54.3" fill="#4b9ae8"/>
+<rect x="578.0" y="341.7" width="84" height="54.3" fill="url(#hatch)"/>
+<text x="620.0" y="324.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">362</text>
+<text x="620.0" y="336.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">145/$1k</text>
+<text x="620.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">Mac Studio M4</text>
+<text x="620.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">Max</text>
+<text x="620.0" y="436.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$2,499</text>
+<rect x="674.0" y="257.1" width="84" height="138.9" fill="#5f6f7a"/>
+<text x="716.0" y="240.1" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">926</text>
+<text x="716.0" y="252.1" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">515/$1k</text>
+<text x="716.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">RTX 5080 PC</text>
+<text x="716.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$1,799</text>
+<text x="668.0" y="462.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">PC is 2.6x</text>
+<rect x="814.0" y="317.2" width="84" height="78.8" fill="#4b9ae8"/>
+<rect x="814.0" y="317.2" width="84" height="78.8" fill="url(#hatch)"/>
+<text x="856.0" y="300.2" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">526</text>
+<text x="856.0" y="312.2" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">99/$1k</text>
+<text x="856.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">Mac Studio M3</text>
+<text x="856.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">Ultra</text>
+<text x="856.0" y="436.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$5,299</text>
+<rect x="910.0" y="108.4" width="84" height="287.6" fill="#5f6f7a"/>
+<text x="952.0" y="91.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" font-weight="600" fill="#202124" text-anchor="middle">1917</text>
+<text x="952.0" y="103.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#5f6368" text-anchor="middle">685/$1k</text>
+<text x="952.0" y="412.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" text-anchor="middle">RTX 5090 PC</text>
+<text x="952.0" y="424.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">$2,799</text>
+<text x="904.0" y="462.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">PC is 3.6x</text>
+<rect x="78" y="513" width="11" height="11" fill="#0b4f9e"/>
+<text x="95" y="522" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple, measured</text>
+<rect x="209.0" y="513" width="11" height="11" fill="#4b9ae8"/>
+<rect x="209.0" y="513" width="11" height="11" fill="url(#hatch)"/>
+<text x="226.0" y="522" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple, projected</text>
+<rect x="347.0" y="513" width="11" height="11" fill="#5f6f7a"/>
+<text x="364.0" y="522" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">NVIDIA, measured</text>
+</svg>
