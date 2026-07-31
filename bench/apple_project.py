@@ -55,9 +55,13 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# Measured on this machine with bench/bench.mx3 at 2048x2048, solver 2.
+# Measured on this machine with bench/bench.mx3 at 2048x2048, solver 2, as the
+# median of three runs interleaved with the pre-optimisation build so both come
+# from the same machine state. That interleaving matters: the same binary
+# measured hours apart differed by 15%, while three runs in one session agree to
+# 0.4%.
 MEASURED_CHIP = "Apple M4"
-MEASURED_THROUGHPUT = 9.05518699000999e07
+MEASURED_THROUGHPUT = 1.041829e08
 
 # Fraction of quoted bandwidth a GPU streaming kernel reaches (arXiv:2502.05317).
 MEMORY_EFFICIENCY = 0.85
