@@ -37,27 +37,34 @@ func newSlice(nComp int, size [3]int, alloc func(int64) unsafe.Pointer, memType 
 func memFree(ptr unsafe.Pointer) { cu.MemFree(cu.DevicePtr(uintptr(ptr))) }
 
 func MemCpyDtoH(dst, src unsafe.Pointer, bytes int64) {
-	Sync() // sync previous kernels
+	// PROTOTYPE: the Metal runtime's copy-to-host already drains the queue
+	// before reading the shared allocation, so the bracketing Sync() calls are
+	// redundant full-pipeline stalls.
 	timer.Start("memcpyDtoH")
 	cu.MemcpyDtoH(dst, cu.DevicePtr(uintptr(src)), bytes)
-	Sync() // sync copy
 	timer.Stop("memcpyDtoH")
 }
 
 func MemCpyHtoD(dst, src unsafe.Pointer, bytes int64) {
-	Sync() // sync previous kernels
+	// PROTOTYPE: mr_copy_to_device drains internally before the host write.
 	timer.Start("memcpyHtoD")
 	cu.MemcpyHtoD(cu.DevicePtr(uintptr(dst)), src, bytes)
-	Sync() // sync copy
 	timer.Stop("memcpyHtoD")
 }
 
 func MemCpy(dst, src unsafe.Pointer, bytes int64) {
-	Sync()
-	timer.Start("memcpy")
+	// PROTOTYPE: device-to-device copy is a blit encoded into the same serial
+	// queue as the surrounding kernels, so it is already ordered. Draining the
+	// pipeline twice per copy costs ~2 GPU wake-ups for no ordering benefit.
+	if Synchronous {
+		Sync()
+		timer.Start("memcpy")
+	}
 	cu.MemcpyAsync(cu.DevicePtr(uintptr(dst)), cu.DevicePtr(uintptr(src)), bytes, stream0)
-	Sync()
-	timer.Stop("memcpy")
+	if Synchronous {
+		Sync()
+		timer.Stop("memcpy")
+	}
 }
 
 // Memset sets the Slice's components to the specified values.
