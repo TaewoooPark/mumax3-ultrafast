@@ -135,6 +135,23 @@ summand that used double-complex intermediates in CUDA uses `float2` on Apple
 GPUs, which do not provide native FP64; its output is checked with an explicit
 floating-point tolerance rather than bit-for-bit comparison.
 
+On the current Apple M4 build, **15/15 non-thermal upstream CUDA-era physics
+tests and 103/103 assertions passed: 100.000% conformance within the original
+upstream tolerances**. Across the 10 dimensionless average-magnetization vectors
+in those tests, Metal achieved **99.9923% mean normalized-L2 agreement** with
+the embedded upstream reference vectors; the lowest individual result was
+**99.9415%**. The vector metric is
+`100 × (1 - ||m_Metal - m_reference||₂ / ||m_reference||₂)`.
+
+These are numerical-conformance measurements, not a claim of bit-for-bit
+identity. The GTX 1050 mobile and GTX 860M identify the M4's neighboring
+throughput class in the official benchmark chart, but no same-commit raw
+physics output from either card is published, and a Mac cannot execute the
+CUDA backend locally. The comparison therefore uses unchanged tests and
+reference values from the upstream CUDA-only codebase; those references mix
+historical mumax³ goldens, analytic invariants, and independent OOMMF values.
+See the [full method, test cohort, statistics, and per-vector data](physics-validation-results/apple-m4-cuda-era-20260731/).
+
 ## Verified examples and performance
 
 The repository includes the exact 15 scripts from the

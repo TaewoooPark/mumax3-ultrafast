@@ -1,0 +1,48 @@
+{
+  "schema_version": 1,
+  "measurement_date": "2026-07-31",
+  "source_commit": "1c1e7a6d1d25d858f4a55275c12926b856a1e7f5",
+  "upstream_reference_tree": "f656494b29516bead825b444b1f0b38c6e6c7dbf",
+  "hardware": {
+    "model": "MacBook Air Mac16,13",
+    "soc": "Apple M4",
+    "gpu_cores": 10,
+    "unified_memory_gb": 32
+  },
+  "software": {
+    "os": "macOS 15.6 (24G84)",
+    "architecture": "arm64",
+    "backend": "Metal 3",
+    "go": "1.26.5"
+  },
+  "tests": {
+    "selected": 15,
+    "passed": 15,
+    "pass_rate_percent": 100.0
+  },
+  "assertions": {
+    "total": 103,
+    "passed": 103,
+    "pass_rate_percent": 100.0,
+    "positive_tolerance": 84,
+    "zero_tolerance": 19,
+    "zero_tolerance_exact_matches": 19
+  },
+  "positive_tolerance_utilization_percent": {
+    "median": 3.7752130960938546,
+    "p95_linear_interpolation": 87.17924356460564,
+    "maximum": 94.83357754652626
+  },
+  "magnetization_vector_agreement_percent": {
+    "definition": "100 * (1 - l2_norm(metal - reference) / l2_norm(reference))",
+    "vector_count": 10,
+    "mean": 99.99228368697435,
+    "median": 99.9983962811203,
+    "minimum": 99.94150310602973
+  },
+  "scope": {
+    "direct_same_host_cuda_ab": false,
+    "thermal_sample_identity_included": false,
+    "note": "The comparison uses unchanged upstream CUDA-era regression tests and their embedded reference values."
+  }
+}
