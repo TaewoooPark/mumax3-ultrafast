@@ -641,3 +641,105 @@ NVIDIA는 드라이버 여유 8%를, Apple은 이 M4에서 실측한
 - **C3 CPU+GPU 이종 분할**: unified memory라 원리적으로 가능하고 Apple 전용 이점이지만
   유효장 분할·부하 균형·검증이 별도 프로젝트 규모다.
 
+---
+
+## 7. A1 VkFFT: 프로토타입까지 만들어 측정한 뒤 기각
+
+`bench/`에 넣지 않고 스크래치에서 끝냈다. **vendoring은 하지 않았다.**
+
+### 확인된 것
+
+VkFFT는 조건이 좋았다. MIT 라이선스, metal-cpp를 **자체 번들**(따로 구할 필요 없음),
+vkFFT 39,121줄 + metal-cpp 21,193줄. `VKFFT_BACKEND=5`로 컴파일되고,
+`VkFFTLaunchParams.commandBuffer`/`commandEncoder`에 **우리 command buffer와 encoder를 넘겨
+append**할 수 있다 — 현재 `mr_begin_external` 설계와 정확히 맞는다.
+
+**in-place R2C 모드에서 레이아웃이 cuFFT와 정확히 일치**한다(행 stride = Nx/2+1). 즉
+mumax3의 `kernmulRSymm*`을 손대지 않고 드롭인 가능하다. 정확도도 문제없다(DC 빈 정확 일치,
+직접 DFT 대비 상대오차 4.8e-6).
+
+### 기각 이유: 현재 경로보다 느리다
+
+mumax3가 지금 쓰는 경로(커밋 `0edf1de6`의 축별 분리 MPSGraph)와 정면 비교:
+
+| padded | MPSGraph 분리 (현재) | VkFFT in-place | 결과 |
+|---|---|---|---|
+| 512² | 5.20 + 6.44 = **11.64 µs** | 18.09 µs | 현재가 **1.55× 빠름** |
+| 1024² | 35.09 + 40.15 = **75.24 µs** | 105.43 µs | 현재가 **1.40× 빠름** |
+| 2048² | 361.33 + 384.26 = **745.59 µs** | 1035.97 µs | 현재가 **1.39× 빠름** |
+
+**모든 크기에서 현재 경로가 1.39~1.55× 빠르다.** 6만 줄을 vendoring해서 느려지는 거래는
+성립하지 않는다.
+
+부수적으로 얻은 정보가 더 값지다: 축별 분리는 MPSGraph 결합형 대비 512²에서 32.11 → 11.64 µs
+(2.8×), 1024²에서 234 → 75 µs (3.1×), 2048²에서 1123 → 746 µs (1.5×)다. 즉 **그 커밋 하나가
+전용 FFT 라이브러리보다 더 많이 뽑아냈다.**
+
+### 부수 발견
+
+- `specifyOffsetsAtLaunch=1`이면 생성된 MSL이 `PushConsts`를 선언 없이 참조해 셰이더 컴파일이
+  실패한다(VkFFT Metal 백엔드 codegen 버그, error 4031). out-of-place 모드는 행 stride가
+  Nx(패킹 안 됨)여서 출력 버퍼가 **2배** 필요하다. in-place 모드만 쓸 만하다.
+- VkFFT의 강점은 CUDA/Vulkan 백엔드이고, Metal 백엔드는 상대적으로 덜 튜닝된 것으로 보인다.
+
+---
+
+## 8. 문헌에서 찾은 다음 후보 (미착수, 근거 포함)
+
+### 8.1 암묵적 dealiasing — 제로패딩을 아예 없애기 ★ 최우선
+
+mumax3의 구조적 최대 비효율은 2N 명시적 제로패딩이다(2D에서 셀 4배, 3D에서 8배).
+**암묵적/하이브리드 dealiasing**은 그 0을 메모리에 만들지 않고 수학적으로 처리한다.
+
+Bowman & Roberts의 FFTW++ 계열 연구(Murasko & Bowman, [arXiv:2303.17510](https://arxiv.org/abs/2303.17510);
+[Efficient Dealiased Convolutions without Padding](https://arxiv.org/pdf/1008.1366))의 보고:
+
+- 명시적 패딩 대비 **메모리 1/2^(d-1)** — 2D에서 **절반**, 3D에서 **1/4**
+- 데이터 국소성 향상으로 **연산 약 2배 절감**
+- 1D·2D·3D 모두에서 명시적 dealiasing을 능가
+- 다차원은 저차원 컨볼루션으로 분해해 구현하며, **오픈소스 FFTW++에 참조 구현이 있다**
+
+이건 내가 이미 확인한 사실들과 정확히 맞물린다: demag는 대역폭 지배이고(148 MB/eval 중
+패딩 때문에 부풀려진 부분이 큼), 남은 개선 경로는 "패스를 빠르게"가 아니라 "바이트를 덜 옮기기"뿐이다.
+FFTW++가 CPU/FFTW 기반이라 Metal 이식이 필요하지만 **수식이 논문에 공개돼 있고 검증용
+참조 구현이 존재**하므로, 내가 시도했다 실패한 자체 FFT(threadgroup 융합)와 달리 위험이 통제된다.
+
+### 8.2 FFT pruning — 필요한 출력만 계산
+
+[TurboFNO (SC'25, arXiv:2504.11681)](https://arxiv.org/html/2504.11681v1)는 FFT에
+**제로패딩과 pruning을 내장해 별도 memory-copy 커널을 없앤다**. 출력의 일부만 필요하면
+butterfly 단계 다수, 특히 곱셈 단계를 건너뛰거나 덧셈으로 대체할 수 있다.
+
+mumax3에 그대로 해당한다: 정방향 입력의 절반이 0이고, 역방향은 `copyUnPad`가 읽는 절반만 필요하다.
+커밋 `70292c4e`가 최속축에 대해 이미 이걸 했고(exact, 1.13~1.23×), 나머지 축은 자체 FFT가 있어야
+단계를 제어할 수 있다. 8.1과 같은 전제조건을 공유한다.
+
+### 8.3 threadgroup 융합이 왜 나에게 실패했는지 (문헌과의 대조)
+
+TurboFNO는 **FFT-GEMM-iFFT 융합에 성공**했고 나는 6.x절에서 2~3× 느려졌다. 차이는 공유 메모리다:
+NVIDIA H100은 SM당 최대 228 KB, **Apple은 threadgroup당 32 KB**(내가 실측 확인). 32 KB로는
+Ny=1024 복소 컬럼 4개가 한계이고 그러면 코어당 threadgroup이 1개라 배리어가 전부 노출된다.
+**즉 이 실패는 내 구현 문제가 아니라 하드웨어 예산 차이다.** Apple에서 융합을 살리려면 컬럼
+전체가 아니라 8.1의 저차원 분해처럼 작업집합 자체를 줄여야 한다.
+
+### 8.4 Metal 4 — 내가 측정한 병목을 정면으로 겨냥
+
+[Discover Metal 4 (WWDC25)](https://developer.apple.com/videos/play/wwdc2025/205/):
+
+- **low-overhead barrier API** — stage-to-stage 동기화를 저비용으로. 내 실측에서 디스패치
+  단가 6850 ns의 본질은 인코더 경계가 아니라 **디스패치 간 직렬화 배리어**였다(단일 인코더
+  병합은 5%뿐, concurrent는 3.1×). 이 API가 정확히 그 지점이다.
+- **unified command encoding** — 인코더 전환 비용 감소.
+- **residency sets + argument tables** — step당 115 디스패치가 각각 여러 버퍼를 바인딩한다.
+  리소스 바인딩을 수천 개 규모로 확장하도록 설계된 기구이므로 바인딩 오버헤드를 줄일 수 있다.
+
+전제조건은 macOS 26(Tahoe) 이상이므로, 현재 `-mmacosx-version-min=14.0` 기준선을 올리지 않고
+런타임 분기로 넣어야 한다.
+
+### 8.5 우선순위
+
+1. **8.1 암묵적 dealiasing** — 2D 메모리 절반 + 연산 2배 절감. 문헌 + 참조 구현 있음. 가장 큰 미착수 레버.
+2. **8.4 Metal 4 배리어/인코딩** — 소형 메시 디스패치 지배 구간 직격. macOS 26 분기 필요.
+3. **8.2 pruning** — 8.1과 전제 공유. 함께 하는 게 합리적.
+4. A3 커널 융합 — 3~4%, 이제 0.5% 계측기로 검증 가능.
+
