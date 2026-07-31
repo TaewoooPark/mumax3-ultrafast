@@ -276,7 +276,14 @@ def metal_argument_type(c_type: str) -> str:
     }[c_type]
 
 
-def metal_signature(kernel: Kernel) -> str:
+def metal_signature(kernel: Kernel, builtins: tuple[str, ...] = None) -> str:
+    if builtins is None:
+        builtins = (
+            "    uint3 blockIdx [[threadgroup_position_in_grid]],",
+            "    uint3 threadIdx [[thread_position_in_threadgroup]],",
+            "    uint3 blockDim [[threads_per_threadgroup]],",
+            "    uint3 gridDim [[threadgroups_per_grid]]) {",
+        )
     lines = [f"kernel void {kernel.name}("]
     for argument in kernel.arguments:
         lines.append(
@@ -288,15 +295,63 @@ def metal_signature(kernel: Kernel) -> str:
             f"    constant uint& mumaxPointerMask "
             f"[[buffer({len(kernel.arguments)})]],"
         )
-    lines.extend(
-        (
-            "    uint3 blockIdx [[threadgroup_position_in_grid]],",
-            "    uint3 threadIdx [[thread_position_in_threadgroup]],",
-            "    uint3 blockDim [[threads_per_threadgroup]],",
-            "    uint3 gridDim [[threadgroups_per_grid]]) {",
-        )
-    )
+    lines.extend(builtins)
     return "\n".join(lines)
+
+
+# CUDA recomputes a global thread index from four launch built-ins. Metal
+# publishes it directly as thread_position_in_grid, so materialising
+# threadgroup_position_in_grid, thread_position_in_threadgroup,
+# threads_per_threadgroup and threadgroups_per_grid only burns registers and
+# integer MADs on every one of the ~115 dispatches in an RK45DP step.
+#
+# Both rewrites below are exact identities, not approximations:
+#
+#   3D: blockIdx.<a>*blockDim.<a> + threadIdx.<a> is the definition of
+#       thread_position_in_grid.<a>.
+#
+#   1D: (blockIdx.y*gridDim.x + blockIdx.x)*blockDim.x + threadIdx.x
+#       == gid.y*(gridDim.x*blockDim.x) + gid.x
+#       == gid.y*threads_per_grid.x + gid.x
+#       given blockDim.y == 1, which every call site of the 1D form uses. The
+#       original expression drops threadIdx.y, so it is only correct under that
+#       same condition.
+GLOBAL_INDEX_RE = re.compile(
+    r"int\s+(?P<name>[A-Za-z_]\w*)\s*=\s*\(\s*blockIdx\.y\s*\*\s*gridDim\.x"
+    r"\s*\+\s*blockIdx\.x\s*\)\s*\*\s*blockDim\.x\s*\+\s*threadIdx\.x\s*;"
+)
+AXIS_INDEX_RE = re.compile(
+    r"int\s+(?P<name>[A-Za-z_]\w*)\s*=\s*blockIdx\.(?P<axis>[xyz])\s*\*"
+    r"\s*blockDim\.(?P=axis)\s*\+\s*threadIdx\.(?P=axis)\s*;"
+)
+
+
+def rewrite_thread_indices(source: str) -> str:
+    """Replace CUDA global-index arithmetic with Metal's native built-ins."""
+
+    source = GLOBAL_INDEX_RE.sub(
+        lambda m: (
+            f"int {m.group('name')} = "
+            "int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);"
+        ),
+        source,
+    )
+    source = AXIS_INDEX_RE.sub(
+        lambda m: f"int {m.group('name')} = int(mumaxGid.{m.group('axis')});",
+        source,
+    )
+    return source
+
+
+CUDA_LAUNCH_BUILTINS = ("blockIdx", "threadIdx", "blockDim", "gridDim")
+
+# Prelude macros that expand to CUDA launch geometry. A kernel whose body only
+# invokes such a macro shows no built-in token of its own, so it must be matched
+# by name or its signature would omit declarations the expansion needs. The
+# reduction macro strides by gridDim.x*blockDim.x and indexes sdata by
+# threadIdx.x, so it cannot move to thread_position_in_grid without changing the
+# reduction itself.
+LAUNCH_GEOMETRY_MACROS = ("reduce",)
 
 
 def translate_kernel(kernel: Kernel) -> str:
@@ -316,6 +371,7 @@ def translate_kernel(kernel: Kernel) -> str:
         )
 
     source = translate_nullable_pointer_operations(source, kernel)
+    source = rewrite_thread_indices(source)
 
     matches = list(KERNEL_SIGNATURE_RE.finditer(source))
     if len(matches) != 1:
@@ -324,9 +380,28 @@ def translate_kernel(kernel: Kernel) -> str:
             "during translation"
         )
     match = matches[0]
+    body = source[match.end():]
+    invokes_geometry_macro = any(
+        re.search(rf"\b{re.escape(name)}\s*\(", body)
+        for name in LAUNCH_GEOMETRY_MACROS
+    )
+    if invokes_geometry_macro or any(
+        builtin in body for builtin in CUDA_LAUNCH_BUILTINS
+    ):
+        # Reduction kernels stride by gridDim.x*blockDim.x, so they still need
+        # the CUDA launch geometry.
+        builtins = None
+    else:
+        declarations = ["    uint3 mumaxGid [[thread_position_in_grid]],"]
+        if "mumaxThreadsPerGrid" in body:
+            declarations.append(
+                "    uint3 mumaxThreadsPerGrid [[threads_per_grid]],"
+            )
+        declarations[-1] = declarations[-1][:-1] + ") {"
+        builtins = tuple(declarations)
     source = (
         source[: match.start()]
-        + metal_signature(kernel)
+        + metal_signature(kernel, builtins)
         + source[match.end() :]
     )
 
@@ -430,6 +505,40 @@ def translate_nullable_pointer_operations(
     return vmul_pattern.sub(replace_vmul, source)
 
 
+def verify_launch_builtins(msl: str) -> None:
+    """Reject a library where a kernel uses a built-in it does not declare."""
+
+    blocks = re.split(r"(?m)^kernel void ", msl)
+    prelude_text, kernel_blocks = blocks[0], blocks[1:]
+    geometry_macro_bodies = {
+        name
+        for name in LAUNCH_GEOMETRY_MACROS
+        if any(builtin in prelude_text for builtin in CUDA_LAUNCH_BUILTINS)
+        and re.search(rf"(?m)^#define\s+{re.escape(name)}\b", prelude_text)
+    }
+    for block in kernel_blocks:
+        name = block.split("(", 1)[0].strip()
+        signature_end = block.index("{")
+        signature, body = block[:signature_end], block[signature_end:]
+        declares_cuda = all(
+            builtin in signature for builtin in CUDA_LAUNCH_BUILTINS
+        )
+        if declares_cuda:
+            continue
+        for builtin in CUDA_LAUNCH_BUILTINS:
+            if builtin in body:
+                raise GenerationError(
+                    f"{name}: uses {builtin} but does not declare the CUDA "
+                    "launch built-ins"
+                )
+        for macro in geometry_macro_bodies:
+            if re.search(rf"\b{re.escape(macro)}\s*\(", body):
+                raise GenerationError(
+                    f"{name}: invokes the {macro} macro, which expands to CUDA "
+                    "launch geometry, but does not declare the built-ins"
+                )
+
+
 def generate_msl(kernels: Iterable[Kernel], prelude: str) -> str:
     chunks = [prelude.rstrip(), ""]
     for kernel in kernels:
@@ -447,7 +556,9 @@ def generate_msl(kernels: Iterable[Kernel], prelude: str) -> str:
         chunks.extend(f"#undef {name}" for name in kernel.local_macro_names)
         chunks.append("")
     combined = "\n".join(chunks)
-    return "\n".join(line.rstrip() for line in combined.splitlines()) + "\n"
+    document = "\n".join(line.rstrip() for line in combined.splitlines()) + "\n"
+    verify_launch_builtins(document)
+    return document
 
 
 def go_argument_type(c_type: str) -> str:

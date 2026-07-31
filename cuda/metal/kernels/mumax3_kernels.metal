@@ -190,12 +190,10 @@ kernel void cellindices(
     constant float& ny [[buffer(4)]],
     constant float& nz [[buffer(5)]],
     constant int& N [[buffer(6)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if (i < N) {
         float idx_i = fmod(i, nx);
@@ -228,14 +226,11 @@ kernel void copypadmul2(
     constant float& Ms_mul [[buffer(9)]],
     device float* vol [[buffer(10)]],
     constant uint& mumaxPointerMask [[buffer(11)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix<Sx && iy<Sy && iz<Sz) {
         int sI = index(ix, iy, iz, Sx, Sy, Sz);  // source index
@@ -260,14 +255,11 @@ kernel void copyunpad(
     constant int& Sx [[buffer(5)]],
     constant int& Sy [[buffer(6)]],
     constant int& Sz [[buffer(7)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix<Dx && iy<Dy && iz<Dz) {
         dst[index(ix, iy, iz, Dx, Dy, Dz)] = src[index(ix, iy, iz, Sx, Sy, Sz)];
@@ -292,14 +284,11 @@ kernel void crop(
     constant int& Offx [[buffer(8)]],
     constant int& Offy [[buffer(9)]],
     constant int& Offz [[buffer(10)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix<Dx && iy<Dy && iz<Dz) {
         dst[index(ix, iy, iz, Dx, Dy, Dz)] = src[index(ix+Offx, iy+Offy, iz+Offz, Sx, Sy, Sz)];
@@ -322,12 +311,10 @@ kernel void crossproduct(
     device float* by [[buffer(7)]],
     device float* bz [[buffer(8)]],
     constant int& N [[buffer(9)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
         float3 A = {ax[i], ay[i], az[i]};
         float3 B = {bx[i], by[i], bz[i]};
@@ -381,12 +368,10 @@ kernel void addcubicanisotropy2(
     constant float& c2z_mul [[buffer(25)]],
     constant int& N [[buffer(26)]],
     constant uint& mumaxPointerMask [[buffer(27)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         float invMs = inv_Msat(Ms_, mumaxPointerPresent(mumaxPointerMask, 6u), Ms_mul, i);
@@ -427,12 +412,10 @@ kernel void pointwise_div(
     device float* a [[buffer(1)]],
     device float* b [[buffer(2)]],
     constant int& N [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         if (b[i] != 0.0f) {
@@ -476,14 +459,11 @@ kernel void adddmi(
     constant uchar& PBC [[buffer(17)]],
     constant uchar& OpenBC [[buffer(18)]],
     constant uint& mumaxPointerMask [[buffer(19)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -702,14 +682,11 @@ kernel void adddmibulk(
     constant uchar& PBC [[buffer(17)]],
     constant uchar& OpenBC [[buffer(18)]],
     constant uint& mumaxPointerMask [[buffer(19)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -927,12 +904,10 @@ kernel void dotproduct(
     device float* by [[buffer(6)]],
     device float* bz [[buffer(7)]],
     constant int& N [[buffer(8)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
         float3 A = {ax[i], ay[i], az[i]};
         float3 B = {bx[i], by[i], bz[i]};
@@ -965,14 +940,11 @@ kernel void addexchange(
     constant int& Nz [[buffer(15)]],
     constant uchar& PBC [[buffer(16)]],
     constant uint& mumaxPointerMask [[buffer(17)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -1061,14 +1033,11 @@ kernel void exchangedecode(
     constant int& Ny [[buffer(7)]],
     constant int& Nz [[buffer(8)]],
     constant uchar& PBC [[buffer(9)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -1152,14 +1121,11 @@ kernel void setemergentmagneticfieldsolidangle(
     constant int& Ny [[buffer(11)]],
     constant int& Nz [[buffer(12)]],
     constant uchar& PBC [[buffer(13)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -1361,14 +1327,11 @@ kernel void setemergentmagneticfieldfivepoint(
     constant int& Ny [[buffer(11)]],
     constant int& Nz [[buffer(12)]],
     constant uchar& PBC [[buffer(13)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz)
     {
@@ -1606,14 +1569,11 @@ kernel void setemergentmagneticfieldtwopoint(
     constant int& Ny [[buffer(11)]],
     constant int& Nz [[buffer(12)]],
     constant uchar& PBC [[buffer(13)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz)
     {
@@ -1776,14 +1736,11 @@ kernel void setvectorpotential(
     constant int& Ny [[buffer(8)]],
     constant int& Nz [[buffer(9)]],
     constant uchar& PBC [[buffer(10)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz)
     {
@@ -1822,14 +1779,11 @@ kernel void solidanglefourierfield(
     constant int& Nx [[buffer(6)]],
     constant int& Ny [[buffer(7)]],
     constant int& Nz [[buffer(8)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix>= Nx || iy>= Ny || iz>=Nz) {
         return;
@@ -1889,14 +1843,11 @@ kernel void scaleemergentfield(
     constant int& Nx [[buffer(9)]],
     constant int& Ny [[buffer(10)]],
     constant int& Nz [[buffer(11)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix>= Nx || iy>= Ny || iz>=Nz) {
         return;
@@ -1923,14 +1874,11 @@ kernel void solidanglefouriersummand(
     constant int& Nx [[buffer(4)]],
     constant int& Ny [[buffer(5)]],
     constant int& Nz [[buffer(6)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix>= Nx || iy>= Ny || iz>=Nz) {
         return;
@@ -2005,13 +1953,10 @@ kernel void kernmulC(
     device float* fftK [[buffer(1)]],
     constant int& Nx [[buffer(2)]],
     constant int& Ny [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
 
     if(ix>= Nx || iy>=Ny) {
         return;
@@ -2045,13 +1990,10 @@ kernel void kernmulRSymm2Dxy(
     device float* fftKxy [[buffer(4)]],
     constant int& Nx [[buffer(5)]],
     constant int& Ny [[buffer(6)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
 
     if(ix>= Nx || iy>=Ny) {
         return;
@@ -2095,13 +2037,10 @@ kernel void kernmulRSymm2Dz(
     device float* fftKzz [[buffer(1)]],
     constant int& Nx [[buffer(2)]],
     constant int& Ny [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
 
     if(ix>= Nx || iy>=Ny) {
         return;
@@ -2167,14 +2106,11 @@ kernel void kernmulRSymm3D(
     constant int& Nx [[buffer(9)]],
     constant int& Ny [[buffer(10)]],
     constant int& Nz [[buffer(11)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix>= Nx || iy>= Ny || iz>=Nz) {
         return;
@@ -2247,12 +2183,10 @@ kernel void llnoprecess(
     device float* hy [[buffer(7)]],
     device float* hz [[buffer(8)]],
     constant int& N [[buffer(9)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         float3 m = {mx[i], my[i], mz[i]};
@@ -2287,12 +2221,10 @@ kernel void lltorque2(
     constant float& alpha_mul [[buffer(10)]],
     constant int& N [[buffer(11)]],
     constant uint& mumaxPointerMask [[buffer(12)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         float3 m = {mx[i], my[i], mz[i]};
@@ -2322,12 +2254,10 @@ kernel void madd2(
     device float* src2 [[buffer(3)]],
     constant float& fac2 [[buffer(4)]],
     constant int& N [[buffer(5)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         dst[i] = fac1*src1[i] + fac2*src2[i];
@@ -2349,12 +2279,10 @@ kernel void madd3(
     device float* src3 [[buffer(5)]],
     constant float& fac3 [[buffer(6)]],
     constant int& N [[buffer(7)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         dst[i] = (fac1 * src1[i]) + (fac2 * src2[i] + fac3 * src3[i]);
@@ -2379,12 +2307,10 @@ kernel void madd4(
     device float* src4 [[buffer(7)]],
     constant float& fac4 [[buffer(8)]],
     constant int& N [[buffer(9)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         dst[i] = (fac1*src1[i]) + (fac2*src2[i]) + (fac3*src3[i]) + (fac4*src4[i]);
@@ -2410,12 +2336,10 @@ kernel void madd5(
     device float* src5 [[buffer(9)]],
     constant float& fac5 [[buffer(10)]],
     constant int& N [[buffer(11)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         dst[i] = (fac1*src1[i]) + (fac2*src2[i]) + (fac3*src3[i]) + (fac4*src4[i]) + (fac5*src5[i]);
@@ -2443,12 +2367,10 @@ kernel void madd6(
     device float* src6 [[buffer(11)]],
     constant float& fac6 [[buffer(12)]],
     constant int& N [[buffer(13)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         dst[i] = (fac1*src1[i]) + (fac2*src2[i]) + (fac3*src3[i]) + (fac4*src4[i]) + (fac5*src5[i]) + (fac6*src6[i]);
@@ -2478,12 +2400,10 @@ kernel void madd7(
     device float* src7 [[buffer(13)]],
     constant float& fac7 [[buffer(14)]],
     constant int& N [[buffer(15)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         dst[i] = (fac1*src1[i]) + (fac2*src2[i]) + (fac3*src3[i]) + (fac4*src4[i]) + (fac5*src5[i]) + (fac6*src6[i]) + (fac7*src7[i]);
@@ -2525,12 +2445,10 @@ kernel void addmagnetoelasticfield(
     constant float& Ms_mul [[buffer(23)]],
     constant int& N [[buffer(24)]],
     constant uint& mumaxPointerMask [[buffer(25)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-	int I =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+	int I = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
 	if (I < N) {
 
@@ -2588,14 +2506,11 @@ kernel void getmagnetoelasticforce(
     constant int& Nz [[buffer(15)]],
     constant uchar& PBC [[buffer(16)]],
     constant uint& mumaxPointerMask [[buffer(17)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-	int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+	int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
 
     if (ix >= Nx || iy >= Ny || iz >= Nz)
@@ -2820,14 +2735,11 @@ kernel void setmaxangle(
     constant int& Ny [[buffer(7)]],
     constant int& Nz [[buffer(8)]],
     constant uchar& PBC [[buffer(9)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -2926,12 +2838,10 @@ kernel void minimize(
     device float* tz [[buffer(8)]],
     constant float& dt [[buffer(9)]],
     constant int& N [[buffer(10)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         float3 m0 = {m0x[i], m0y[i], m0z[i]};
@@ -2957,12 +2867,10 @@ kernel void mul(
     device float* a [[buffer(1)]],
     device float* b [[buffer(2)]],
     constant int& N [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 
     if(i < N) {
         dst[i] = a[i] * b[i];
@@ -2982,12 +2890,10 @@ kernel void normalize(
     device float* vol [[buffer(3)]],
     constant int& N [[buffer(4)]],
     constant uint& mumaxPointerMask [[buffer(5)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         float v = (!mumaxPointerPresent(mumaxPointerMask, 3u)? 1.0f: vol[i]);
@@ -3011,14 +2917,11 @@ kernel void setPhi(
     constant int& Nx [[buffer(3)]],
     constant int& Ny [[buffer(4)]],
     constant int& Nz [[buffer(5)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz)
     {
@@ -3174,12 +3077,10 @@ kernel void regionadds(
     device float* LUT [[buffer(1)]],
     device uchar* regions [[buffer(2)]],
     constant int& N [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-	int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+	int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
 	if (i < N) {
 
 		uchar r = regions[i];
@@ -3203,12 +3104,10 @@ kernel void regionaddv(
     device float* LUTz [[buffer(5)]],
     device uchar* regions [[buffer(6)]],
     constant int& N [[buffer(7)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         uchar r = regions[i];
@@ -3229,12 +3128,10 @@ kernel void regiondecode(
     device float* LUT [[buffer(1)]],
     device uchar* regions [[buffer(2)]],
     constant int& N [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         dst[i] = LUT[regions[i]];
@@ -3253,12 +3150,10 @@ kernel void regionselect(
     device uchar* regions [[buffer(2)]],
     constant uchar& region [[buffer(3)]],
     constant int& N [[buffer(4)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i = ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
         dst[i] = (regions[i] == region? src[i]: 0.0f);
     }
@@ -3282,13 +3177,10 @@ kernel void resize(
     constant int& layer [[buffer(8)]],
     constant int& scalex [[buffer(9)]],
     constant int& scaley [[buffer(10)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
 
     if (ix<Dx && iy<Dy) {
 
@@ -3326,14 +3218,11 @@ kernel void shiftbytes(
     constant int& Nz [[buffer(4)]],
     constant int& shx [[buffer(5)]],
     constant uchar& clamp [[buffer(6)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix < Nx && iy < Ny && iz < Nz) {
         int ix2 = ix-shx;
@@ -3362,14 +3251,11 @@ kernel void shiftbytesy(
     constant int& Nz [[buffer(4)]],
     constant int& shy [[buffer(5)]],
     constant uchar& clamp [[buffer(6)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix < Nx && iy < Ny && iz < Nz) {
         int iy2 = iy-shy;
@@ -3406,14 +3292,11 @@ kernel void shiftedgecarryX(
     constant int& shx [[buffer(7)]],
     constant float& clampL [[buffer(8)]],
     constant float& clampR [[buffer(9)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix < Nx && iy < Ny && iz < Nz) {
         int ix2 = ix-shx; // old X-index
@@ -3458,14 +3341,11 @@ kernel void shiftedgecarryY(
     constant int& shy [[buffer(7)]],
     constant float& clampD [[buffer(8)]],
     constant float& clampU [[buffer(9)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix < Nx && iy < Ny && iz < Nz) {
         int iy2 = iy-shy; // old Y-index
@@ -3503,14 +3383,11 @@ kernel void shiftx(
     constant int& shx [[buffer(5)]],
     constant float& clampL [[buffer(6)]],
     constant float& clampR [[buffer(7)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix < Nx && iy < Ny && iz < Nz) {
         int ix2 = ix-shx;
@@ -3542,14 +3419,11 @@ kernel void shifty(
     constant int& shy [[buffer(5)]],
     constant float& clampD [[buffer(6)]],
     constant float& clampU [[buffer(7)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix < Nx && iy < Ny && iz < Nz) {
         int iy2 = iy-shy;
@@ -3581,14 +3455,11 @@ kernel void shiftz(
     constant int& shz [[buffer(5)]],
     constant float& clampB [[buffer(6)]],
     constant float& clampF [[buffer(7)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if(ix < Nx && iy < Ny && iz < Nz) {
         int iz2 = iz-shz;
@@ -3643,12 +3514,10 @@ kernel void addslonczewskitorque2(
     constant float& freeLayerPosition [[buffer(27)]],
     constant int& N [[buffer(28)]],
     constant uint& mumaxPointerMask [[buffer(29)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         float3 m = make_float3(mx[i], my[i], mz[i]);
@@ -3708,12 +3577,10 @@ kernel void settemperature2(
     constant float& alpha_mul [[buffer(8)]],
     constant int& N [[buffer(9)]],
     constant uint& mumaxPointerMask [[buffer(10)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
         float invMs = inv_Msat(Ms_, mumaxPointerPresent(mumaxPointerMask, 3u), Ms_mul, i);
         float temp = amul(temp_, mumaxPointerPresent(mumaxPointerMask, 5u), temp_mul, i);
@@ -3733,14 +3600,11 @@ kernel void setTheta(
     constant int& Nx [[buffer(2)]],
     constant int& Ny [[buffer(3)]],
     constant int& Nz [[buffer(4)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz)
     {
@@ -3786,14 +3650,11 @@ kernel void settopologicalchargelattice(
     constant int& Ny [[buffer(6)]],
     constant int& Nz [[buffer(7)]],
     constant uchar& PBC [[buffer(8)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
@@ -3875,14 +3736,11 @@ kernel void settopologicalcharge(
     constant int& Ny [[buffer(6)]],
     constant int& Nz [[buffer(7)]],
     constant uchar& PBC [[buffer(8)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz)
     {
@@ -4055,12 +3913,10 @@ kernel void adduniaxialanisotropy2(
     constant float& uz_mul [[buffer(17)]],
     constant int& N [[buffer(18)]],
     constant uint& mumaxPointerMask [[buffer(19)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
 
         float3 u   = normalized(vmul(ux_, uy_, uz_, mumaxPointerPresent(mumaxPointerMask, 12u), mumaxPointerPresent(mumaxPointerMask, 14u), mumaxPointerPresent(mumaxPointerMask, 16u), ux_mul, uy_mul, uz_mul, i));
@@ -4089,12 +3945,10 @@ kernel void zeromask(
     device float* maskLUT [[buffer(1)]],
     device uchar* regions [[buffer(2)]],
     constant int& N [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
         if (maskLUT[regions[i]] != 0) {
             dst[i] = 0;
@@ -4113,12 +3967,10 @@ kernel void zeromaskinv(
     device float* maskLUT [[buffer(1)]],
     device uchar* regions [[buffer(2)]],
     constant int& N [[buffer(3)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
 
-    int i =  ( blockIdx.y*gridDim.x + blockIdx.x ) * blockDim.x + threadIdx.x;
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
     if (i < N) {
         if (maskLUT[regions[i]] == 0) {
             dst[i] = 0;
@@ -4167,14 +4019,11 @@ kernel void addzhanglitorque2(
     constant int& Nz [[buffer(25)]],
     constant uchar& PBC [[buffer(26)]],
     constant uint& mumaxPointerMask [[buffer(27)]],
-    uint3 blockIdx [[threadgroup_position_in_grid]],
-    uint3 threadIdx [[thread_position_in_threadgroup]],
-    uint3 blockDim [[threads_per_threadgroup]],
-    uint3 gridDim [[threadgroups_per_grid]]) {
+    uint3 mumaxGid [[thread_position_in_grid]]) {
 
-    int ix = blockIdx.x * blockDim.x + threadIdx.x;
-    int iy = blockIdx.y * blockDim.y + threadIdx.y;
-    int iz = blockIdx.z * blockDim.z + threadIdx.z;
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
 
     if (ix >= Nx || iy >= Ny || iz >= Nz) {
         return;
