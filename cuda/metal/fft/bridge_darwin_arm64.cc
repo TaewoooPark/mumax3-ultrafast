@@ -19,12 +19,23 @@
     NSArray<NSNumber *> *realShape;
     NSArray<NSNumber *> *HermitianShape;
     NSArray<NSNumber *> *axes;
+    // A separable transform split into the Hermitian (last, contiguous) axis
+    // and the remaining axes. MPSGraph produces bit-identical results either
+    // way, but is far slower when asked for all axes in one operation: for a
+    // 1024x1024 padded R2C on an M4 the combined form costs 255 us against
+    // 47 us + 41 us for the two stages.
+    NSArray<NSNumber *> *primaryAxes;
+    NSArray<NSNumber *> *leadingAxes;
     MPSGraph *forwardGraph;
     MPSGraphTensor *forwardInput;
     MPSGraphTensor *forwardOutput;
     MPSGraph *inverseGraph;
     MPSGraphTensor *inverseInput;
     MPSGraphTensor *inverseOutput;
+    MPSGraph *stageGraph;
+    MPSGraphTensor *stageInput;
+    MPSGraphTensor *stageOutput;
+    id<MTLBuffer> scratch;
 }
 @end
 
@@ -77,6 +88,51 @@ static NSArray<NSNumber *> *mf_axes(size_t rank, int64_t batch) {
     return [result copy];
 }
 
+/*
+ * MPSGraph's combined multi-axis transform sustains full bandwidth while the
+ * strided axis is at most 512 long and then collapses. Padded R2C on an M4,
+ * marginal cost per transform and the implied single-pass bandwidth:
+ *
+ *   {1, 512,  512}    24.1 us   87 GB/s
+ *   {1, 512, 1024}    36.6 us  115 GB/s   long axis contiguous, fine
+ *   {1, 640,  640}    60.9 us   54 GB/s
+ *   {1, 768,  768}   116.7 us   40 GB/s
+ *   {1,1024, 1024}   260.4 us   32 GB/s   long axis strided, collapsed
+ *
+ * Running the Hermitian axis and the remaining axes as two separate transforms
+ * avoids that path. It is bit-identical, verified against the combined form to
+ * exactly 0 difference in both directions, so this only selects a schedule.
+ *
+ * The split is not free: it doubles the number of MPSGraph encodes, which costs
+ * more than it saves while the combined form is still healthy. Whole-demag
+ * timings on this M4 put the crossover between 512 and 1024, but run-to-run
+ * spread on the same binary reached 35% at these sizes, so the threshold is set
+ * from the bandwidth measurements above, which were reproducible, rather than
+ * from the noisier end-to-end numbers. Splitting therefore starts above 512.
+ */
+static const int64_t mf_split_threshold = 512;
+
+static void mf_split_axes(MFPlan *plan, const int64_t *dimensions, size_t rank) {
+    NSUInteger count = plan->axes.count;
+    // Without a split the single graph must still transform every axis.
+    plan->primaryAxes = plan->axes;
+    plan->leadingAxes = @[];
+    if (count < 2) {
+        return;
+    }
+    int64_t longestLeading = 0;
+    for (size_t axis = 0; axis + 1 < rank; ++axis) {
+        if (dimensions[axis] > longestLeading) {
+            longestLeading = dimensions[axis];
+        }
+    }
+    if (longestLeading > mf_split_threshold) {
+        plan->leadingAxes =
+            [plan->axes subarrayWithRange:NSMakeRange(0, count - 1)];
+        plan->primaryAxes = @[plan->axes[count - 1]];
+    }
+}
+
 static size_t mf_element_count(NSArray<NSNumber *> *shape) {
     size_t result = 1;
     for (NSNumber *dimension in shape) {
@@ -96,9 +152,22 @@ static void mf_build_forward_graph(MFPlan *plan) {
         descriptor.scalingMode = MPSGraphFFTScalingModeNone;
         descriptor.roundToOddHermitean = plan->oddLastDimension;
         plan->forwardOutput = [plan->forwardGraph realToHermiteanFFTWithTensor:plan->forwardInput
-                                                                          axes:plan->axes
+                                                                          axes:plan->primaryAxes
                                                                     descriptor:descriptor
                                                                           name:@"mumax3_fft_r2c_output"];
+        if (plan->leadingAxes.count != 0) {
+            plan->stageGraph = [MPSGraph new];
+            plan->stageInput = [plan->stageGraph placeholderWithShape:plan->HermitianShape
+                                                            dataType:MPSDataTypeComplexFloat32
+                                                                name:@"mumax3_fft_r2c_stage_input"];
+            MPSGraphFFTDescriptor *stage = [MPSGraphFFTDescriptor descriptor];
+            stage.inverse = NO;
+            stage.scalingMode = MPSGraphFFTScalingModeNone;
+            plan->stageOutput = [plan->stageGraph fastFourierTransformWithTensor:plan->stageInput
+                                                                            axes:plan->leadingAxes
+                                                                      descriptor:stage
+                                                                            name:@"mumax3_fft_r2c_stage_output"];
+        }
     } else {
         plan->forwardInput = [plan->forwardGraph placeholderWithShape:plan->realShape
                                                              dataType:MPSDataTypeComplexFloat32
@@ -121,11 +190,24 @@ static void mf_build_inverse_graph(MFPlan *plan) {
     descriptor.roundToOddHermitean = plan->oddLastDimension;
 
     if (plan->transform == MF_C2R) {
+        if (plan->leadingAxes.count != 0) {
+            plan->stageGraph = [MPSGraph new];
+            plan->stageInput = [plan->stageGraph placeholderWithShape:plan->HermitianShape
+                                                            dataType:MPSDataTypeComplexFloat32
+                                                                name:@"mumax3_fft_c2r_stage_input"];
+            MPSGraphFFTDescriptor *stage = [MPSGraphFFTDescriptor descriptor];
+            stage.inverse = YES;
+            stage.scalingMode = MPSGraphFFTScalingModeNone;
+            plan->stageOutput = [plan->stageGraph fastFourierTransformWithTensor:plan->stageInput
+                                                                            axes:plan->leadingAxes
+                                                                      descriptor:stage
+                                                                            name:@"mumax3_fft_c2r_stage_output"];
+        }
         plan->inverseInput = [plan->inverseGraph placeholderWithShape:plan->HermitianShape
                                                              dataType:MPSDataTypeComplexFloat32
                                                                  name:@"mumax3_fft_c2r_input"];
         plan->inverseOutput = [plan->inverseGraph HermiteanToRealFFTWithTensor:plan->inverseInput
-                                                                          axes:plan->axes
+                                                                          axes:plan->primaryAxes
                                                                     descriptor:descriptor
                                                                           name:@"mumax3_fft_c2r_output"];
     } else {
@@ -190,6 +272,7 @@ extern "C" void *mf_plan_create(const int64_t *dimensions,
                 plan->realShape = mf_shape(dimensions, rank, batch, NO);
                 plan->HermitianShape = mf_shape(dimensions, rank, batch, YES);
                 plan->axes = mf_axes(rank, batch);
+                mf_split_axes(plan, dimensions, rank);
                 plan->realBytes = mf_element_count(plan->realShape) * sizeof(float);
                 plan->HermitianBytes = mf_element_count(plan->HermitianShape) * 2 * sizeof(float);
 
@@ -293,15 +376,70 @@ extern "C" int mf_plan_execute(void *opaquePlan,
                         (__bridge id<MTLCommandBuffer>)context.command_buffer;
                     MPSCommandBuffer *mpsCommandBuffer =
                         [MPSCommandBuffer commandBufferWithCommandBuffer:commandBuffer];
-                    NSDictionary<MPSGraphTensor *, MPSGraphTensorData *> *feeds =
-                        @{inputTensor: inputData};
-                    NSDictionary<MPSGraphTensor *, MPSGraphTensorData *> *results =
-                        @{outputTensor: outputData};
-                    [graph encodeToCommandBuffer:mpsCommandBuffer
-                                           feeds:feeds
-                                targetOperations:nil
-                               resultsDictionary:results
-                             executionDescriptor:nil];
+
+                    /*
+                     * A separable R2C/C2R runs as two stages through a
+                     * plan-owned scratch buffer: the Hermitian axis and then
+                     * the remaining axes. The results are bit-identical to
+                     * asking MPSGraph for every axis at once, but the combined
+                     * form schedules far worse - 255 us against 47 + 41 us for
+                     * a 1024x1024 padded R2C on an M4. The scratch adds no
+                     * traffic: the second stage reads it instead of reading the
+                     * destination it would otherwise update in place.
+                     */
+                    MPSGraph *stageGraph = plan->stageGraph;
+                    if (stageGraph != nil && plan->scratch == nil) {
+                        id<MTLDevice> metalDevice =
+                            (__bridge id<MTLDevice>)context.device;
+                        plan->scratch =
+                            [metalDevice newBufferWithLength:plan->HermitianBytes
+                                                     options:MTLResourceStorageModePrivate];
+                        if (plan->scratch == nil) {
+                            mf_set_error(error_message,
+                                         @"failed to allocate the Metal FFT stage buffer");
+                            result = MF_ERROR_RUNTIME;
+                        }
+                    }
+
+                    if (result != MF_SUCCESS) {
+                        // fall through to mr_end_external below
+                    } else if (stageGraph == nil) {
+                        [graph encodeToCommandBuffer:mpsCommandBuffer
+                                               feeds:@{inputTensor: inputData}
+                                    targetOperations:nil
+                                   resultsDictionary:@{outputTensor: outputData}
+                                 executionDescriptor:nil];
+                    } else {
+                        MPSGraphTensorData *scratchData =
+                            [[MPSGraphTensorData alloc] initWithMTLBuffer:plan->scratch
+                                                                   shape:plan->HermitianShape
+                                                                dataType:MPSDataTypeComplexFloat32];
+                        if (inverse) {
+                            // C2C over the leading axes, then C2R over the last.
+                            [stageGraph encodeToCommandBuffer:mpsCommandBuffer
+                                                       feeds:@{plan->stageInput: inputData}
+                                            targetOperations:nil
+                                           resultsDictionary:@{plan->stageOutput: scratchData}
+                                         executionDescriptor:nil];
+                            [graph encodeToCommandBuffer:mpsCommandBuffer
+                                                  feeds:@{inputTensor: scratchData}
+                                       targetOperations:nil
+                                      resultsDictionary:@{outputTensor: outputData}
+                                    executionDescriptor:nil];
+                        } else {
+                            // R2C over the last axis, then C2C over the rest.
+                            [graph encodeToCommandBuffer:mpsCommandBuffer
+                                                  feeds:@{inputTensor: inputData}
+                                       targetOperations:nil
+                                      resultsDictionary:@{outputTensor: scratchData}
+                                    executionDescriptor:nil];
+                            [stageGraph encodeToCommandBuffer:mpsCommandBuffer
+                                                       feeds:@{plan->stageInput: scratchData}
+                                            targetOperations:nil
+                                           resultsDictionary:@{plan->stageOutput: outputData}
+                                         executionDescriptor:nil];
+                        }
+                    }
                 }
             }
         } @catch (NSException *exception) {
