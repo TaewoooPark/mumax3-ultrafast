@@ -144,6 +144,16 @@ inline void atomicFmaxabs(device float* address, float value) {
 // CUDA's reduction uses implicit warp lockstep for its last 32 lanes. Metal
 // makes no equivalent guarantee, so every tree level has an explicit barrier.
 // Current MuMax3 callers use a power-of-two group no larger than 512.
+//
+// Determinism: CUDA MuMax3 combines the per-threadgroup partials with a single
+// atomic into one accumulator, so the float addition order depends on GPU
+// scheduling and the result varies run to run in the last bits. relax() is
+// documented to iterate "until energy reaches the numerical noise floor", so
+// that jitter decides its stopping iteration and makes the relaxed state
+// depend on scheduling. Each threadgroup therefore owns slot blockIdx.x and
+// the host combines the slots in fixed index order (see cuda/reduce.go). The
+// intra-threadgroup tree is untouched, so every partial is bit-identical to
+// the CUDA reduction; only the cross-threadgroup order becomes reproducible.
 #define reduce(load, op, atomicOp)                                           \
     threadgroup float sdata[REDUCE_BLOCKSIZE];                              \
     uint tid = threadIdx.x;                                                 \
@@ -163,7 +173,7 @@ inline void atomicFmaxabs(device float* address, float value) {
         threadgroup_barrier(mem_flags::mem_threadgroup);                    \
     }                                                                       \
     if (tid == 0) {                                                         \
-        atomicOp(dst, sdata[0]);                                            \
+        atomicOp(dst + blockIdx.x, sdata[0]);                               \
     }
 
 // -----------------------------------------------------------------------------
