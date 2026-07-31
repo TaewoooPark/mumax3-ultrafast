@@ -817,3 +817,90 @@ buffer나 ICB처럼 **간접 접근**에 효과가 있는 기구여서 이 코�
 **즉 현재 구현은 이 하드웨어에서 MPSGraph로 도달 가능한 지점에 가깝다.** 추가 이득은
 Metal 4(macOS 26 필요)나 알고리즘 자체 교체(FMM/H-matrix 같은 O(N) demag)에서 와야 한다.
 
+---
+
+## 10. 정정: 마이크로벤치 동기화 버그와 VkFFT 판정 역전
+
+사용자가 "메모리 서빙이 많아서 결과가 왜곡됐을 수 있다"고 지적해 재측정했다. 장비는 실제로
+압박 상태였다(**스왑 13.7 GB / 15.4 GB 사용**, pageout 4.3M). 그런데 더 중요한 원인이 따로 있었다.
+
+### 10.1 버그: MPSCommandBuffer를 잘못 기다렸다
+
+MPSGraph 마이크로벤치들이 이 패턴을 썼다:
+
+```objc
+MPSCommandBuffer *m = [MPSCommandBuffer commandBufferWithCommandBuffer:cb];
+[graph encodeToCommandBuffer:m ...];
+[m commit];
+[cb waitUntilCompleted];      // <-- 틀렸다
+```
+
+**MPSGraph는 내부적으로 command buffer를 교체할 수 있다**(commitAndContinue). 그러면 내가 만든
+`cb`는 일찍 완료되고 나머지 작업은 새 buffer에서 계속되므로, `[cb waitUntilCompleted]`가
+**작업 완료 전에 리턴**한다. 즉 MPSGraph 쪽 시간이 과소측정됐다.
+
+증거: 2048²에서 slope가 **-146 µs**(음수)로 나왔다. t40 < t8은 물리적으로 불가능하므로 계측 붕괴다.
+
+수정: 같은 serial queue에 빈 command buffer를 하나 더 넣고 그걸 기다린다.
+
+```objc
+[m commit];
+id<MTLCommandBuffer> fence = [q commandBuffer];
+[fence commit]; [fence waitUntilCompleted];
+```
+
+### 10.2 결과: VkFFT 판정이 뒤집혔다
+
+한 프로세스에서 **두 구현을 교차 실행**하고 동기화를 고쳐 재측정:
+
+| padded | MPSGraph 분리 | VkFFT in-place | 정정된 판정 |
+|---|---|---|---|
+| 512² | 49.73 µs | **36.03 µs** | **VkFFT 1.38× 빠름** |
+| 1024² | 167.86 µs | **138.35 µs** | **VkFFT 1.21× 빠름** |
+| 2048² | **832.84 µs** | 1024.16 µs | MPSGraph 1.23× 빠름 |
+
+7절의 "모든 크기에서 현재 경로가 1.39~1.55× 빠름"은 **틀렸다.** 그 비교는 (a) 서로 다른
+프로세스·다른 시점의 수치를 맞대었고 (b) MPSGraph 쪽이 위 버그로 과소측정된 값이었다.
+**mesh 512² 이하(padded 1024² 이하)에서는 VkFFT가 더 빠르다.**
+
+7절의 "축별 분리가 결합형 대비 2.8~3.1×"라는 수치도 같은 버그의 영향을 받았으므로 신뢰할 수 없다.
+
+### 10.3 반영된 코드는 안전하다
+
+다행히 **shipped 코드의 판단은 별도 계측기로 검증돼 있었다.** 축별 분리(`0edf1de6`)는
+마이크로벤치가 아니라 **실제 mumax3 demag 벤치마크**(프로세스 격리, `cuda.Sync()` 전체 드레인)로
+채택했고, 그 계측기는 이 버그의 영향을 받지 않는다. 지금 재측정해도 여전히 이득이다:
+
+| mesh (padded) | 분리 없음 | 분리 | |
+|---|---|---|---|
+| 256² (512²) | 561.8 µs/eval | 521.3 µs/eval | 1.08× |
+| 512² (1024²) | 2187.4 µs/eval | 2099.7 µs/eval | 1.04× |
+
+이전에 기록한 1.23×/1.13×보다 작지만 방향은 같다(머신 상태 차이). **회귀는 없다.**
+
+### 10.4 암묵적 dealiasing은 그대로 기각
+
+같은 버그가 있었지만 이 경우엔 결론이 바뀌지 않는다. 두 arm 모두 MPSGraph인데 암묵적 arm이
+encode를 2개 쓰므로 **과소측정을 더 많이 받아 유리하게 나왔던** 쪽이다. 수정 후:
+
+| N (padded) | 현재 | 암묵적 | |
+|---|---|---|---|
+| 512 (1024) | 34.34 µs | 82.36 µs | **0.42×** |
+| 1024 (2048) | 383.46 µs | 637.84 µs | **0.60×** |
+
+오히려 더 나빠졌다. 기각 유지.
+
+### 10.5 남은 판단
+
+VkFFT는 **mesh 512² 이하에서 FFT를 1.21~1.38× 빠르게 한다.** FFT가 demag의 약 55%,
+demag가 step의 약 65%이므로 그 구간에서 end-to-end 약 1.09× 여지가 있다. 공식 벤치마크 지점
+(mesh 2048², padded 4096²)은 MPSGraph가 이기는 쪽이므로 **크기별 게이팅**이 필요하다.
+
+통합 실현성은 확인했다: VkFFT TU가 **`-fobjc-arc`로도 컴파일된다**(metal-cpp는 순수 C++라
+ARC가 건드리지 않음). 따라서 별도 Go 패키지 없이 기존 `cuda/metal/fft`에 넣을 수 있다.
+demag 버퍼는 `NewSlice`로 독립 할당되므로 offset 0이고, `specifyOffsetsAtLaunch`
+codegen 버그를 우회할 수 있다.
+
+**교훈**: 마이크로벤치는 두 번 나를 속였다(threadgroup 융합의 커맨드버퍼 지연, 여기의 MPSGraph
+동기화). 채택 판단은 **실제 mumax3 계측기로만** 해야 한다.
+
