@@ -8,7 +8,7 @@ Silicon.**
 Upstream [mumax³](https://github.com/mumax/3) is built around NVIDIA CUDA,
 which is unavailable on current Macs. This fork replaces that GPU execution
 layer with a native Metal implementation, so an Apple-silicon Mac can run
-ordinary `.mx3` simulations locally—without an NVIDIA GPU, CUDA, a virtual
+ordinary `.mx3` simulations locally without an NVIDIA GPU, CUDA, a virtual
 machine, or a remote Linux host.
 
 The port changes the hardware backend, not the physical model. The `.mx3`
@@ -133,15 +133,14 @@ Random123, Go, SVGo, and Freetype-Go are collected in the
 
 ## Creator
 
-**Taewoo Park** is an undergraduate physics student at the Korea Advanced
-Institute of Science and Technology (KAIST). Since October 2025, he has
-conducted experimental spintronics research on magnetic domain-wall motion and
-neuromorphic-computing applications at the
+I am **Taewoo Park**, and I am an undergraduate physics student at the Korea
+Advanced Institute of Science and Technology (KAIST). Since October 2025, I
+have conducted experimental spintronics research on magnetic domain wall motion
+and neuromorphic computing applications at the
 [KAIST Ultrafast Spin Dynamics Laboratory (USDL)](https://spintronics.kaist.ac.kr/),
-led by **Prof. Kab-Jin Kim**. Previously, from June 2023 to March 2024, he
-studied domain-wall motion through theoretical modeling and micromagnetic
-simulation in the KAIST Quantum Spin Dynamics Laboratory under **Prof. Se-Kwon
-Kim**.
+led by **Professor Kab Jin Kim**. From June 2023 through March 2024, I studied
+domain wall motion through theoretical modeling and micromagnetic simulation in
+the KAIST Quantum Spin Dynamics Laboratory under **Professor Se Kwon Kim**.
 
 <a href="https://taewoopark.com"><img src="https://img.shields.io/badge/-taewoopark.com-000000?style=for-the-badge&logo=safari&logoColor=white" alt="Personal site"></a>
 <a href="mailto:ptw151125@kaist.ac.kr"><img src="https://img.shields.io/badge/-Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"></a>
