@@ -278,11 +278,15 @@ def metal_argument_type(c_type: str) -> str:
 
 def metal_signature(kernel: Kernel, builtins: tuple[str, ...] = None) -> str:
     if builtins is None:
+        # The reduction macro also collapses across SIMD lanes for the
+        # maximum reductions, so it needs the lane and group indices.
         builtins = (
             "    uint3 blockIdx [[threadgroup_position_in_grid]],",
             "    uint3 threadIdx [[thread_position_in_threadgroup]],",
             "    uint3 blockDim [[threads_per_threadgroup]],",
-            "    uint3 gridDim [[threadgroups_per_grid]]) {",
+            "    uint3 gridDim [[threadgroups_per_grid]],",
+            "    uint mumaxSimdLane [[thread_index_in_simdgroup]],",
+            "    uint mumaxSimdGroup [[simdgroup_index_in_threadgroup]]) {",
         )
     lines = [f"kernel void {kernel.name}("]
     for argument in kernel.arguments:
