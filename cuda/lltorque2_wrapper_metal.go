@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_lltorque2 caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_lltorque2 = metal.NewKernel("lltorque2")
+
 // k_lltorque2_async dispatches the Metal implementation of cuda/lltorque2.cu.
 func k_lltorque2_async(
 	tx unsafe.Pointer,
@@ -91,9 +94,10 @@ func k_lltorque2_async(
 		mumaxPointerMask |= uint32(1) << 9
 	}
 
-	metal.MustLaunch("lltorque2", metal.GridConfig{
+	kernel_lltorque2.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(tx),
 		metal.BufferArg(ty),

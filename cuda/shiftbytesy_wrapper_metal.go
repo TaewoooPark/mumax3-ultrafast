@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_shiftbytesy caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_shiftbytesy = metal.NewKernel("shiftbytesy")
+
 // k_shiftbytesy_async dispatches the Metal implementation of cuda/shiftbytesy.cu.
 func k_shiftbytesy_async(
 	dst unsafe.Pointer,
@@ -33,17 +36,10 @@ func k_shiftbytesy_async(
 		panic("cuda/metal: kernel shiftbytesy argument src must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if src != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-
-	metal.MustLaunch("shiftbytesy", metal.GridConfig{
+	kernel_shiftbytesy.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.BufferArg(src),
@@ -52,7 +48,6 @@ func k_shiftbytesy_async(
 		metal.I32(Nz),
 		metal.I32(shy),
 		metal.U8(clamp),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

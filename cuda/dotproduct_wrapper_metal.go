@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_dotproduct caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_dotproduct = metal.NewKernel("dotproduct")
+
 // k_dotproduct_async dispatches the Metal implementation of cuda/dotproduct.cu.
 func k_dotproduct_async(
 	dst unsafe.Pointer,
@@ -50,32 +53,10 @@ func k_dotproduct_async(
 		panic("cuda/metal: kernel dotproduct argument bz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if ax != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if ay != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if az != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if bx != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-	if by != nil {
-		mumaxPointerMask |= uint32(1) << 6
-	}
-	if bz != nil {
-		mumaxPointerMask |= uint32(1) << 7
-	}
-
-	metal.MustLaunch("dotproduct", metal.GridConfig{
+	kernel_dotproduct.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.F32(prefactor),
@@ -86,7 +67,6 @@ func k_dotproduct_async(
 		metal.BufferArg(by),
 		metal.BufferArg(bz),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_reducemaxdiff caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_reducemaxdiff = metal.NewKernel("reducemaxdiff")
+
 // k_reducemaxdiff_async dispatches the Metal implementation of cuda/reducemaxdiff.cu.
 func k_reducemaxdiff_async(
 	src1 unsafe.Pointer,
@@ -34,27 +37,16 @@ func k_reducemaxdiff_async(
 		panic("cuda/metal: kernel reducemaxdiff argument dst must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if src1 != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if src2 != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-
-	metal.MustLaunch("reducemaxdiff", metal.GridConfig{
+	kernel_reducemaxdiff.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(src1),
 		metal.BufferArg(src2),
 		metal.BufferArg(dst),
 		metal.F32(initVal),
 		metal.I32(n),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

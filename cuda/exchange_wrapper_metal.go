@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_addexchange caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_addexchange = metal.NewKernel("addexchange")
+
 // k_addexchange_async dispatches the Metal implementation of cuda/exchange.cu.
 func k_addexchange_async(
 	Bx unsafe.Pointer,
@@ -90,9 +93,10 @@ func k_addexchange_async(
 		mumaxPointerMask |= uint32(1) << 9
 	}
 
-	metal.MustLaunch("addexchange", metal.GridConfig{
+	kernel_addexchange.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(Bx),
 		metal.BufferArg(By),

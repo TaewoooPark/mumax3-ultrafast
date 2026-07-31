@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_kernmulRSymm2Dxy caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_kernmulRSymm2Dxy = metal.NewKernel("kernmulRSymm2Dxy")
+
 // k_kernmulRSymm2Dxy_async dispatches the Metal implementation of cuda/kernmulrsymm2dxy.cu.
 func k_kernmulRSymm2Dxy_async(
 	fftMx unsafe.Pointer,
@@ -42,26 +45,10 @@ func k_kernmulRSymm2Dxy_async(
 		panic("cuda/metal: kernel kernmulRSymm2Dxy argument fftKxy must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if fftMx != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if fftMy != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if fftKxx != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if fftKyy != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if fftKxy != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-
-	metal.MustLaunch("kernmulRSymm2Dxy", metal.GridConfig{
+	kernel_kernmulRSymm2Dxy.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(fftMx),
 		metal.BufferArg(fftMy),
@@ -70,7 +57,6 @@ func k_kernmulRSymm2Dxy_async(
 		metal.BufferArg(fftKxy),
 		metal.I32(Nx),
 		metal.I32(Ny),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

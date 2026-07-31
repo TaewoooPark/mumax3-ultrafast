@@ -13,6 +13,7 @@
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <vector>
 
 namespace {
 
@@ -30,6 +31,15 @@ id<MTLBuffer> zero_buffer = nil;
 NSMutableArray<id<MTLLibrary>> *libraries = nil;
 NSMutableDictionary<NSString *, id<MTLComputePipelineState>> *pipelines = nil;
 NSMutableArray<id<MTLCommandBuffer>> *submitted_command_buffers = nil;
+/*
+ * Dense kernel handles. The dispatch path indexes this vector instead of
+ * building an NSString and hashing the pipeline dictionary on every launch,
+ * which matters because a single RK45 step issues over a hundred dispatches.
+ * Entries are CFBridgingRetain'd pipelines released by mr_shutdown.
+ */
+std::vector<void *> kernel_pipelines;
+std::vector<std::string> kernel_names;
+std::map<std::string, uint32_t> kernel_handle_by_name;
 std::map<uintptr_t, Allocation> allocations;
 uint64_t allocated_bytes = 0;
 uint64_t peak_allocated_bytes = 0;
@@ -328,6 +338,166 @@ id<MTLComputePipelineState> pipelineUnlocked(const char *name,
     return pipeline;
 }
 
+/*
+ * Encode one dispatch. Shared by the name-based and handle-based entry points
+ * so both keep identical argument-binding and validation behaviour. The caller
+ * holds runtime_mutex and has already resolved the pipeline.
+ */
+int encodeDispatchUnlocked(id<MTLComputePipelineState> pipeline,
+                           const char *label,
+                           mr_grid grid,
+                           const mr_arg *args,
+                           size_t arg_count,
+                           std::string &error) {
+    uint64_t block_threads = static_cast<uint64_t>(grid.block_x) *
+                             grid.block_y * grid.block_z;
+    MTLSize device_limit = device.maxThreadsPerThreadgroup;
+    if (grid.block_x > device_limit.width ||
+        grid.block_y > device_limit.height ||
+        grid.block_z > device_limit.depth ||
+        block_threads > pipeline.maxTotalThreadsPerThreadgroup) {
+        std::ostringstream stream;
+        stream << "threadgroup (" << grid.block_x << ", " << grid.block_y
+               << ", " << grid.block_z
+               << ") exceeds the device or pipeline limit of "
+               << pipeline.maxTotalThreadsPerThreadgroup << " total threads";
+        error = stream.str();
+        return MR_ERROR_INVALID_ARGUMENT;
+    }
+
+    MTLSize threads_per_threadgroup =
+        MTLSizeMake(grid.block_x, grid.block_y, grid.block_z);
+    /*
+     * threads_* is the exact thread count when the caller supplies it, which
+     * lets Metal build a partial trailing threadgroup and lets the kernel drop
+     * its bounds guard. Zero means "derive from grid * block" for the CUDA
+     * launch geometry that still rounds up.
+     */
+    MTLSize threads_per_grid =
+        MTLSizeMake(grid.threads_x != 0
+                        ? grid.threads_x
+                        : static_cast<NSUInteger>(grid.grid_x) * grid.block_x,
+                    grid.threads_y != 0
+                        ? grid.threads_y
+                        : static_cast<NSUInteger>(grid.grid_y) * grid.block_y,
+                    grid.threads_z != 0
+                        ? grid.threads_z
+                        : static_cast<NSUInteger>(grid.grid_z) * grid.block_z);
+
+    id<MTLCommandBuffer> command_buffer = commandBufferUnlocked(error);
+    if (command_buffer == nil) {
+        return MR_ERROR_COMMAND;
+    }
+    id<MTLComputeCommandEncoder> encoder =
+        [command_buffer computeCommandEncoder];
+    if (encoder == nil) {
+        error = "failed to create a Metal compute encoder";
+        return MR_ERROR_COMMAND;
+    }
+#if defined(MUMAX3_METAL_LABELS)
+    if (label != nullptr) {
+        encoder.label = [NSString stringWithUTF8String:label];
+    }
+#else
+    (void)label;
+#endif
+    [encoder setComputePipelineState:pipeline];
+
+    for (size_t index = 0; index < arg_count; ++index) {
+        const mr_arg &argument = args[index];
+        switch (argument.kind) {
+            case MR_ARG_BUFFER: {
+                id<MTLBuffer> buffer = nil;
+                size_t offset = 0;
+                size_t available = 0;
+                int status = resolveBufferUnlocked(argument.buffer,
+                                                   argument.size,
+                                                   buffer,
+                                                   offset,
+                                                   available,
+                                                   error);
+                if (status != MR_SUCCESS) {
+                    [encoder endEncoding];
+                    std::ostringstream stream;
+                    stream << "argument " << index << ": " << error;
+                    error = stream.str();
+                    return status;
+                }
+                [encoder setBuffer:buffer offset:offset atIndex:index];
+                break;
+            }
+            case MR_ARG_FLOAT32:
+            case MR_ARG_INT32:
+            case MR_ARG_UINT32:
+                if (argument.size != 4) {
+                    [encoder endEncoding];
+                    error = "32-bit scalar argument has an invalid size";
+                    return MR_ERROR_INVALID_ARGUMENT;
+                }
+                [encoder setBytes:&argument.bits length:4 atIndex:index];
+                break;
+            case MR_ARG_UINT8:
+                if (argument.size != 1) {
+                    [encoder endEncoding];
+                    error = "8-bit scalar argument has an invalid size";
+                    return MR_ERROR_INVALID_ARGUMENT;
+                }
+                [encoder setBytes:&argument.bits length:1 atIndex:index];
+                break;
+            case MR_ARG_FLOAT64:
+            case MR_ARG_INT64:
+            case MR_ARG_UINT64:
+                if (argument.size != 8) {
+                    [encoder endEncoding];
+                    error = "64-bit scalar argument has an invalid size";
+                    return MR_ERROR_INVALID_ARGUMENT;
+                }
+                [encoder setBytes:&argument.bits length:8 atIndex:index];
+                break;
+            default:
+                [encoder endEncoding];
+                error = "kernel argument has an unknown kind";
+                return MR_ERROR_INVALID_ARGUMENT;
+        }
+    }
+
+    [encoder dispatchThreads:threads_per_grid
+        threadsPerThreadgroup:threads_per_threadgroup];
+    [encoder endEncoding];
+    return operationEncodedUnlocked(error);
+}
+
+int validateLaunchRequest(mr_grid grid,
+                          const mr_arg *args,
+                          size_t arg_count,
+                          bool &empty,
+                          std::string &error) {
+    empty = false;
+    if (arg_count > 0 && args == nullptr) {
+        error = "kernel argument array is null";
+        return MR_ERROR_INVALID_ARGUMENT;
+    }
+    if (arg_count > max_buffer_arguments) {
+        error = "kernel uses more than 31 Metal buffer-table arguments";
+        return MR_ERROR_INVALID_ARGUMENT;
+    }
+    if (grid.block_x == 0 || grid.block_y == 0 || grid.block_z == 0) {
+        error = "threadgroup dimensions must be non-zero";
+        return MR_ERROR_INVALID_ARGUMENT;
+    }
+    if (grid.threads_x != 0 || grid.threads_y != 0 || grid.threads_z != 0) {
+        if (grid.threads_x == 0 || grid.threads_y == 0 ||
+            grid.threads_z == 0) {
+            empty = true;
+        }
+        return MR_SUCCESS;
+    }
+    if (grid.grid_x == 0 || grid.grid_y == 0 || grid.grid_z == 0) {
+        empty = true;
+    }
+    return MR_SUCCESS;
+}
+
 bool rangesOverlap(size_t first_offset,
                    size_t second_offset,
                    size_t length) {
@@ -375,6 +545,13 @@ int mr_shutdown(char **error_message) {
         allocations.clear();
         allocated_bytes = 0;
         peak_allocated_bytes = 0;
+        for (void *retained : kernel_pipelines) {
+            id released = CFBridgingRelease(retained);
+            (void)released;
+        }
+        kernel_pipelines.clear();
+        kernel_names.clear();
+        kernel_handle_by_name.clear();
         [pipelines removeAllObjects];
         [libraries removeAllObjects];
         pipelines = nil;
@@ -892,29 +1069,59 @@ int mr_launch(const char *name,
                         error_message,
                         "kernel name is empty");
         }
-        if (arg_count > 0 && args == nullptr) {
-            return fail(MR_ERROR_INVALID_ARGUMENT,
-                        error_message,
-                        "kernel argument array is null");
+        std::string error;
+        bool empty = false;
+        int status = validateLaunchRequest(grid, args, arg_count, empty, error);
+        if (status != MR_SUCCESS) {
+            return fail(status, error_message, error);
         }
-        if (arg_count > max_buffer_arguments) {
-            return fail(MR_ERROR_INVALID_ARGUMENT,
-                        error_message,
-                        "kernel uses more than 31 Metal buffer-table arguments");
-        }
-        if (grid.block_x == 0 || grid.block_y == 0 || grid.block_z == 0) {
-            return fail(MR_ERROR_INVALID_ARGUMENT,
-                        error_message,
-                        "threadgroup dimensions must be non-zero");
-        }
-        if (grid.grid_x == 0 || grid.grid_y == 0 || grid.grid_z == 0) {
+        if (empty) {
             return MR_SUCCESS;
         }
 
         std::lock_guard<std::mutex> lock(runtime_mutex);
+        status = checkInitialized(error_message);
+        if (status != MR_SUCCESS) {
+            return status;
+        }
+
+        id<MTLComputePipelineState> pipeline =
+            pipelineUnlocked(name, status, error);
+        if (pipeline == nil) {
+            return fail(status, error_message, error);
+        }
+
+        status = encodeDispatchUnlocked(
+            pipeline, name, grid, args, arg_count, error);
+        if (status != MR_SUCCESS) {
+            std::ostringstream stream;
+            stream << "kernel '" << name << "': " << error;
+            return fail(status, error_message, stream.str());
+        }
+        return MR_SUCCESS;
+    }
+}
+
+int mr_register_kernel(const char *name,
+                       uint32_t *handle,
+                       char **error_message) {
+    @autoreleasepool {
+        if (name == nullptr || name[0] == '\0' || handle == nullptr) {
+            return fail(MR_ERROR_INVALID_ARGUMENT,
+                        error_message,
+                        "kernel registration requires a name and an output");
+        }
+        std::lock_guard<std::mutex> lock(runtime_mutex);
         int status = checkInitialized(error_message);
         if (status != MR_SUCCESS) {
             return status;
+        }
+
+        const std::string key(name);
+        auto existing = kernel_handle_by_name.find(key);
+        if (existing != kernel_handle_by_name.end()) {
+            *handle = existing->second;
+            return MR_SUCCESS;
         }
 
         std::string error;
@@ -923,124 +1130,63 @@ int mr_launch(const char *name,
         if (pipeline == nil) {
             return fail(status, error_message, error);
         }
+        if (kernel_pipelines.size() >=
+            std::numeric_limits<uint32_t>::max()) {
+            return fail(MR_ERROR_INTERNAL,
+                        error_message,
+                        "too many registered Metal kernels");
+        }
+        const uint32_t assigned =
+            static_cast<uint32_t>(kernel_pipelines.size());
+        kernel_pipelines.push_back((__bridge_retained void *)pipeline);
+        kernel_names.push_back(key);
+        kernel_handle_by_name.emplace(key, assigned);
+        *handle = assigned;
+        return MR_SUCCESS;
+    }
+}
 
-        uint64_t block_xy =
-            static_cast<uint64_t>(grid.block_x) * grid.block_y;
-        uint64_t block_threads = block_xy * grid.block_z;
-        MTLSize device_limit = device.maxThreadsPerThreadgroup;
-        if (grid.block_x > device_limit.width ||
-            grid.block_y > device_limit.height ||
-            grid.block_z > device_limit.depth ||
-            block_threads > pipeline.maxTotalThreadsPerThreadgroup) {
+int mr_launch_handle(uint32_t handle,
+                     mr_grid grid,
+                     const mr_arg *args,
+                     size_t arg_count,
+                     char **error_message) {
+    @autoreleasepool {
+        std::string error;
+        bool empty = false;
+        int status = validateLaunchRequest(grid, args, arg_count, empty, error);
+        if (status != MR_SUCCESS) {
+            return fail(status, error_message, error);
+        }
+        if (empty) {
+            return MR_SUCCESS;
+        }
+
+        std::lock_guard<std::mutex> lock(runtime_mutex);
+        status = checkInitialized(error_message);
+        if (status != MR_SUCCESS) {
+            return status;
+        }
+        if (handle >= kernel_pipelines.size()) {
+            return fail(MR_ERROR_NOT_FOUND,
+                        error_message,
+                        "Metal kernel handle is not registered");
+        }
+
+        id<MTLComputePipelineState> pipeline =
+            (__bridge id<MTLComputePipelineState>)kernel_pipelines[handle];
+        status = encodeDispatchUnlocked(pipeline,
+                                        kernel_names[handle].c_str(),
+                                        grid,
+                                        args,
+                                        arg_count,
+                                        error);
+        if (status != MR_SUCCESS) {
             std::ostringstream stream;
-            stream << "threadgroup (" << grid.block_x << ", "
-                   << grid.block_y << ", " << grid.block_z
-                   << ") exceeds the device or pipeline limit of "
-                   << pipeline.maxTotalThreadsPerThreadgroup
-                   << " total threads";
-            return fail(MR_ERROR_INVALID_ARGUMENT,
-                        error_message,
-                        stream.str());
+            stream << "kernel '" << kernel_names[handle] << "': " << error;
+            return fail(status, error_message, stream.str());
         }
-
-        MTLSize threads_per_threadgroup =
-            MTLSizeMake(grid.block_x, grid.block_y, grid.block_z);
-        MTLSize threads_per_grid =
-            MTLSizeMake(static_cast<NSUInteger>(grid.grid_x) * grid.block_x,
-                        static_cast<NSUInteger>(grid.grid_y) * grid.block_y,
-                        static_cast<NSUInteger>(grid.grid_z) * grid.block_z);
-
-        id<MTLCommandBuffer> command_buffer = commandBufferUnlocked(error);
-        if (command_buffer == nil) {
-            return fail(MR_ERROR_COMMAND, error_message, error);
-        }
-        id<MTLComputeCommandEncoder> encoder =
-            [command_buffer computeCommandEncoder];
-        if (encoder == nil) {
-            return fail(MR_ERROR_COMMAND,
-                        error_message,
-                        "failed to create a Metal compute encoder");
-        }
-        encoder.label = [NSString stringWithUTF8String:name];
-        [encoder setComputePipelineState:pipeline];
-
-        for (size_t index = 0; index < arg_count; ++index) {
-            const mr_arg &argument = args[index];
-            switch (argument.kind) {
-                case MR_ARG_BUFFER: {
-                    id<MTLBuffer> buffer = nil;
-                    size_t offset = 0;
-                    size_t available = 0;
-                    status = resolveBufferUnlocked(argument.buffer,
-                                                   argument.size,
-                                                   buffer,
-                                                   offset,
-                                                   available,
-                                                   error);
-                    if (status != MR_SUCCESS) {
-                        [encoder endEncoding];
-                        std::ostringstream stream;
-                        stream << "kernel '" << name << "' argument "
-                               << index << ": " << error;
-                        return fail(status, error_message, stream.str());
-                    }
-                    [encoder setBuffer:buffer
-                                offset:offset
-                               atIndex:index];
-                    break;
-                }
-                case MR_ARG_FLOAT32:
-                case MR_ARG_INT32:
-                case MR_ARG_UINT32:
-                    if (argument.size != 4) {
-                        [encoder endEncoding];
-                        return fail(MR_ERROR_INVALID_ARGUMENT,
-                                    error_message,
-                                    "32-bit scalar argument has an invalid size");
-                    }
-                    [encoder setBytes:&argument.bits
-                               length:4
-                              atIndex:index];
-                    break;
-                case MR_ARG_UINT8:
-                    if (argument.size != 1) {
-                        [encoder endEncoding];
-                        return fail(MR_ERROR_INVALID_ARGUMENT,
-                                    error_message,
-                                    "8-bit scalar argument has an invalid size");
-                    }
-                    [encoder setBytes:&argument.bits
-                               length:1
-                              atIndex:index];
-                    break;
-                case MR_ARG_FLOAT64:
-                case MR_ARG_INT64:
-                case MR_ARG_UINT64:
-                    if (argument.size != 8) {
-                        [encoder endEncoding];
-                        return fail(MR_ERROR_INVALID_ARGUMENT,
-                                    error_message,
-                                    "64-bit scalar argument has an invalid size");
-                    }
-                    [encoder setBytes:&argument.bits
-                               length:8
-                              atIndex:index];
-                    break;
-                default:
-                    [encoder endEncoding];
-                    return fail(MR_ERROR_INVALID_ARGUMENT,
-                                error_message,
-                                "kernel argument has an unknown kind");
-            }
-        }
-
-        [encoder dispatchThreads:threads_per_grid
-           threadsPerThreadgroup:threads_per_threadgroup];
-        [encoder endEncoding];
-        status = operationEncodedUnlocked(error);
-        return status == MR_SUCCESS
-                   ? MR_SUCCESS
-                   : fail(status, error_message, error);
+        return MR_SUCCESS;
     }
 }
 

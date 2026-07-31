@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_solidanglefourierfield caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_solidanglefourierfield = metal.NewKernel("solidanglefourierfield")
+
 // k_solidanglefourierfield_async dispatches the Metal implementation of cuda/hopfindex-solidangle-fourier-field.cu.
 func k_solidanglefourierfield_async(
 	fftFx_partial unsafe.Pointer,
@@ -47,29 +50,10 @@ func k_solidanglefourierfield_async(
 		panic("cuda/metal: kernel solidanglefourierfield argument fftFz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if fftFx_partial != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if fftFy_partial != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if fftFz_partial != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if fftFx != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if fftFy != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if fftFz != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-
-	metal.MustLaunch("solidanglefourierfield", metal.GridConfig{
+	kernel_solidanglefourierfield.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(fftFx_partial),
 		metal.BufferArg(fftFy_partial),
@@ -80,7 +64,6 @@ func k_solidanglefourierfield_async(
 		metal.I32(Nx),
 		metal.I32(Ny),
 		metal.I32(Nz),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_reducemaxvecdiff2 caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_reducemaxvecdiff2 = metal.NewKernel("reducemaxvecdiff2")
+
 // k_reducemaxvecdiff2_async dispatches the Metal implementation of cuda/reducemaxvecdiff2.cu.
 func k_reducemaxvecdiff2_async(
 	x1 unsafe.Pointer,
@@ -50,32 +53,10 @@ func k_reducemaxvecdiff2_async(
 		panic("cuda/metal: kernel reducemaxvecdiff2 argument dst must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if x1 != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if y1 != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if z1 != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if x2 != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if y2 != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if z2 != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 6
-	}
-
-	metal.MustLaunch("reducemaxvecdiff2", metal.GridConfig{
+	kernel_reducemaxvecdiff2.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(x1),
 		metal.BufferArg(y1),
@@ -86,7 +67,6 @@ func k_reducemaxvecdiff2_async(
 		metal.BufferArg(dst),
 		metal.F32(initVal),
 		metal.I32(n),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

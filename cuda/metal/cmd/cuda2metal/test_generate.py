@@ -135,11 +135,35 @@ example(float* __restrict__ output, uint8_t* regions,
             "metal.F32(scale)",
             "metal.I32(count)",
             "metal.U8(flags)",
-            "metal.U32(mumaxPointerMask)",
             "kernel example argument output must not be nil",
             "kernel example argument regions must not be nil",
         ):
             self.assertIn(required, wrapper)
+        # No argument is a NULL-sentinel pointer, so binding the presence mask
+        # would cost a setBytes call and a buffer-table slot for nothing.
+        self.assertNotIn("mumaxPointerMask", wrapper)
+        self.assertIn("var kernel_example = metal.NewKernel(\"example\")", wrapper)
+        self.assertIn("kernel_example.MustLaunch(", wrapper)
+
+    def test_wrapper_binds_mask_only_for_nullable_pointers(self) -> None:
+        source = """extern "C" __global__ void
+opt(float* __restrict__ dst, float* vol, int N) {
+    int i = blockIdx.x * blockDim.x + threadIdx.x;
+    if (i < N) { dst[i] = (vol == NULL) ? 1.0f : vol[i]; }
+}"""
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "opt.cu"
+            path.write_text(source, encoding="utf-8")
+            kernel = generator.parse_kernel(path)
+        self.assertTrue(kernel.uses_pointer_mask)
+        wrapper = generator.generate_wrapper(kernel)
+        self.assertIn("metal.U32(mumaxPointerMask)", wrapper)
+        self.assertIn("mumaxPointerMask |= uint32(1) << 1", wrapper)
+        signature = generator.metal_signature(kernel)
+        self.assertIn(
+            f"constant uint& mumaxPointerMask [[buffer({len(kernel.arguments)})]]",
+            signature,
+        )
 
     def test_unsupported_signature_fails_closed(self) -> None:
         source = (
@@ -180,9 +204,12 @@ extern "C" __global__ void example(float* dst, int N) {
         sha256 = re.compile(r"^[0-9a-f]{64}$")
         for kernel in document["kernels"]:
             self.assertRegex(kernel["source_sha256"], sha256)
+            nullable_argument = any(
+                argument["nullable"] for argument in kernel["arguments"]
+            )
             self.assertEqual(
                 kernel["pointer_mask_buffer_index"],
-                len(kernel["arguments"]),
+                len(kernel["arguments"]) if nullable_argument else None,
             )
 
     def test_nullable_pointer_semantics_use_presence_mask(self) -> None:

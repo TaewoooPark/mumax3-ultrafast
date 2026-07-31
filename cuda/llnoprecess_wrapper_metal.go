@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_llnoprecess caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_llnoprecess = metal.NewKernel("llnoprecess")
+
 // k_llnoprecess_async dispatches the Metal implementation of cuda/llnoprecess.cu.
 func k_llnoprecess_async(
 	tx unsafe.Pointer,
@@ -57,38 +60,10 @@ func k_llnoprecess_async(
 		panic("cuda/metal: kernel llnoprecess argument hz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if tx != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if ty != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if tz != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if mx != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if my != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if mz != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-	if hx != nil {
-		mumaxPointerMask |= uint32(1) << 6
-	}
-	if hy != nil {
-		mumaxPointerMask |= uint32(1) << 7
-	}
-	if hz != nil {
-		mumaxPointerMask |= uint32(1) << 8
-	}
-
-	metal.MustLaunch("llnoprecess", metal.GridConfig{
+	kernel_llnoprecess.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(tx),
 		metal.BufferArg(ty),
@@ -100,7 +75,6 @@ func k_llnoprecess_async(
 		metal.BufferArg(hy),
 		metal.BufferArg(hz),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

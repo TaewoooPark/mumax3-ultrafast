@@ -56,7 +56,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 7,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "392a283b17928b2db7e94f904abcb75c0a8ca31a427dfa307d292518f0d30230"
     },
     {
@@ -205,7 +205,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 8,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "462d64215d96be9df8707b69e5151ea909b85fbf3db900c890689783e7c133e0"
     },
     {
@@ -290,7 +290,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 11,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "c6df94ec7e19b7ba2a5e089bd5b9b30a901d07b1d8246d5d78cf3b73f4bc0b86"
     },
     {
@@ -368,7 +368,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 10,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "58b38653fd88ef0e1a5fce2f272958736259390cc5f086eee0e8a43640c53d20"
     },
     {
@@ -601,7 +601,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "a72829d244caca20fc2d8bb903744570f0c1aadc386e35d3a97468c0013c33ea"
     },
     {
@@ -954,7 +954,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 9,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "225d2c22e33cd734bcef7fe052bb957a4392792b2887d435e4c24e9bc0e49125"
     },
     {
@@ -1159,7 +1159,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 10,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "33586e4d31d5afa6ea9ac16dd592718a03583a42803a70d08bf1fceb5b5f1b9f"
     },
     {
@@ -1265,7 +1265,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 14,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "b38c2ec8dbae1039ea6f7c74d13a0e1b1ff50f18ea206b4aa42e5508df3def65"
     },
     {
@@ -1371,7 +1371,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 14,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "ebd40dca31233fbcbb81f794e4f20d9f2de3bcdf79d17398e7259841cc1dae18"
     },
     {
@@ -1477,7 +1477,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 14,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "72f9386d3bfad3660a74998857f29109cd70f8b12689990f96ba022a0bb76d0c"
     },
     {
@@ -1562,7 +1562,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 11,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "38ed6c4e195521a1a7364b432bb83f7dac1cab6529283dfa524c00da42bec4b6"
     },
     {
@@ -1633,7 +1633,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 9,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "81d77a5298a328f29ad5767a04718ea9c32d811be75b48ed3e5302722ad64300"
     },
     {
@@ -1725,7 +1725,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 12,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "fd29decaaa1deb8c9ad3f62eb524d46a6c442b488c11096b1ce6d00de27dba8e"
     },
     {
@@ -1782,7 +1782,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 7,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "10968bbddad1e724f1d975465323bba30623550070bee5ac7a4f68c78479ad95"
     },
     {
@@ -1818,7 +1818,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "d3d1ac35db99dba5e10ce388339b246b1b363debed9e65ef0b9fffaad6a3143c"
     },
     {
@@ -1875,7 +1875,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 7,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "01c0c15173b5e30fe6293937fb21ce46137532cdb9206b529ad9cdda5cd9603e"
     },
     {
@@ -1911,7 +1911,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "36de5dbcb4660cf75df6a6f6befff808f50c91e86d6f015f62cb262557d61fca"
     },
     {
@@ -2003,7 +2003,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 12,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "f52699cfabb81ce5eec321aeb6a00fa27a37b3f93ebd6666295dd7b007e9909b"
     },
     {
@@ -2081,7 +2081,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 10,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "caff3e22cd975869fefbd9c976e9726cf77329a04176c7669cfe52b5123b0b5f"
     },
     {
@@ -2223,7 +2223,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 6,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "e8a4d282cd4766ed69c053f6801d2f19088fdf9833e3d2c4e260a2716b124719"
     },
     {
@@ -2287,7 +2287,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 8,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "fd4805e5486e9846cd1edd3796abdcff666f9f77707a37a37194f22fbbdc82aa"
     },
     {
@@ -2365,7 +2365,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 10,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "dbbb4448d4fd5a0062ecc6919e313cfc5542df7e0f9795f32a30d4eb15e87f82"
     },
     {
@@ -2457,7 +2457,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 12,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "b823922f8eb5f6f6ad82dd0e202698b584d41cf2041b660ea01ead5e9f3cae39"
     },
     {
@@ -2563,7 +2563,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 14,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "472051fae4ee36afa457cc9f00db297eef4f1cf6599965f632ad6fe00efb239b"
     },
     {
@@ -2683,7 +2683,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 16,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "b9b60abe7a3229016aa0079333b7b6f5f3b768b3303e788fdb84364f7efa79c6"
     },
     {
@@ -3071,7 +3071,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 10,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "4b2fcba2417d8eb54021a1d447c45effeeec352d51ac6c0b1115a602381e6888"
     },
     {
@@ -3156,7 +3156,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 11,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "c8370dc86d367719958337a39fc8962579daaf582399c16f7f235461ecd1783c"
     },
     {
@@ -3192,7 +3192,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "efcee07613c7b01120b0889b466bc5fa3d16bff273ffbdf7f4182b144ac3f49f"
     },
     {
@@ -3285,7 +3285,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 6,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "8ace2046629826531e747f78b6e438becc64777ceb5939f9329256375cb220e8"
     },
     {
@@ -3328,7 +3328,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 5,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "08659e8e6bb6eab72604fdd6c9e046bff457bf76498d82276e22e9e2230380cd"
     },
     {
@@ -3364,7 +3364,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "81a544a3b0261d01f524b53b432ddf68087de6af93450f5e64d9babfb153f4d3"
     },
     {
@@ -3407,7 +3407,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 5,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "51aae93cf6835e6844dbec325ba9ad638075d1e5dc6b73cf0faabc726b918740"
     },
     {
@@ -3478,7 +3478,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 9,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "53f1b3694505a0c548f3ec333a23a9062815e144241211ae01f639f3b29958d6"
     },
     {
@@ -3528,7 +3528,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 6,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "0d5432719d537ca63e69a14fc994e1d539298fa32b05ffee0f3be7673e81c6ed"
     },
     {
@@ -3564,7 +3564,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "6d6fa06e2834c2e607901344205058470f2f106fef9d9513af0630b9e9b2d0cb"
     },
     {
@@ -3600,7 +3600,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "138ac0d72ac53f9f28e7e99e44d3bad594c58cfa38247cbcdc829322a5e3d5f9"
     },
     {
@@ -3664,7 +3664,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 8,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "0aabaec4c4cd24c958619f0dfd6e1f750c29c453c67b10645d0ecb187847cbdb"
     },
     {
@@ -3700,7 +3700,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "e55fd48be2a927f6e81548dee993c0e08e32477e1a53b4e1ee6eadf10be0f08e"
     },
     {
@@ -3743,7 +3743,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 5,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "9ce90a43a5022aab3a8f0d5a2a2ecba8e74b01aede2ffe78a2b78427676f4bf0"
     },
     {
@@ -3828,7 +3828,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 11,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "49800fa5fed124ac0d2ed2ba53b968111f5938d91e26506fe8466f2e1523b47d"
     },
     {
@@ -3885,7 +3885,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 7,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "f27b0c238379ee5f13333c9ea62ab659cd63a5c4b0f7f71f4d72618287a90d05"
     },
     {
@@ -3942,7 +3942,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 7,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "98ebe9a14615e300e6c5e0d4f2e53cd34755857eeb5ae5b2f6e7bac629f2845d"
     },
     {
@@ -4020,7 +4020,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 10,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "6dcd5752c2e950a1a6f8792a3f75075ec6e6b8a5c99f96ff3e401c7a1765ad2b"
     },
     {
@@ -4098,7 +4098,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 10,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "d93f1a580ebeb4ec94f6ed073a21b2fc37dec17281293c0dafaf5b94004ef79e"
     },
     {
@@ -4162,7 +4162,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 8,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "31dd76cd4d4fd99b0b43c3e3f679cf2708eefbbdedff2c9df312d3497bff9ae4"
     },
     {
@@ -4226,7 +4226,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 8,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "9db1f59ba7f1b47e7e2e8ba57602455ef9a03363f3f7cdaf91597f8c232dc237"
     },
     {
@@ -4290,7 +4290,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 8,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "471d278fd7665f62214472238ef42d7d5da5be07443c485105cc4d37eabd39c6"
     },
     {
@@ -4622,7 +4622,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 5,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "058c6848d869154a6cbb1b22402cd8cdca5035f799dc659157b1a9d0ef31cbc9"
     },
     {
@@ -4693,7 +4693,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 9,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "b1f908043e2eea3779ecc860673e2907489c6f8043324efe0bc4697ffa311097"
     },
     {
@@ -4764,7 +4764,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 9,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "98681cb18729a058e659235fe41b85b71bb393f15b36e58812612c7fa74da087"
     },
     {
@@ -4941,7 +4941,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "97832c4d02adb90a00281817717f2a19896a9d55794db011488770918966031d"
     },
     {
@@ -4977,7 +4977,7 @@
           "nullable": false
         }
       ],
-      "pointer_mask_buffer_index": 4,
+      "pointer_mask_buffer_index": null,
       "source_sha256": "588da7f87caff3231abfb73193c46d764caf2299f13cbb8ef0febe23004f8514"
     },
     {

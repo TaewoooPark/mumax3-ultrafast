@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_reducemaxabs caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_reducemaxabs = metal.NewKernel("reducemaxabs")
+
 // k_reducemaxabs_async dispatches the Metal implementation of cuda/reducemaxabs.cu.
 func k_reducemaxabs_async(
 	src unsafe.Pointer,
@@ -30,23 +33,15 @@ func k_reducemaxabs_async(
 		panic("cuda/metal: kernel reducemaxabs argument dst must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if src != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-
-	metal.MustLaunch("reducemaxabs", metal.GridConfig{
+	kernel_reducemaxabs.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(src),
 		metal.BufferArg(dst),
 		metal.F32(initVal),
 		metal.I32(n),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

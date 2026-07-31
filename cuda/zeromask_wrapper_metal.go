@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_zeromask caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_zeromask = metal.NewKernel("zeromask")
+
 // k_zeromask_async dispatches the Metal implementation of cuda/zeromask.cu.
 func k_zeromask_async(
 	dst unsafe.Pointer,
@@ -33,26 +36,15 @@ func k_zeromask_async(
 		panic("cuda/metal: kernel zeromask argument regions must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if maskLUT != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if regions != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-
-	metal.MustLaunch("zeromask", metal.GridConfig{
+	kernel_zeromask.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.BufferArg(maskLUT),
 		metal.BufferArg(regions),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

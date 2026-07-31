@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_scaleemergentfield caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_scaleemergentfield = metal.NewKernel("scaleemergentfield")
+
 // k_scaleemergentfield_async dispatches the Metal implementation of cuda/hopfindex-solidangle-fourier-scale.cu.
 func k_scaleemergentfield_async(
 	Fx_scale unsafe.Pointer,
@@ -50,29 +53,10 @@ func k_scaleemergentfield_async(
 		panic("cuda/metal: kernel scaleemergentfield argument Fz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if Fx_scale != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if Fy_scale != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if Fz_scale != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if Fx != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if Fy != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if Fz != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-
-	metal.MustLaunch("scaleemergentfield", metal.GridConfig{
+	kernel_scaleemergentfield.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(Fx_scale),
 		metal.BufferArg(Fy_scale),
@@ -86,7 +70,6 @@ func k_scaleemergentfield_async(
 		metal.I32(Nx),
 		metal.I32(Ny),
 		metal.I32(Nz),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

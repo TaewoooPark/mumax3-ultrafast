@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_minimize caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_minimize = metal.NewKernel("minimize")
+
 // k_minimize_async dispatches the Metal implementation of cuda/minimize.cu.
 func k_minimize_async(
 	mx unsafe.Pointer,
@@ -58,38 +61,10 @@ func k_minimize_async(
 		panic("cuda/metal: kernel minimize argument tz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if mx != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if my != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if mz != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if m0x != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if m0y != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if m0z != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-	if tx != nil {
-		mumaxPointerMask |= uint32(1) << 6
-	}
-	if ty != nil {
-		mumaxPointerMask |= uint32(1) << 7
-	}
-	if tz != nil {
-		mumaxPointerMask |= uint32(1) << 8
-	}
-
-	metal.MustLaunch("minimize", metal.GridConfig{
+	kernel_minimize.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(mx),
 		metal.BufferArg(my),
@@ -102,7 +77,6 @@ func k_minimize_async(
 		metal.BufferArg(tz),
 		metal.F32(dt),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

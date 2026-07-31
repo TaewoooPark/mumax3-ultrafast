@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_cellindices caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_cellindices = metal.NewKernel("cellindices")
+
 // k_cellindices_async dispatches the Metal implementation of cuda/cellindices.cu.
 func k_cellindices_async(
 	dstx unsafe.Pointer,
@@ -36,20 +39,10 @@ func k_cellindices_async(
 		panic("cuda/metal: kernel cellindices argument dstz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dstx != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if dsty != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if dstz != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-
-	metal.MustLaunch("cellindices", metal.GridConfig{
+	kernel_cellindices.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dstx),
 		metal.BufferArg(dsty),
@@ -58,7 +51,6 @@ func k_cellindices_async(
 		metal.F32(ny),
 		metal.F32(nz),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_setemergentmagneticfieldsolidangle caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_setemergentmagneticfieldsolidangle = metal.NewKernel("setemergentmagneticfieldsolidangle")
+
 // k_setemergentmagneticfieldsolidangle_async dispatches the Metal implementation of cuda/hopf-emergentmagneticfield-solidangle.cu.
 func k_setemergentmagneticfieldsolidangle_async(
 	Fx unsafe.Pointer,
@@ -52,29 +55,10 @@ func k_setemergentmagneticfieldsolidangle_async(
 		panic("cuda/metal: kernel setemergentmagneticfieldsolidangle argument mz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if Fx != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if Fy != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if Fz != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if mx != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if my != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if mz != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-
-	metal.MustLaunch("setemergentmagneticfieldsolidangle", metal.GridConfig{
+	kernel_setemergentmagneticfieldsolidangle.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(Fx),
 		metal.BufferArg(Fy),
@@ -90,7 +74,6 @@ func k_setemergentmagneticfieldsolidangle_async(
 		metal.I32(Ny),
 		metal.I32(Nz),
 		metal.U8(PBC),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

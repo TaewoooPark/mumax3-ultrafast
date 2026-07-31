@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_madd7 caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_madd7 = metal.NewKernel("madd7")
+
 // k_madd7_async dispatches the Metal implementation of cuda/madd7.cu.
 func k_madd7_async(
 	dst unsafe.Pointer,
@@ -60,35 +63,10 @@ func k_madd7_async(
 		panic("cuda/metal: kernel madd7 argument src7 must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if src1 != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if src2 != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if src3 != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-	if src4 != nil {
-		mumaxPointerMask |= uint32(1) << 7
-	}
-	if src5 != nil {
-		mumaxPointerMask |= uint32(1) << 9
-	}
-	if src6 != nil {
-		mumaxPointerMask |= uint32(1) << 11
-	}
-	if src7 != nil {
-		mumaxPointerMask |= uint32(1) << 13
-	}
-
-	metal.MustLaunch("madd7", metal.GridConfig{
+	kernel_madd7.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.BufferArg(src1),
@@ -106,7 +84,6 @@ func k_madd7_async(
 		metal.BufferArg(src7),
 		metal.F32(fac7),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

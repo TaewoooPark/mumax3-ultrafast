@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_settopologicalcharge caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_settopologicalcharge = metal.NewKernel("settopologicalcharge")
+
 // k_settopologicalcharge_async dispatches the Metal implementation of cuda/topologicalcharge.cu.
 func k_settopologicalcharge_async(
 	s unsafe.Pointer,
@@ -41,23 +44,10 @@ func k_settopologicalcharge_async(
 		panic("cuda/metal: kernel settopologicalcharge argument mz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if s != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if mx != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if my != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if mz != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-
-	metal.MustLaunch("settopologicalcharge", metal.GridConfig{
+	kernel_settopologicalcharge.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(s),
 		metal.BufferArg(mx),
@@ -68,7 +58,6 @@ func k_settopologicalcharge_async(
 		metal.I32(Ny),
 		metal.I32(Nz),
 		metal.U8(PBC),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

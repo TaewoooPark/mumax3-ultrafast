@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_adduniaxialanisotropy2 caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_adduniaxialanisotropy2 = metal.NewKernel("adduniaxialanisotropy2")
+
 // k_adduniaxialanisotropy2_async dispatches the Metal implementation of cuda/uniaxialanisotropy2.cu.
 func k_adduniaxialanisotropy2_async(
 	Bx unsafe.Pointer,
@@ -95,9 +98,10 @@ func k_adduniaxialanisotropy2_async(
 		mumaxPointerMask |= uint32(1) << 16
 	}
 
-	metal.MustLaunch("adduniaxialanisotropy2", metal.GridConfig{
+	kernel_adduniaxialanisotropy2.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(Bx),
 		metal.BufferArg(By),

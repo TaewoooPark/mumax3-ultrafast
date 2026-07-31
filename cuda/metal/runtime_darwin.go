@@ -174,6 +174,39 @@ func FillUint32(dst unsafe.Pointer, value uint32, count int64) error {
 	)
 }
 
+// maxKernelArguments is the Metal buffer-table limit for a compute kernel.
+const maxKernelArguments = 31
+
+func encodeGrid(cfg GridConfig) C.mr_grid {
+	return C.mr_grid{
+		grid_x:    C.uint32_t(cfg.GridX),
+		grid_y:    C.uint32_t(cfg.GridY),
+		grid_z:    C.uint32_t(cfg.GridZ),
+		block_x:   C.uint32_t(cfg.BlockX),
+		block_y:   C.uint32_t(cfg.BlockY),
+		block_z:   C.uint32_t(cfg.BlockZ),
+		threads_x: C.uint32_t(cfg.ThreadsX),
+		threads_y: C.uint32_t(cfg.ThreadsY),
+		threads_z: C.uint32_t(cfg.ThreadsZ),
+	}
+}
+
+// encodeArgs fills a caller-owned array so the dispatch path does not allocate.
+// The array is a value type holding only scalars and pointers into Metal
+// allocations, so it never needs to escape to the heap.
+func encodeArgs(dst *[maxKernelArguments]C.mr_arg, args []Arg) *C.mr_arg {
+	if len(args) == 0 {
+		return nil
+	}
+	for i, arg := range args {
+		dst[i].kind = C.uint32_t(arg.kind)
+		dst[i].size = C.uint32_t(arg.size)
+		dst[i].buffer = arg.pointer
+		dst[i].bits = C.uint64_t(arg.bits)
+	}
+	return &dst[0]
+}
+
 func Launch(name string, cfg GridConfig, args ...Arg) error {
 	if name == "" {
 		return errors.New("mumax3/metal: kernel name is empty")
@@ -181,43 +214,91 @@ func Launch(name string, cfg GridConfig, args ...Arg) error {
 	if cfg.BlockX == 0 || cfg.BlockY == 0 || cfg.BlockZ == 0 {
 		return errors.New("mumax3/metal: threadgroup dimensions must be non-zero")
 	}
-	if len(args) > 31 {
+	if len(args) > maxKernelArguments {
 		return errors.New("mumax3/metal: a Metal compute kernel cannot bind more than 31 buffer-table arguments")
 	}
 
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
-	cargs := make([]C.mr_arg, len(args))
-	for i, arg := range args {
-		cargs[i].kind = C.uint32_t(arg.kind)
-		cargs[i].size = C.uint32_t(arg.size)
-		cargs[i].buffer = arg.pointer
-		cargs[i].bits = C.uint64_t(arg.bits)
-	}
-
-	grid := C.mr_grid{
-		grid_x:  C.uint32_t(cfg.GridX),
-		grid_y:  C.uint32_t(cfg.GridY),
-		grid_z:  C.uint32_t(cfg.GridZ),
-		block_x: C.uint32_t(cfg.BlockX),
-		block_y: C.uint32_t(cfg.BlockY),
-		block_z: C.uint32_t(cfg.BlockZ),
-	}
-
-	var cargsPointer *C.mr_arg
-	if len(cargs) != 0 {
-		cargsPointer = &cargs[0]
-	}
+	var storage [maxKernelArguments]C.mr_arg
 	var message *C.char
 	return runtimeStatus(
-		C.mr_launch(cname, grid, cargsPointer, C.size_t(len(cargs)), &message),
+		C.mr_launch(cname, encodeGrid(cfg), encodeArgs(&storage, args),
+			C.size_t(len(args)), &message),
 		message,
 	)
 }
 
 func MustLaunch(name string, cfg GridConfig, args ...Arg) {
 	if err := Launch(name, cfg, args...); err != nil {
+		panic(err)
+	}
+}
+
+// Kernel caches the runtime handle of one compute kernel. A single RK45 step
+// issues well over a hundred dispatches, so resolving the name once removes a
+// C string allocation, an NSString allocation and a dictionary hash from every
+// one of them.
+type Kernel struct {
+	name     string
+	handle   uint32
+	resolved bool
+}
+
+// NewKernel names a kernel without resolving it. Resolution is deferred to the
+// first launch so that package-level kernel variables can be declared before
+// the Metal device and shader library exist.
+func NewKernel(name string) *Kernel { return &Kernel{name: name} }
+
+// Name reports the kernel name this handle was created for.
+func (k *Kernel) Name() string { return k.name }
+
+func (k *Kernel) resolve() error {
+	if k.resolved {
+		return nil
+	}
+	if k.name == "" {
+		return errors.New("mumax3/metal: kernel name is empty")
+	}
+	cname := C.CString(k.name)
+	defer C.free(unsafe.Pointer(cname))
+	var handle C.uint32_t
+	var message *C.char
+	if err := runtimeStatus(
+		C.mr_register_kernel(cname, &handle, &message), message,
+	); err != nil {
+		return err
+	}
+	k.handle = uint32(handle)
+	k.resolved = true
+	return nil
+}
+
+// Launch dispatches this kernel through its cached handle.
+func (k *Kernel) Launch(cfg GridConfig, args ...Arg) error {
+	if cfg.BlockX == 0 || cfg.BlockY == 0 || cfg.BlockZ == 0 {
+		return errors.New("mumax3/metal: threadgroup dimensions must be non-zero")
+	}
+	if len(args) > maxKernelArguments {
+		return errors.New("mumax3/metal: a Metal compute kernel cannot bind more than 31 buffer-table arguments")
+	}
+	if err := k.resolve(); err != nil {
+		return err
+	}
+	var storage [maxKernelArguments]C.mr_arg
+	var message *C.char
+	return runtimeStatus(
+		C.mr_launch_handle(C.uint32_t(k.handle), encodeGrid(cfg),
+			encodeArgs(&storage, args), C.size_t(len(args)), &message),
+		message,
+	)
+}
+
+// MustLaunch is Launch with a panic on failure, matching MuMax3's convention
+// that a kernel dispatch failure is not recoverable.
+func (k *Kernel) MustLaunch(cfg GridConfig, args ...Arg) {
+	if err := k.Launch(cfg, args...); err != nil {
 		panic(err)
 	}
 }

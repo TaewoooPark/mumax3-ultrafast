@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_setvectorpotential caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_setvectorpotential = metal.NewKernel("setvectorpotential")
+
 // k_setvectorpotential_async dispatches the Metal implementation of cuda/hopf-vectorpotential.cu.
 func k_setvectorpotential_async(
 	Ax unsafe.Pointer,
@@ -49,29 +52,10 @@ func k_setvectorpotential_async(
 		panic("cuda/metal: kernel setvectorpotential argument Fz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if Ax != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if Ay != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if Az != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if Fx != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if Fy != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if Fz != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-
-	metal.MustLaunch("setvectorpotential", metal.GridConfig{
+	kernel_setvectorpotential.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(Ax),
 		metal.BufferArg(Ay),
@@ -84,7 +68,6 @@ func k_setvectorpotential_async(
 		metal.I32(Ny),
 		metal.I32(Nz),
 		metal.U8(PBC),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

@@ -72,6 +72,22 @@ func MustLaunch(name string, cfg GridConfig, args ...Arg) {
 	panic(ErrUnsupported)
 }
 
+// Kernel mirrors the Metal handle cache so kernel wrappers compile on
+// platforms without the Metal backend.
+type Kernel struct{ name string }
+
+func NewKernel(name string) *Kernel { return &Kernel{name: name} }
+
+func (k *Kernel) Name() string { return k.name }
+
+func (k *Kernel) Launch(cfg GridConfig, args ...Arg) error {
+	return ErrUnsupported
+}
+
+func (k *Kernel) MustLaunch(cfg GridConfig, args ...Arg) {
+	panic(ErrUnsupported)
+}
+
 func Flush() error {
 	return ErrUnsupported
 }

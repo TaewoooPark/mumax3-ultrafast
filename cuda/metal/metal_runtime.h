@@ -31,6 +31,13 @@ enum mr_arg_kind {
     MR_ARG_UINT64 = 8
 };
 
+/*
+ * grid_* is the CUDA threadgroup count and block_* the threadgroup size, so
+ * grid * block threads are dispatched and the kernel needs a bounds guard.
+ * threads_* optionally overrides that with the exact thread count: Metal then
+ * builds a partial trailing threadgroup and the kernel can index
+ * thread_position_in_grid without a guard. Zero means "use grid * block".
+ */
 typedef struct mr_grid {
     uint32_t grid_x;
     uint32_t grid_y;
@@ -38,6 +45,9 @@ typedef struct mr_grid {
     uint32_t block_x;
     uint32_t block_y;
     uint32_t block_z;
+    uint32_t threads_x;
+    uint32_t threads_y;
+    uint32_t threads_z;
 } mr_grid;
 
 /*
@@ -109,6 +119,18 @@ int mr_launch(const char *name,
               const mr_arg *args,
               size_t arg_count,
               char **error_message);
+
+/*
+ * Resolve a kernel name to a dense integer handle once, so the dispatch path
+ * does not build an NSString and hash a dictionary on every launch. Handles are
+ * stable for the lifetime of the process and are invalidated by mr_shutdown.
+ */
+int mr_register_kernel(const char *name, uint32_t *handle, char **error_message);
+int mr_launch_handle(uint32_t handle,
+                     mr_grid grid,
+                     const mr_arg *args,
+                     size_t arg_count,
+                     char **error_message);
 int mr_flush(char **error_message);
 int mr_synchronize(char **error_message);
 

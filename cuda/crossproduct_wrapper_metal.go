@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_crossproduct caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_crossproduct = metal.NewKernel("crossproduct")
+
 // k_crossproduct_async dispatches the Metal implementation of cuda/crossproduct.cu.
 func k_crossproduct_async(
 	dstx unsafe.Pointer,
@@ -57,38 +60,10 @@ func k_crossproduct_async(
 		panic("cuda/metal: kernel crossproduct argument bz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dstx != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if dsty != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if dstz != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if ax != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if ay != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if az != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-	if bx != nil {
-		mumaxPointerMask |= uint32(1) << 6
-	}
-	if by != nil {
-		mumaxPointerMask |= uint32(1) << 7
-	}
-	if bz != nil {
-		mumaxPointerMask |= uint32(1) << 8
-	}
-
-	metal.MustLaunch("crossproduct", metal.GridConfig{
+	kernel_crossproduct.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dstx),
 		metal.BufferArg(dsty),
@@ -100,7 +75,6 @@ func k_crossproduct_async(
 		metal.BufferArg(by),
 		metal.BufferArg(bz),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

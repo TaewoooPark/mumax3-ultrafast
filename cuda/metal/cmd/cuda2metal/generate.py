@@ -88,12 +88,24 @@ class Kernel:
     original_source: str
     local_macro_names: tuple[str, ...]
 
+    @property
+    def uses_pointer_mask(self) -> bool:
+        """True when some argument is a NULL-sentinel CUDA pointer.
+
+        Only those kernels read mumaxPointerMask, so binding it everywhere
+        costs a setBytes call and a buffer-table slot on every dispatch of the
+        other kernels.
+        """
+        return any(argument.nullable for argument in self.arguments)
+
     def public_dict(self) -> dict[str, object]:
         return {
             "source": self.source,
             "name": self.name,
             "arguments": [argument.public_dict() for argument in self.arguments],
-            "pointer_mask_buffer_index": len(self.arguments),
+            "pointer_mask_buffer_index": (
+                len(self.arguments) if self.uses_pointer_mask else None
+            ),
             "source_sha256": self.source_sha256,
         }
 
@@ -271,10 +283,13 @@ def metal_signature(kernel: Kernel) -> str:
             f"    {metal_argument_type(argument.c_type)} {argument.name} "
             f"[[buffer({argument.buffer_index})]],"
         )
+    if kernel.uses_pointer_mask:
+        lines.append(
+            f"    constant uint& mumaxPointerMask "
+            f"[[buffer({len(kernel.arguments)})]],"
+        )
     lines.extend(
         (
-            f"    constant uint& mumaxPointerMask "
-            f"[[buffer({len(kernel.arguments)})]],",
             "    uint3 blockIdx [[threadgroup_position_in_grid]],",
             "    uint3 threadIdx [[thread_position_in_threadgroup]],",
             "    uint3 blockDim [[threads_per_threadgroup]],",
@@ -469,6 +484,10 @@ def generate_wrapper(kernel: Kernel) -> str:
         '\t"github.com/mumax/3/timer"',
         ")",
         "",
+        f"// kernel_{kernel.name} caches the runtime handle so each dispatch "
+        f"skips the kernel-name lookup.",
+        f'var kernel_{kernel.name} = metal.NewKernel("{kernel.name}")',
+        "",
         f"// k_{kernel.name}_async dispatches the Metal implementation "
         f"of cuda/{kernel.source}.",
         f"func k_{kernel.name}_async(",
@@ -498,25 +517,28 @@ def generate_wrapper(kernel: Kernel) -> str:
                     "\t}",
                 )
             )
-    lines.extend(("", "\tvar mumaxPointerMask uint32"))
-    for argument in kernel.arguments:
-        if argument.c_type.endswith("*"):
-            lines.extend(
-                (
-                    f"\tif {argument.name} != nil {{",
-                    f"\t\tmumaxPointerMask |= uint32(1) << "
-                    f"{argument.buffer_index}",
-                    "\t}",
+    if kernel.uses_pointer_mask:
+        lines.extend(("", "\tvar mumaxPointerMask uint32"))
+        for argument in kernel.arguments:
+            if argument.c_type.endswith("*"):
+                lines.extend(
+                    (
+                        f"\tif {argument.name} != nil {{",
+                        f"\t\tmumaxPointerMask |= uint32(1) << "
+                        f"{argument.buffer_index}",
+                        "\t}",
+                    )
                 )
-            )
     lines.extend(
         (
             "",
-            f'\tmetal.MustLaunch("{kernel.name}", metal.GridConfig{{',
+            f"\tkernel_{kernel.name}.MustLaunch(metal.GridConfig{{",
             "\t\tGridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), "
             "GridZ: uint32(cfg.Grid.Z),",
             "\t\tBlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), "
             "BlockZ: uint32(cfg.Block.Z),",
+            "\t\tThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), "
+            "ThreadsZ: uint32(cfg.Threads.Z),",
             "\t},",
         )
     )
@@ -524,9 +546,10 @@ def generate_wrapper(kernel: Kernel) -> str:
         f"\t\t{constructor_for(argument.c_type)}({argument.name}),"
         for argument in kernel.arguments
     )
+    if kernel.uses_pointer_mask:
+        lines.append("\t\tmetal.U32(mumaxPointerMask),")
     lines.extend(
         (
-            "\t\tmetal.U32(mumaxPointerMask),",
             "\t)",
             "",
             "\tif Synchronous {",

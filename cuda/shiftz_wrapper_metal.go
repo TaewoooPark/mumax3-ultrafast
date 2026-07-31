@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_shiftz caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_shiftz = metal.NewKernel("shiftz")
+
 // k_shiftz_async dispatches the Metal implementation of cuda/shiftz.cu.
 func k_shiftz_async(
 	dst unsafe.Pointer,
@@ -34,17 +37,10 @@ func k_shiftz_async(
 		panic("cuda/metal: kernel shiftz argument src must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if src != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-
-	metal.MustLaunch("shiftz", metal.GridConfig{
+	kernel_shiftz.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.BufferArg(src),
@@ -54,7 +50,6 @@ func k_shiftz_async(
 		metal.I32(shz),
 		metal.F32(clampB),
 		metal.F32(clampF),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

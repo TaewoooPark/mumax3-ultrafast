@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_adddmibulk caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_adddmibulk = metal.NewKernel("adddmibulk")
+
 // k_adddmibulk_async dispatches the Metal implementation of cuda/dmibulk.cu.
 func k_adddmibulk_async(
 	Hx unsafe.Pointer,
@@ -98,9 +101,10 @@ func k_adddmibulk_async(
 		mumaxPointerMask |= uint32(1) << 10
 	}
 
-	metal.MustLaunch("adddmibulk", metal.GridConfig{
+	kernel_adddmibulk.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(Hx),
 		metal.BufferArg(Hy),

@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_normalize caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_normalize = metal.NewKernel("normalize")
+
 // k_normalize_async dispatches the Metal implementation of cuda/normalize.cu.
 func k_normalize_async(
 	vx unsafe.Pointer,
@@ -48,9 +51,10 @@ func k_normalize_async(
 		mumaxPointerMask |= uint32(1) << 3
 	}
 
-	metal.MustLaunch("normalize", metal.GridConfig{
+	kernel_normalize.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(vx),
 		metal.BufferArg(vy),

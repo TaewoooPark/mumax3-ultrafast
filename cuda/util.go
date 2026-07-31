@@ -11,8 +11,18 @@ import (
 const MaxGridSize = 65535
 
 // cuda launch configuration
+//
+// Grid and Block carry the CUDA geometry: Grid*Block threads are dispatched and
+// the kernel guards against the round-up. Threads optionally requests an exact
+// thread count instead, which lets Metal form a partial trailing threadgroup.
+// A kernel may only be launched that way if it indexes
+// thread_position_in_grid: for a partial group Metal reports the reduced size in
+// threads_per_threadgroup, which would corrupt the CUDA blockDim arithmetic.
+// Zero means "use Grid*Block", which is what the reduction kernels require
+// because their grid-stride loop strides by gridDim.x*blockDim.x.
 type config struct {
 	Grid, Block cu.Dim3
+	Threads     cu.Dim3
 }
 
 // Make a 1D kernel launch configuration suited for N threads.
@@ -24,7 +34,7 @@ func make1DConf(N int) *config {
 	ny := divUp(n2, nx)
 	gr := cu.Dim3{X: nx, Y: ny, Z: 1}
 
-	return &config{gr, bl}
+	return &config{Grid: gr, Block: bl}
 }
 
 // Make a 3D kernel launch configuration suited for N threads.
@@ -35,7 +45,7 @@ func make3DConf(N [3]int) *config {
 	ny := divUp(N[Y], TileY)
 	gr := cu.Dim3{X: nx, Y: ny, Z: N[Z]}
 
-	return &config{gr, bl}
+	return &config{Grid: gr, Block: bl}
 }
 
 // integer minimum

@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_copypadmul2 caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_copypadmul2 = metal.NewKernel("copypadmul2")
+
 // k_copypadmul2_async dispatches the Metal implementation of cuda/copypadmul2.cu.
 func k_copypadmul2_async(
 	dst unsafe.Pointer,
@@ -51,9 +54,10 @@ func k_copypadmul2_async(
 		mumaxPointerMask |= uint32(1) << 10
 	}
 
-	metal.MustLaunch("copypadmul2", metal.GridConfig{
+	kernel_copypadmul2.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.I32(Dx),

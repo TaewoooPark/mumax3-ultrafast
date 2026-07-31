@@ -19,9 +19,14 @@ const (
 	BackendVersion = "3"
 )
 
-// GridConfig describes a CUDA-compatible launch geometry. Grid* is the number
-// of threadgroups and Block* is the number of threads in each threadgroup.
-// Metal receives Grid*Block threads in each dimension.
+// GridConfig describes a launch geometry. Grid* is the number of threadgroups
+// and Block* is the number of threads in each threadgroup, so by default Metal
+// receives Grid*Block threads per dimension, exactly like CUDA.
+//
+// Threads* optionally overrides the dispatched thread count with an exact
+// value. Metal then forms a partial trailing threadgroup, which lets a kernel
+// read thread_position_in_grid directly and drop its bounds guard. Zero in a
+// dimension means "use Grid*Block" for that dimension.
 type GridConfig struct {
 	GridX  uint32
 	GridY  uint32
@@ -29,6 +34,24 @@ type GridConfig struct {
 	BlockX uint32
 	BlockY uint32
 	BlockZ uint32
+
+	ThreadsX uint32
+	ThreadsY uint32
+	ThreadsZ uint32
+}
+
+// Exact returns a launch geometry that dispatches exactly threads* threads with
+// the given threadgroup shape. Kernels launched this way must index
+// thread_position_in_grid and must not assume a full trailing threadgroup.
+func Exact(threadsX, threadsY, threadsZ, blockX, blockY, blockZ int) GridConfig {
+	return GridConfig{
+		BlockX:   checkedDimension("block x", blockX),
+		BlockY:   checkedDimension("block y", blockY),
+		BlockZ:   checkedDimension("block z", blockZ),
+		ThreadsX: checkedDimension("threads x", threadsX),
+		ThreadsY: checkedDimension("threads y", threadsY),
+		ThreadsZ: checkedDimension("threads z", threadsZ),
+	}
 }
 
 // Grid returns a launch geometry with explicit three-dimensional dimensions.

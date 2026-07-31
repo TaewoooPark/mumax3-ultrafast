@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_resize caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_resize = metal.NewKernel("resize")
+
 // k_resize_async dispatches the Metal implementation of cuda/resize.cu.
 func k_resize_async(
 	dst unsafe.Pointer,
@@ -37,17 +40,10 @@ func k_resize_async(
 		panic("cuda/metal: kernel resize argument src must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if src != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-
-	metal.MustLaunch("resize", metal.GridConfig{
+	kernel_resize.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.I32(Dx),
@@ -60,7 +56,6 @@ func k_resize_async(
 		metal.I32(layer),
 		metal.I32(scalex),
 		metal.I32(scaley),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

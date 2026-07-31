@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_kernmulRSymm2Dz caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_kernmulRSymm2Dz = metal.NewKernel("kernmulRSymm2Dz")
+
 // k_kernmulRSymm2Dz_async dispatches the Metal implementation of cuda/kernmulrsymm2dz.cu.
 func k_kernmulRSymm2Dz_async(
 	fftMz unsafe.Pointer,
@@ -30,23 +33,15 @@ func k_kernmulRSymm2Dz_async(
 		panic("cuda/metal: kernel kernmulRSymm2Dz argument fftKzz must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if fftMz != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if fftKzz != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-
-	metal.MustLaunch("kernmulRSymm2Dz", metal.GridConfig{
+	kernel_kernmulRSymm2Dz.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(fftMz),
 		metal.BufferArg(fftKzz),
 		metal.I32(Nx),
 		metal.I32(Ny),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

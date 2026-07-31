@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_copyunpad caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_copyunpad = metal.NewKernel("copyunpad")
+
 // k_copyunpad_async dispatches the Metal implementation of cuda/copyunpad.cu.
 func k_copyunpad_async(
 	dst unsafe.Pointer,
@@ -34,17 +37,10 @@ func k_copyunpad_async(
 		panic("cuda/metal: kernel copyunpad argument src must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if src != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-
-	metal.MustLaunch("copyunpad", metal.GridConfig{
+	kernel_copyunpad.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.I32(Dx),
@@ -54,7 +50,6 @@ func k_copyunpad_async(
 		metal.I32(Sx),
 		metal.I32(Sy),
 		metal.I32(Sz),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

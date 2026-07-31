@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_madd3 caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_madd3 = metal.NewKernel("madd3")
+
 // k_madd3_async dispatches the Metal implementation of cuda/madd3.cu.
 func k_madd3_async(
 	dst unsafe.Pointer,
@@ -40,23 +43,10 @@ func k_madd3_async(
 		panic("cuda/metal: kernel madd3 argument src3 must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if src1 != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if src2 != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if src3 != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-
-	metal.MustLaunch("madd3", metal.GridConfig{
+	kernel_madd3.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dst),
 		metal.BufferArg(src1),
@@ -66,7 +56,6 @@ func k_madd3_async(
 		metal.BufferArg(src3),
 		metal.F32(fac3),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

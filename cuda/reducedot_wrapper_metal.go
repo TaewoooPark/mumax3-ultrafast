@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_reducedot caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_reducedot = metal.NewKernel("reducedot")
+
 // k_reducedot_async dispatches the Metal implementation of cuda/reducedot.cu.
 func k_reducedot_async(
 	x1 unsafe.Pointer,
@@ -34,27 +37,16 @@ func k_reducedot_async(
 		panic("cuda/metal: kernel reducedot argument dst must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if x1 != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if x2 != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if dst != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-
-	metal.MustLaunch("reducedot", metal.GridConfig{
+	kernel_reducedot.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(x1),
 		metal.BufferArg(x2),
 		metal.BufferArg(dst),
 		metal.F32(initVal),
 		metal.I32(n),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {

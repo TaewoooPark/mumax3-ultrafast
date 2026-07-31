@@ -10,6 +10,9 @@ import (
 	"github.com/mumax/3/timer"
 )
 
+// kernel_regionaddv caches the runtime handle so each dispatch skips the kernel-name lookup.
+var kernel_regionaddv = metal.NewKernel("regionaddv")
+
 // k_regionaddv_async dispatches the Metal implementation of cuda/regionaddv.cu.
 func k_regionaddv_async(
 	dstx unsafe.Pointer,
@@ -49,32 +52,10 @@ func k_regionaddv_async(
 		panic("cuda/metal: kernel regionaddv argument regions must not be nil")
 	}
 
-	var mumaxPointerMask uint32
-	if dstx != nil {
-		mumaxPointerMask |= uint32(1) << 0
-	}
-	if dsty != nil {
-		mumaxPointerMask |= uint32(1) << 1
-	}
-	if dstz != nil {
-		mumaxPointerMask |= uint32(1) << 2
-	}
-	if LUTx != nil {
-		mumaxPointerMask |= uint32(1) << 3
-	}
-	if LUTy != nil {
-		mumaxPointerMask |= uint32(1) << 4
-	}
-	if LUTz != nil {
-		mumaxPointerMask |= uint32(1) << 5
-	}
-	if regions != nil {
-		mumaxPointerMask |= uint32(1) << 6
-	}
-
-	metal.MustLaunch("regionaddv", metal.GridConfig{
+	kernel_regionaddv.MustLaunch(metal.GridConfig{
 		GridX: uint32(cfg.Grid.X), GridY: uint32(cfg.Grid.Y), GridZ: uint32(cfg.Grid.Z),
 		BlockX: uint32(cfg.Block.X), BlockY: uint32(cfg.Block.Y), BlockZ: uint32(cfg.Block.Z),
+		ThreadsX: uint32(cfg.Threads.X), ThreadsY: uint32(cfg.Threads.Y), ThreadsZ: uint32(cfg.Threads.Z),
 	},
 		metal.BufferArg(dstx),
 		metal.BufferArg(dsty),
@@ -84,7 +65,6 @@ func k_regionaddv_async(
 		metal.BufferArg(LUTz),
 		metal.BufferArg(regions),
 		metal.I32(N),
-		metal.U32(mumaxPointerMask),
 	)
 
 	if Synchronous {
