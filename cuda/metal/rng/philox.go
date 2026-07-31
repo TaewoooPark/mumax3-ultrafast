@@ -1,3 +1,7 @@
+// Random123-derived portions of this file are Copyright 2010-2012,
+// D. E. Shaw Research. They are used under the BSD 3-Clause license;
+// see ../../../THIRD_PARTY_NOTICES.md for the complete notice.
+
 // Package rng provides the Metal thermal-noise generator and a pure-Go
 // Random123-compatible Philox implementation used for known-answer tests.
 package rng

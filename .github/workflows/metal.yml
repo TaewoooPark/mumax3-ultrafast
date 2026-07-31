@@ -34,6 +34,9 @@ jobs:
           go version
           xcrun --show-sdk-version
 
+      - name: Verify license notices
+        run: make check-licenses
+
       - name: Verify generated Metal sources
         run: |
           python3 cuda/metal/cmd/cuda2metal/generate.py --check

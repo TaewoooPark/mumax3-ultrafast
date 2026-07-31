@@ -12,8 +12,10 @@ in the upstream `mumax/3` repository. A byte-for-byte comparison against its
 
 That upstream source is licensed under **GNU GPL version 3 or any later
 version (`GPL-3.0-or-later`)**, including the additional permission for linking
-with NVIDIA CUDA libraries stated in the license. The complete applicable text
-is available in this repository's [`LICENSE`](../LICENSE) and the
+with NVIDIA CUDA libraries stated by the upstream licensors. The complete GPLv3
+text is in this repository's [`LICENSE`](../LICENSE), while the preserved
+upstream notice and CUDA permission are in [`NOTICE`](../NOTICE). The original
+notice is also available in the
 [upstream LICENSE](https://github.com/mumax/3/blob/f656494b29516bead825b444b1f0b38c6e6c7dbf/LICENSE).
 
 Upstream attribution, as stated in that license:
@@ -27,6 +29,8 @@ Upstream attribution, as stated in that license:
 The scripts remain unmodified so that they are exact test inputs; SPDX comments
 were deliberately not inserted into the files themselves. This notice supplies
 the license and attribution for the whole set.
+The archived `official-examples.html` snapshot is generated from the same
+GPL-covered upstream documentation and is included under the same notice.
 
 ## Supporting fixtures and generated results
 

@@ -125,7 +125,11 @@ This project is derived from [mumax³](https://github.com/mumax/3), whose design
 and verification are described in the
 [original paper](https://doi.org/10.1063/1.4899186). NVIDIA CUDA users should
 follow the [official mumax³ installation documentation](https://mumax.github.io/download.html).
-This fork is distributed under the [GNU GPL v3 or later](LICENSE).
+This fork is distributed under the [GNU GPL v3 or later](LICENSE). The
+[project notices](NOTICE) preserve the upstream CUDA linking permission and
+identify the July 2026 macOS modifications. Licenses and attribution for
+Random123, Go, SVGo, and Freetype-Go are collected in the
+[third-party notices](THIRD_PARTY_NOTICES.md).
 
 ## Creator
 

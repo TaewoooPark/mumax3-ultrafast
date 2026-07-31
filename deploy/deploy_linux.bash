@@ -66,6 +66,8 @@ for CUDAVERSION in "${INPUT_CUDA_VERSIONS[@]}"; do
     cp $GOPATH/bin/mumax3-convert $BUILDDIR 
     cp $GOPATH/bin/mumax3-server $BUILDDIR 
     cp ../LICENSE $BUILDDIR
+    cp ../NOTICE $BUILDDIR
+    cp ../THIRD_PARTY_NOTICES.md $BUILDDIR
     cp $( ldd ${BUILDDIR}/mumax3 | grep libcufft | awk '{print $3}' ) ${BUILDDIR}/${RPATH}
     cp $( ldd ${BUILDDIR}/mumax3 | grep libcurand | awk '{print $3}' ) ${BUILDDIR}/${RPATH}
 

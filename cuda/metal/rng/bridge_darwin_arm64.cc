@@ -1,3 +1,7 @@
+// The Philox4x32-10 portions of this file are derived from Random123.
+// Copyright 2010-2012, D. E. Shaw Research. Used under BSD-3-Clause;
+// see ../../../THIRD_PARTY_NOTICES.md for the complete notice.
+
 #include "bridge.h"
 #include "../metal_runtime.h"
 

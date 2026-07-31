@@ -1,6 +1,10 @@
 //go:build darwin && arm64 && cgo
 // +build darwin,arm64,cgo
 
+// The Philox known-answer vector in this file comes from Random123.
+// Copyright 2010-2012, D. E. Shaw Research. Used under BSD-3-Clause;
+// see ../../../THIRD_PARTY_NOTICES.md for the complete notice.
+
 package rng
 
 import (
