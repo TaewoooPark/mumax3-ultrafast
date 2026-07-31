@@ -1,0 +1,19 @@
+# Largest simulation that fits in memory, at the 133.1 bytes per cell measured
+# on this M4 with the allocator's own peak tracking (2D, Heun; 256^2 gave 136.8
+# B/cell falling to 133.1 by 2048^2).
+#
+# usable_fraction accounts for what the runtime will not hand out: 0.92 for
+# NVIDIA driver overhead, and 0.68 for Apple, which is the
+# recommendedMaxWorkingSetSize/RAM ratio measured here (21845/32768 MB).
+#
+# Below roughly 240M cells a same-cost PC is 2.6x to 3.6x faster. Above it the
+# largest consumer NVIDIA card cannot run the problem at all, and the only
+# alternatives are datacenter parts at 10x to 30x the price.
+#
+# columns: vendor  memory_GB  usable_fraction  "label"
+nvidia   12  0.92  "RTX 4070"
+apple    32  0.68  "Mac mini M4"
+nvidia   24  0.92  "RTX 4090"
+nvidia   32  0.92  "RTX 5090"
+apple   128  0.68  "Mac Studio M4 Max"
+apple   512  0.68  "Mac Studio M3 Ultra"

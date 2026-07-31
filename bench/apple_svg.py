@@ -110,7 +110,8 @@ def wrap(text, width):
     return lines
 
 
-def render(rows, title, subtitle, path, legend):
+def render(rows, title, subtitle, path, legend,
+           y_label="throughput (M cells/s)"):
     bar_slot = 26 if len(rows) <= 24 else 15
     left, right = 78, 26
     plot_w = bar_slot * len(rows)
@@ -180,7 +181,7 @@ def render(rows, title, subtitle, path, legend):
         f'<text x="18" y="{label_y:.1f}" font-family="{FONT}" font-size="11" '
         f'fill="{COLOR_TEXT}" text-anchor="middle" '
         f'transform="rotate(-90 18 {label_y:.1f})">'
-        f'throughput (M cells/s)</text>'
+        f'{y_label}</text>'
     )
 
     palette = {
@@ -420,6 +421,30 @@ def render_price_tiers(path, tiers, order):
     print(f"wrote {path} ({len(order)} tiers)")
 
 
+BYTES_PER_CELL = 133.1   # measured, see bench/capacity.txt
+
+
+def read_capacity(path):
+    rows = []
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            vendor, gb, frac, label = shlex.split(line)
+            cells = int(gb) * (1024 ** 3) * float(frac) / BYTES_PER_CELL
+            rows.append(
+                {
+                    "name": label,
+                    "value": cells / 1e6,
+                    "status": "measured" if vendor == "apple" else "other",
+                    "mesh": int(cells ** 0.5),
+                }
+            )
+    rows.sort(key=lambda row: row["value"])
+    return rows
+
+
 def main():
     apple = read_apple(os.path.join(HERE, "apple.txt"))
     render(
@@ -450,6 +475,20 @@ def main():
 
     tiers, order = read_tiers(os.path.join(HERE, "price_tiers.txt"))
     render_price_tiers(os.path.join(HERE, "apple-price-tiers.svg"), tiers, order)
+
+    capacity = read_capacity(os.path.join(HERE, "capacity.txt"))
+    for row in capacity:
+        row["name"] = f'{row["name"]} ({row["mesh"]}^2)'
+    render(
+        capacity,
+        "Largest MuMax3 simulation that fits in memory",
+        f"At the {BYTES_PER_CELL:.1f} bytes per cell measured on this M4. Below "
+        "roughly 240M cells a same-cost PC is 2.6-3.6x faster; above it the "
+        "largest consumer NVIDIA card cannot run the problem at all.",
+        os.path.join(HERE, "apple-capacity.svg"),
+        [("Apple, unified memory", "measured"), ("NVIDIA, VRAM", "other")],
+        y_label="largest simulation (M cells)",
+    )
 
 
 if __name__ == "__main__":

@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="260" height="634" viewBox="0 0 260 634">
+<defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" stroke-width="2.1"/></pattern></defs>
+<rect width="260" height="634" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">Largest MuMax3 simulation that fits in memory</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">At the 133.1 bytes per cell measured on</text>
+<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">this M4. Below roughly 240M cells a</text>
+<text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">same-cost PC is 2.6-3.6x faster; above</text>
+<text x="78" y="93" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">it the largest consumer NVIDIA card</text>
+<text x="78" y="108" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">cannot run the problem at all.</text>
+<line x1="78" y1="398.0" x2="234" y2="398.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="402.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
+<line x1="78" y1="354.7" x2="234" y2="354.7" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="358.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">500</text>
+<line x1="78" y1="311.3" x2="234" y2="311.3" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="315.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1000</text>
+<line x1="78" y1="268.0" x2="234" y2="268.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="272.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1500</text>
+<line x1="78" y1="224.7" x2="234" y2="224.7" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="228.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2000</text>
+<line x1="78" y1="181.3" x2="234" y2="181.3" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="185.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2500</text>
+<line x1="78" y1="138.0" x2="234" y2="138.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="142.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">3000</text>
+<line x1="78" y1="138" x2="78" y2="398" stroke="#5f6368" stroke-width="1"/>
+<line x1="78" y1="398" x2="234" y2="398" stroke="#5f6368" stroke-width="1"/>
+<text x="18" y="268.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 268.0)">largest simulation (M cells)</text>
+<rect x="82.9" y="390.3" width="16.1" height="7.7" fill="#8d9299"/>
+<text x="91.0" y="405.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 91.0 405.0)">RTX 4070 (9437^2)</text>
+<rect x="108.9" y="382.8" width="16.1" height="15.2" fill="#0b4f9e"/>
+<text x="117.0" y="405.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 117.0 405.0)">Mac mini M4 (13249^2)</text>
+<rect x="134.9" y="382.6" width="16.1" height="15.4" fill="#8d9299"/>
+<text x="143.0" y="405.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 143.0 405.0)">RTX 4090 (13346^2)</text>
+<rect x="160.9" y="377.4" width="16.1" height="20.6" fill="#8d9299"/>
+<text x="169.0" y="405.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 169.0 405.0)">RTX 5090 (15410^2)</text>
+<rect x="186.9" y="337.1" width="16.1" height="60.9" fill="#0b4f9e"/>
+<text x="195.0" y="405.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 195.0 405.0)">Mac Studio M4 Max (26498^2)</text>
+<rect x="212.9" y="154.6" width="16.1" height="243.4" fill="#0b4f9e"/>
+<text x="221.0" y="405.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 221.0 405.0)">Mac Studio M3 Ultra (52996^2)</text>
+<rect x="78" y="603" width="11" height="11" fill="#0b4f9e"/>
+<text x="95" y="612" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple, unified memory</text>
+<rect x="245.0" y="603" width="11" height="11" fill="#8d9299"/>
+<text x="262.0" y="612" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">NVIDIA, VRAM</text>
+</svg>
