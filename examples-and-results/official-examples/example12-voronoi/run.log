@@ -1,0 +1,64 @@
+$ /Users/taewoopark/go/bin/mumax3 -http= -f -o output.out example12.mx3
+//mumax 3.12 [darwin_arm64 go1.26.5(gc) Metal-3]
+//commit hash: 90d07e63
+//CPU info: Apple M4, Cores: 10
+//GPU info: Apple M4, unified memory, Metal 3, recommended working set 21845MB, backend=Metal
+//OS  info: macOS 15.6 (24G84), Hostname: bagtaeuui-MacBookAir-4.local
+//Timestamp: 2026-07-30 22:17:25
+//(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium
+//This is free software without any warranty. See license.txt
+//********************************************************************//
+//  If you use mumax in any work or publication,                      //
+//  we kindly ask you to cite the references in references.bib        //
+//********************************************************************//
+//output directory: output.out/
+//not starting GUI (-http="")
+N := 256
+c := 4e-9
+d := 40e-9
+setgridsize(N, N, 1)
+setcellsize(c, c, d)
+// WARNING: cell size was set to a high aspect ratio.
+//          Calculation of demag kernel may take longer than usual.
+//          Note that this can exacerbate discretization anisotropy.
+setGeom(circle(N * c))
+// Initializing geometry 0 %
+// Initializing geometry 100 %
+grainSize := 40e-9
+randomSeed := 1234567
+maxRegion := NREGION - 1
+ext_makegrains(grainSize, maxRegion, randomSeed)
+defregion(0, circle(N*c).inverse())
+alpha = 3
+Kc1 = 1000
+Aex = 13e-12
+Msat = 860e3
+for i := 0; i < maxRegion; i++ {
+	axis1 := vector(randNorm(), randNorm(), randNorm())
+	helper := vector(randNorm(), randNorm(), randNorm())
+	axis2 := axis1.cross(helper)
+	AnisC1.SetRegion(i, axis1)
+	AnisC2.SetRegion(i, axis2)
+	K := 1e5
+	Kc1.SetRegion(i, K+randNorm()*0.1*K)
+}
+for i := 0; i < maxRegion; i++ {
+	for j := i + 1; j < maxRegion; j++ {
+		ext_ScaleExchange(i, j, 0.9)
+	}
+}
+m = vortex(1, 1)
+run(.1e-9)
+//Using cached kernel: /var/folders/7x/ldgmfnbx3zn474dpx_246g400000gn/T//mumax3kernel_[256 256 1]_[0 0 0]_[4e-09 4e-09 4e-08]_6_
+save(regions)
+save(Kc1)
+save(AnisC1)
+save(AnisC2)
+save(m)
+save(exchCoupling)
+//********************************************************************//
+//Please cite the following references, relevant for your simulation. //
+//See bibtex file in output folder for justification.                 //
+//********************************************************************//
+//   * Vansteenkiste et al., AIP Adv. 4, 107133 (2014).
+//   * Leliaert et al., J. Appl. Phys. 115, 233903 (2014)

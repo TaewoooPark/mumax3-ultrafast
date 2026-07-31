@@ -1,0 +1,28 @@
+{
+  "source_url": "https://mumax.github.io/examples.html",
+  "source_template_url": "https://github.com/mumax/3/blob/f656494b29516bead825b444b1f0b38c6e6c7dbf/doc/templates/examples-template.html",
+  "source_sha256": "c5ec8c43ad74f11724d9223052675fbcc00e707650a46a262a2f1e7280b2ef8a",
+  "license_expression": "GPL-3.0-or-later",
+  "license_url": "https://github.com/mumax/3/blob/f656494b29516bead825b444b1f0b38c6e6c7dbf/LICENSE",
+  "fetched_at": "2026-07-30T12:56:07.077751+00:00",
+  "binary": "/Users/taewoopark/go/bin/mumax3",
+  "binary_sha256": "938bbb2ea1e13696130ee8637aaeb71c9c3e477f459e47d55ff16fd78893f2d4",
+  "selected_examples": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "timeout_seconds": 1800.0
+}

@@ -1,0 +1,25 @@
+N := 10
+setgridsize(N, N, 2)
+
+c := 1e-9
+setcellsize(c, c, c)
+
+defRegion(0, layer(0))
+defRegion(1, layer(1))
+
+Msat = 1e6
+
+Aex  = 10e-12
+RKKY := -1e-3 // 1mJ/m2
+scale := (RKKY * c) / (2 * Aex.Average())
+ext_scaleExchange(0, 1, scale)
+
+tableAdd(E_total)
+
+m.setRegion(0, uniform(1, 0, 0))
+
+for ang:=0; ang<360; ang++{
+	m.setRegion(1, uniform(cos(ang*pi/180), sin(ang*pi/180), 0))	
+	t = ang * 1e-9 // output "time" is really angle
+	tablesave()
+}

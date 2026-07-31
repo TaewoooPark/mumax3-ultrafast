@@ -1,0 +1,55 @@
+SetGridsize(100, 100, 50)
+SetCellsize(1e-6/100, 1e-6/100, 1e-6/50)
+
+EdgeSmooth = 8
+
+setgeom( rect(800e-9, 500e-9) )
+saveas(geom, "rect")
+
+setgeom( cylinder(800e-9, inf) )
+saveas(geom, "cylinder")
+
+setgeom( circle(200e-9).repeat(300e-9, 400e-9, 0) )
+saveas(geom, "circle_repeat")
+
+setgeom( cylinder(800e-9, inf).inverse() )
+saveas(geom, "cylinder_inverse")
+
+setgeom( cylinder(800e-9, 600e-9).transl(200e-9, 100e-9, 0) )
+saveas(geom, "cylinder_transl")
+
+setgeom( ellipsoid(800e-9, 600e-9, 500e-9) )
+saveas(geom, "ellipsoid")
+
+setgeom( cuboid(800e-9, 600e-9, 500e-9) )
+saveas(geom, "cuboid")
+
+setgeom( cuboid(800e-9, 600e-9, 500e-9).rotz(-10*pi/180) )
+saveas(geom, "cuboid_rotZ")
+
+setgeom( layers(0, 25) )
+saveas(geom, "layers")
+
+setgeom( cell(50, 20, 0) )
+saveas(geom, "cell")
+
+setgeom( xrange(0, inf) )
+saveas(geom, "xrange")
+
+a := cylinder(600e-9, 600e-9).transl(-150e-9, 50e-9, 0 )
+b := rect(600e-9, 600e-9).transl(150e-9, -50e-9, 0)
+
+setgeom( a.add(b) )
+saveas(geom, "logicAdd")
+
+setgeom( a.sub(b) )
+saveas(geom, "logicSub")
+
+setgeom( a.intersect(b) )
+saveas(geom, "logicAnd")
+
+setgeom( a.xor(b) )
+saveas(geom, "logicXor")
+
+setgeom( imageShape("mask.png") )
+saveas(geom, "imageShape")

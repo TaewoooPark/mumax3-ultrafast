@@ -1,0 +1,31 @@
+setGridSize(256, 64, 1)
+setCellSize(3e-9, 3e-9, 10e-9)
+
+Msat    = 860e3
+Aex     = 13e-12
+Xi      = 0.1
+alpha   = 0.02 
+m       = twodomain(1,0,0,  0,1,0,  -1,0,0)
+
+notches := rect(15e-9, 15e-9).RotZ(45*pi/180).Repeat(200e-9, 64*3e-9, 0).Transl(0, 32*3e-9, 0)
+setGeom(notches.inverse())
+
+// Remove surface charges from left (mx=1) and right (mx=-1) sides to mimic infinitely long wire. We have to specify the region (0) at the boundaries.
+BoundaryRegion := 0
+MagLeft        := 1
+MagRight       := -1
+ext_rmSurfaceCharge(BoundaryRegion, MagLeft, MagRight)
+
+relax()
+
+ext_centerWall(0) // keep m[0] (m_x) close to zero
+
+// Schedule output
+autosave(m, 50e-12)
+tableadd(ext_dwpos)   // domain wall position
+tableautosave(10e-12)
+
+// Run the simulation with current through the sample
+pol = 0.56
+J   = vector(-10e12, 0, 0)
+Run(0.5e-9)

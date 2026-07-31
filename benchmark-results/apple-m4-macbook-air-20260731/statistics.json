@@ -1,0 +1,57 @@
+{
+  "benchmark": {
+    "source_url": "https://github.com/mumax/3/blob/f656494b29516bead825b444b1f0b38c6e6c7dbf/bench/bench.mx3",
+    "source_sha256": "d839c6a1ec9fc76d6c37abc63cc21fdc508efe295c38b0bbc3ce2834d37eabaa",
+    "cells": 4194304,
+    "grid": [2048, 2048, 1],
+    "measured_steps": 100
+  },
+  "environment": {
+    "computer": "MacBook Air Mac16,13",
+    "chip": "Apple M4",
+    "cpu_cores": 10,
+    "gpu_cores": 10,
+    "unified_memory_gb": 32,
+    "os": "macOS 15.6 (24G84)",
+    "architecture": "arm64",
+    "backend": "Metal 3",
+    "go": "go1.26.5",
+    "mumax3_runtime_reported_commit": "f133509f",
+    "mumax3_equivalent_rewritten_commit": "120ec5ea",
+    "binary_sha256": "275a4cb842f1cd7c040c1706e90fb7e15d263f41ef705929714be3f23f794bbb",
+    "power_source": "AC Power",
+    "low_power_mode": false
+  },
+  "throughput_cells_per_second": [
+    65860758.92890422,
+    66432431.92361978,
+    66018736.65128375,
+    65698946.007482015,
+    66543828.37537558
+  ],
+  "statistics": {
+    "median_cells_per_second": 66018736.65128375,
+    "mean_cells_per_second": 66110940.37733307,
+    "minimum_cells_per_second": 65698946.007482015,
+    "maximum_cells_per_second": 66543828.37537558,
+    "population_standard_deviation_percent": 0.493
+  },
+  "published_website_comparison": {
+    "checked_at": "2026-07-31T02:54:21+09:00",
+    "chart_url": "https://mumax.github.io/gpus.svg",
+    "chart_sha256": "7d5d0c44fbe68bad4d61c079f5f6ee86517a1485535c647ab36b7c005efc6143",
+    "cuda_entries": 58,
+    "rank_after_insertion": 55,
+    "total_after_insertion": 59,
+    "cuda_entries_faster": 54,
+    "cuda_entries_slower": 4,
+    "nearest_faster": {
+      "device": "GTX 1050 (mobile)",
+      "cells_per_second": 72606939.9178654
+    },
+    "nearest_slower": {
+      "device": "GTX 860M",
+      "cells_per_second": 55278401.60261479
+    }
+  }
+}

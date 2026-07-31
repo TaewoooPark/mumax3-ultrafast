@@ -71,14 +71,40 @@ When installing from an existing checkout, use:
 ./install-macos.sh
 ```
 
-After installation, open a new Terminal or run `source ~/.zprofile`. An
-ordinary mumax³ input file can then be started with:
+After installation, open a new Terminal or run `source ~/.zprofile`.
+
+## Running a simulation on macOS
+
+### Live Web UI (default)
+
+Run an ordinary mumax³ input file without an `-http` flag:
+
+```bash
+mumax3 example.mx3
+```
+
+This starts the simulation and the live Web UI on
+<http://127.0.0.1:35367>. Open that address manually if the browser does not
+open automatically. You can inspect the magnetization and progress while the
+simulation is running; normal output is also written to `example.out/`.
+
+To use another port:
+
+```bash
+mumax3 -http=":35368" example.mx3
+```
+
+### Headless or batch execution
+
+Disable the Web UI explicitly for scripts, remote shells, benchmarks, or batch
+runs:
 
 ```bash
 mumax3 -http="" example.mx3
 ```
 
-The startup banner identifies `Metal` and the selected Apple GPU. `-gpu` is
+Both modes run the same simulation and write the same result directory. The
+startup banner identifies `Metal` and the selected Apple GPU. `-gpu` is
 accepted for CLI compatibility but Apple Silicon exposes one system-default
 Metal device. Use `-sync` only for debugging; it forces synchronization after
 each GPU call and substantially reduces performance. Do not install CUDA on a
@@ -108,6 +134,22 @@ cuRAND normal generation, the Metal path also accepts odd cell counts. One Hopf
 summand that used double-complex intermediates in CUDA uses `float2` on Apple
 GPUs, which do not provide native FP64; its output is checked with an explicit
 floating-point tolerance rather than bit-for-bit comparison.
+
+## Verified examples and performance
+
+The repository includes the exact 15 scripts from the
+[official examples page](https://mumax.github.io/examples.html), their complete
+Apple M4 execution outputs, logs, and license/attribution:
+
+- [Working examples and results](examples-and-results/)
+- [15/15 execution report](examples-and-results/RESULTS.md)
+- [Official example source and GPL-3.0-or-later license](examples-and-results/SOURCE_AND_LICENSE.md)
+
+The official 4-million-cell benchmark produced a 5-run median of
+**66.02 M cells/s** on the tested 10-core-GPU M4 MacBook Air. Inserted into the
+CUDA ranking currently published on the mumax³ website, it falls between the
+GTX 1050 mobile and GTX 860M: **55th out of 59 entries after insertion**.
+See the [benchmark method, raw runs, and interpretation](benchmark-results/apple-m4-macbook-air-20260731/).
 
 ## Downloads and documentation
 
@@ -277,7 +319,7 @@ Click on the arrows below to expand the installation instructions:<br><sub><sup>
 
 <details><summary>(Optional: <b><i>install gnuplot</i></b> for pretty graphs)</summary>
 
-* **Windows:** [Download]((http://www.gnuplot.info/download.html)) and install.
+* **Windows:** [Download](http://www.gnuplot.info/download.html) and install.
 * **Linux:** `sudo apt-get install gnuplot`
 
 👉 *Check gnuplot installation with: `gnuplot -V`*
