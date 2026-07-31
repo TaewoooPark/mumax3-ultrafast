@@ -26,6 +26,11 @@
     // 47 us + 41 us for the two stages.
     NSArray<NSNumber *> *primaryAxes;
     NSArray<NSNumber *> *leadingAxes;
+    // Shapes for the Hermitian-axis stage when the zero-padded tail is skipped.
+    // Equal to realShape/HermitianShape when no rows are skipped.
+    NSArray<NSNumber *> *activeRealShape;
+    NSArray<NSNumber *> *activeHermitianShape;
+    BOOL skipsPaddedRows;
     MPSGraph *forwardGraph;
     MPSGraphTensor *forwardInput;
     MPSGraphTensor *forwardOutput;
@@ -112,6 +117,46 @@ static NSArray<NSNumber *> *mf_axes(size_t rank, int64_t batch) {
  */
 static const int64_t mf_split_threshold = 512;
 
+/*
+ * Restrict the Hermitian-axis stage to the leading active rows. The rows the
+ * caller declares inactive are zero, so their transform is zero; the stage that
+ * follows still reads the full array, because those zeros are exactly the
+ * zero-padding the convolution depends on.
+ *
+ * Only the Hermitian axis can be shortened this way. The zeros inside an active
+ * row are the padding along that axis and must be transformed.
+ */
+static void mf_active_shapes(MFPlan *plan, int64_t activeOuter) {
+    plan->activeRealShape = plan->realShape;
+    plan->activeHermitianShape = plan->HermitianShape;
+    plan->skipsPaddedRows = NO;
+    if (activeOuter <= 0 || plan->leadingAxes.count == 0) {
+        return;
+    }
+    NSUInteger count = plan->realShape.count;
+    if (count < 2) {
+        return;
+    }
+    NSUInteger outer = count - 2;
+    if (activeOuter >= plan->realShape[outer].longLongValue) {
+        return;  // nothing to skip
+    }
+    // The active rows must be a contiguous prefix, so every axis outside the
+    // one being shortened has to be a single plane.
+    for (NSUInteger axis = 0; axis < outer; ++axis) {
+        if (plan->realShape[axis].longLongValue != 1) {
+            return;
+        }
+    }
+    NSMutableArray<NSNumber *> *real = [plan->realShape mutableCopy];
+    NSMutableArray<NSNumber *> *herm = [plan->HermitianShape mutableCopy];
+    real[outer] = @(activeOuter);
+    herm[outer] = @(activeOuter);
+    plan->activeRealShape = [real copy];
+    plan->activeHermitianShape = [herm copy];
+    plan->skipsPaddedRows = YES;
+}
+
 static void mf_split_axes(MFPlan *plan, const int64_t *dimensions, size_t rank) {
     NSUInteger count = plan->axes.count;
     // Without a split the single graph must still transform every axis.
@@ -126,7 +171,7 @@ static void mf_split_axes(MFPlan *plan, const int64_t *dimensions, size_t rank) 
             longestLeading = dimensions[axis];
         }
     }
-    if (longestLeading > mf_split_threshold) {
+    if (longestLeading >= mf_split_threshold) {
         plan->leadingAxes =
             [plan->axes subarrayWithRange:NSMakeRange(0, count - 1)];
         plan->primaryAxes = @[plan->axes[count - 1]];
@@ -144,7 +189,7 @@ static size_t mf_element_count(NSArray<NSNumber *> *shape) {
 static void mf_build_forward_graph(MFPlan *plan) {
     plan->forwardGraph = [MPSGraph new];
     if (plan->transform == MF_R2C) {
-        plan->forwardInput = [plan->forwardGraph placeholderWithShape:plan->realShape
+        plan->forwardInput = [plan->forwardGraph placeholderWithShape:plan->activeRealShape
                                                              dataType:MPSDataTypeFloat32
                                                                  name:@"mumax3_fft_r2c_input"];
         MPSGraphFFTDescriptor *descriptor = [MPSGraphFFTDescriptor descriptor];
@@ -203,7 +248,7 @@ static void mf_build_inverse_graph(MFPlan *plan) {
                                                                       descriptor:stage
                                                                             name:@"mumax3_fft_c2r_stage_output"];
         }
-        plan->inverseInput = [plan->inverseGraph placeholderWithShape:plan->HermitianShape
+        plan->inverseInput = [plan->inverseGraph placeholderWithShape:plan->activeHermitianShape
                                                              dataType:MPSDataTypeComplexFloat32
                                                                  name:@"mumax3_fft_c2r_input"];
         plan->inverseOutput = [plan->inverseGraph HermiteanToRealFFTWithTensor:plan->inverseInput
@@ -248,6 +293,7 @@ extern "C" void *mf_plan_create(const int64_t *dimensions,
                                   size_t rank,
                                   int64_t batch,
                                   int32_t transform,
+                                  int64_t active_outer,
                                   char **error_message) {
     @autoreleasepool {
         if (dimensions == nullptr || rank == 0 || rank > 3 || batch < 1) {
@@ -273,6 +319,13 @@ extern "C" void *mf_plan_create(const int64_t *dimensions,
                 plan->HermitianShape = mf_shape(dimensions, rank, batch, YES);
                 plan->axes = mf_axes(rank, batch);
                 mf_split_axes(plan, dimensions, rank);
+                // Skipping padded rows needs the two-stage form, so it only
+                // applies where mf_split_axes already chose to split. Forcing a
+                // split just to skip rows loses: measured on an M4, whole-demag
+                // time went from 167 to 209 us at padded 128x128 and 219 to 278
+                // us at 256x256, because the extra MPSGraph encode costs more
+                // than halving an already cheap Hermitian pass saves.
+                mf_active_shapes(plan, active_outer);
                 plan->realBytes = mf_element_count(plan->realShape) * sizeof(float);
                 plan->HermitianBytes = mf_element_count(plan->HermitianShape) * 2 * sizeof(float);
 
@@ -391,13 +444,25 @@ extern "C" int mf_plan_execute(void *opaquePlan,
                     if (stageGraph != nil && plan->scratch == nil) {
                         id<MTLDevice> metalDevice =
                             (__bridge id<MTLDevice>)context.device;
+                        /*
+                         * Shared rather than Private so the padded tail can be
+                         * zeroed once here. On a forward transform that skips
+                         * padded rows the Hermitian stage only ever writes the
+                         * leading prefix, and the stage after it reads the whole
+                         * buffer, so the tail has to start at zero and stays
+                         * zero for the life of the plan. Private measured no
+                         * faster than Shared on this unified memory anyway.
+                         */
                         plan->scratch =
                             [metalDevice newBufferWithLength:plan->HermitianBytes
-                                                     options:MTLResourceStorageModePrivate];
-                        if (plan->scratch == nil) {
+                                                     options:MTLResourceStorageModeShared];
+                        if (plan->scratch == nil || plan->scratch.contents == nullptr) {
+                            plan->scratch = nil;
                             mf_set_error(error_message,
                                          @"failed to allocate the Metal FFT stage buffer");
                             result = MF_ERROR_RUNTIME;
+                        } else {
+                            memset(plan->scratch.contents, 0, plan->HermitianBytes);
                         }
                     }
 
@@ -410,34 +475,78 @@ extern "C" int mf_plan_execute(void *opaquePlan,
                                    resultsDictionary:@{outputTensor: outputData}
                                  executionDescriptor:nil];
                     } else {
-                        MPSGraphTensorData *scratchData =
+                        /*
+                         * The Hermitian stage works on the leading active rows,
+                         * the other stage on the whole array. Both views start at
+                         * the same address because the active rows are a
+                         * contiguous prefix, which is what mf_active_shapes
+                         * checks before enabling this.
+                         */
+                        MPSGraphTensorData *scratchFull =
                             [[MPSGraphTensorData alloc] initWithMTLBuffer:plan->scratch
                                                                    shape:plan->HermitianShape
                                                                 dataType:MPSDataTypeComplexFloat32];
+                        MPSGraphTensorData *scratchActive = scratchFull;
+                        if (plan->skipsPaddedRows) {
+                            scratchActive =
+                                [[MPSGraphTensorData alloc] initWithMTLBuffer:plan->scratch
+                                                                       shape:plan->activeHermitianShape
+                                                                    dataType:MPSDataTypeComplexFloat32];
+                        }
                         if (inverse) {
-                            // C2C over the leading axes, then C2R over the last.
-                            [stageGraph encodeToCommandBuffer:mpsCommandBuffer
-                                                       feeds:@{plan->stageInput: inputData}
-                                            targetOperations:nil
-                                           resultsDictionary:@{plan->stageOutput: scratchData}
-                                         executionDescriptor:nil];
-                            [graph encodeToCommandBuffer:mpsCommandBuffer
-                                                  feeds:@{inputTensor: scratchData}
-                                       targetOperations:nil
-                                      resultsDictionary:@{outputTensor: outputData}
-                                    executionDescriptor:nil];
+                            // Inverse over the leading axes needs every row,
+                            // including the padding. The Hermitian stage then
+                            // only has to reconstruct the rows copyUnPad reads.
+                            MPSGraphTensorData *realOut = outputData;
+                            if (plan->skipsPaddedRows) {
+                                realOut = mf_tensor_data(outputBuffer,
+                                                         outputView.offset,
+                                                         plan->activeRealShape,
+                                                         MPSDataTypeFloat32);
+                            }
+                            if (realOut == nil) {
+                                mf_set_error(error_message,
+                                             @"non-zero FFT buffer offsets require an Xcode 16+/macOS 15 build");
+                                result = MF_ERROR_UNAVAILABLE;
+                            } else {
+                                [stageGraph encodeToCommandBuffer:mpsCommandBuffer
+                                                           feeds:@{plan->stageInput: inputData}
+                                                targetOperations:nil
+                                               resultsDictionary:@{plan->stageOutput: scratchFull}
+                                             executionDescriptor:nil];
+                                [graph encodeToCommandBuffer:mpsCommandBuffer
+                                                      feeds:@{inputTensor: scratchActive}
+                                           targetOperations:nil
+                                          resultsDictionary:@{outputTensor: realOut}
+                                        executionDescriptor:nil];
+                            }
                         } else {
-                            // R2C over the last axis, then C2C over the rest.
-                            [graph encodeToCommandBuffer:mpsCommandBuffer
-                                                  feeds:@{inputTensor: inputData}
-                                       targetOperations:nil
-                                      resultsDictionary:@{outputTensor: scratchData}
-                                    executionDescriptor:nil];
-                            [stageGraph encodeToCommandBuffer:mpsCommandBuffer
-                                                       feeds:@{plan->stageInput: scratchData}
-                                            targetOperations:nil
-                                           resultsDictionary:@{plan->stageOutput: outputData}
-                                         executionDescriptor:nil];
+                            // The padded rows are zero, so their Hermitian
+                            // transform is zero and the scratch tail already
+                            // holds it. Only the active rows are transformed.
+                            MPSGraphTensorData *realIn = inputData;
+                            if (plan->skipsPaddedRows) {
+                                realIn = mf_tensor_data(inputBuffer,
+                                                        inputView.offset,
+                                                        plan->activeRealShape,
+                                                        MPSDataTypeFloat32);
+                            }
+                            if (realIn == nil) {
+                                mf_set_error(error_message,
+                                             @"non-zero FFT buffer offsets require an Xcode 16+/macOS 15 build");
+                                result = MF_ERROR_UNAVAILABLE;
+                            } else {
+                                [graph encodeToCommandBuffer:mpsCommandBuffer
+                                                      feeds:@{inputTensor: realIn}
+                                           targetOperations:nil
+                                          resultsDictionary:@{outputTensor: scratchActive}
+                                        executionDescriptor:nil];
+                                [stageGraph encodeToCommandBuffer:mpsCommandBuffer
+                                                           feeds:@{plan->stageInput: scratchFull}
+                                                targetOperations:nil
+                                               resultsDictionary:@{plan->stageOutput: outputData}
+                                             executionDescriptor:nil];
+                            }
                         }
                     }
                 }

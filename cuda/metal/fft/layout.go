@@ -9,6 +9,14 @@ import "fmt"
 type Layout struct {
 	Dimensions []int
 	Batch      int
+
+	// ActiveOuter is the number of entries along the second-to-last transform
+	// axis that can hold non-zero data, or 0 when every entry can. MuMax3
+	// zero-pads the magnetisation, so the trailing rows of a padded array are
+	// always zero; the transform along the fastest axis maps zero rows to zero
+	// rows and can skip them exactly. Only meaningful when those rows form a
+	// contiguous prefix, which the bridge re-checks before acting on it.
+	ActiveOuter int
 }
 
 // NewLayout validates and copies a transform shape.
@@ -32,6 +40,18 @@ func NewLayout(dimensions []int, batch int) (Layout, error) {
 		count *= size
 	}
 	return Layout{Dimensions: dims, Batch: batch}, nil
+}
+
+// WithActiveOuter records how many entries of the second-to-last transform axis
+// can be non-zero. Values outside (0, size) disable the optimisation.
+func (l Layout) WithActiveOuter(active int) Layout {
+	if len(l.Dimensions) >= 2 {
+		outer := l.Dimensions[len(l.Dimensions)-2]
+		if active > 0 && active < outer {
+			l.ActiveOuter = active
+		}
+	}
+	return l
 }
 
 // RealShape returns the MPSGraph tensor shape for real data. A leading batch

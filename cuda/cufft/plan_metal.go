@@ -14,15 +14,23 @@ import (
 type Handle uintptr
 
 func Plan1d(nx int, typ Type, batch int) Handle {
-	return newMetalPlan([]int{nx}, typ, batch)
+	return newMetalPlan([]int{nx}, typ, batch, 0)
 }
 
 func Plan2d(nx, ny int, typ Type) Handle {
-	return newMetalPlan([]int{nx, ny}, typ, 1)
+	return newMetalPlan([]int{nx, ny}, typ, 1, 0)
 }
 
 func Plan3d(nx, ny, nz int, typ Type) Handle {
-	return newMetalPlan([]int{nx, ny, nz}, typ, 1)
+	return newMetalPlan([]int{nx, ny, nz}, typ, 1, 0)
+}
+
+// Plan3dPadded is Plan3d for an array whose trailing rows along the
+// second-to-last axis are known to be zero. activeOuter is how many entries of
+// that axis can be non-zero; the transform along the fastest axis maps zero rows
+// to zero rows, so it can skip the rest exactly. Pass 0 to disable.
+func Plan3dPadded(nx, ny, nz int, typ Type, activeOuter int) Handle {
+	return newMetalPlan([]int{nx, ny, nz}, typ, 1, activeOuter)
 }
 
 // PlanMany supports the contiguous subset used by mumax3. Non-unit strides or
@@ -38,10 +46,10 @@ func PlanMany(n []int, inembed []int, istride int, oembed []int, ostride int, ty
 	if !sameOrNil(inembed, n) || !sameOrNil(oembed, n) {
 		panic("metal cufft: PlanMany explicit embedding is not supported")
 	}
-	return newMetalPlan(n, typ, batch)
+	return newMetalPlan(n, typ, batch, 0)
 }
 
-func newMetalPlan(dimensions []int, typ Type, batch int) Handle {
+func newMetalPlan(dimensions []int, typ Type, batch, activeOuter int) Handle {
 	transform := metalfft.Transform(typ)
 	switch typ {
 	case R2C, C2R, C2C:
@@ -52,6 +60,7 @@ func newMetalPlan(dimensions []int, typ Type, batch int) Handle {
 	if err != nil {
 		panic(err)
 	}
+	layout = layout.WithActiveOuter(activeOuter)
 	handle, err := metalfft.CreatePlan(layout, transform)
 	if err != nil {
 		panic(err)

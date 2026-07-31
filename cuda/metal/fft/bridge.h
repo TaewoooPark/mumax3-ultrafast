@@ -21,10 +21,20 @@ enum mf_transform {
     MF_C2R = 44
 };
 
+/*
+ * active_outer is the number of entries along the second-to-last transform axis
+ * that can hold non-zero data, or 0 when every entry can. MuMax3 zero-pads the
+ * magnetisation, so the trailing rows of the padded array are always zero and
+ * their Hermitian-axis transform is always zero. The Hermitian-axis stage can
+ * therefore be restricted to the leading active_outer rows, which is exact
+ * rather than an approximation. It requires those rows to be a contiguous prefix
+ * of the buffer, so the caller must pass 0 unless that holds.
+ */
 void *mf_plan_create(const int64_t *dimensions,
                      size_t rank,
                      int64_t batch,
                      int32_t transform,
+                     int64_t active_outer,
                      char **error_message);
 
 int mf_plan_execute(void *plan,

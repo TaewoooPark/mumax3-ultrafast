@@ -44,6 +44,7 @@ func CreatePlan(layout Layout, transform Transform) (uintptr, error) {
 		C.size_t(len(dimensions)),
 		C.int64_t(layout.Batch),
 		C.int32_t(transform),
+		C.int64_t(layout.ActiveOuter),
 		&message,
 	)
 	runtime.KeepAlive(dimensions)

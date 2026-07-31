@@ -68,6 +68,15 @@ func Plan3d(nx, ny, nz int, typ Type) Handle {
 //    int odist, cufftType type, int batch );
 
 // 1D,2D or 3D FFT plan
+// Plan3dPadded is Plan3d for an array whose trailing rows along the
+// second-to-last axis are known to be zero. cuFFT has no way to express that,
+// so activeOuter is ignored here; the Metal backend uses it to skip the zero
+// rows of MuMax3's zero-padded arrays.
+func Plan3dPadded(nx, ny, nz int, typ Type, activeOuter int) Handle {
+	_ = activeOuter
+	return Plan3d(nx, ny, nz, typ)
+}
+
 func PlanMany(n []int, inembed []int, istride int, oembed []int, ostride int, typ Type, batch int) Handle {
 	var handle C.cufftHandle
 

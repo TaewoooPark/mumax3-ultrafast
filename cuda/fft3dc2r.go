@@ -16,8 +16,11 @@ type fft3DC2RPlan struct {
 }
 
 // 3D single-precision complex-to-real FFT plan.
-func newFFT3DC2R(Nx, Ny, Nz int) fft3DC2RPlan {
-	handle := cufft.Plan3d(Nz, Ny, Nx, cufft.C2R) // new xyz swap
+// activeY is how many rows along Y can be non-zero, or 0 when all can.
+// MuMax3 zero-pads the magnetisation, so the transform along X maps the
+// padded rows to zero rows and can skip them exactly.
+func newFFT3DC2R(Nx, Ny, Nz, activeY int) fft3DC2RPlan {
+	handle := cufft.Plan3dPadded(Nz, Ny, Nx, cufft.C2R, activeY) // new xyz swap
 	handle.SetStream(stream0)
 	return fft3DC2RPlan{fftplan{handle}, [3]int{Nx, Ny, Nz}}
 }

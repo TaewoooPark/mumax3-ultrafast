@@ -143,8 +143,26 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 	c.fftBwBuf = NewSlice(1, c.realKernSize)
 
 	// init FFT plans
-	c.fwPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z])
-	c.bwPlan = newFFT3DC2R(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z])
+	//
+	// The padded buffer only holds data in its inputSize corner; everything
+	// else is zero and stays zero (see fwFFT), and copyUnPad only reads that
+	// corner back. The transform along X therefore maps the padded Y rows to
+	// zero rows on the way in, and only the data rows are needed on the way
+	// out, so both X passes can skip them. That is exact, not an
+	// approximation: the FFT of a zero row is a zero row.
+	//
+	// The Y and Z passes must still see every row, because those zeros are the
+	// zero-padding that turns the cyclic convolution into a linear one.
+	//
+	// Only claim it when the data rows are a contiguous prefix of the buffer,
+	// which needs a single Z plane. The bridge re-checks this and ignores the
+	// hint otherwise.
+	activeY := 0
+	if c.realKernSize[Z] == 1 {
+		activeY = c.inputSize[Y]
+	}
+	c.fwPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeY)
+	c.bwPlan = newFFT3DC2R(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeY)
 
 	// init FFT kernel
 
@@ -156,6 +174,13 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 	// physical size of FFT(kernel): store only non-redundant part exploiting Y, Z mirror symmetry
 	// X mirror symmetry already exploited: FFT(kernel) is purely real.
 	physKSize := [3]int{c.fftKernLogicSize[X], c.fftKernLogicSize[Y]/2 + 1, c.fftKernLogicSize[Z]/2 + 1}
+
+	// The transforms below carry the demag kernel, which fills the whole padded
+	// array rather than only the inputSize corner, so they must not use the
+	// zero-row hint that c.fwPlan carries. Use a full-extent plan for them and
+	// release it once the kernel is in Fourier space.
+	kernPlan := newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], 0)
+	defer kernPlan.Free()
 
 	output := c.fftCBuf[0]
 	input := c.fftRBuf[0]
@@ -172,7 +197,7 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 			if realKern[i][j] != nil { // ignore 0's
 				// FW FFT
 				data.Copy(input, realKern[i][j])
-				c.fwPlan.ExecAsync(input, output)
+				kernPlan.ExecAsync(input, output)
 				data.Copy(kfull, output)
 
 				// extract non-redundant part (Y,Z symmetry)
@@ -185,7 +210,7 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 				}
 
 				// extract real parts (X symmetry)
-				scaleRealParts(fftKern, kCmplx, 1/float32(c.fwPlan.InputLen()))
+				scaleRealParts(fftKern, kCmplx, 1/float32(kernPlan.InputLen()))
 				c.kern[i][j] = GPUCopy(fftKern)
 			}
 		}
