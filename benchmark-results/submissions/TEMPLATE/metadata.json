@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "contributor_github": "",
+  "machine": {
+    "marketing_model": "",
+    "model_identifier": "",
+    "chip": "",
+    "gpu_cores": 0,
+    "unified_memory_gb": 0
+  },
+  "environment": {
+    "macos_version": "",
+    "architecture": "arm64",
+    "backend": "Metal"
+  },
+  "build": {
+    "repository_commit": "",
+    "binary_sha256": ""
+  },
+  "run_conditions": {
+    "power_source": "AC Power",
+    "low_power_mode": false,
+    "notes": ""
+  }
+}

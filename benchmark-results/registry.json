@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "measurements": [
+    {
+      "label": "Apple M4 10-core GPU — MacBook Air (measured)",
+      "backend": "Metal",
+      "result_path": "benchmark-results/apple-m4-macbook-air-20260731/statistics.json",
+      "evidence_path": "benchmark-results/apple-m4-macbook-air-20260731/README.md",
+      "replaces_estimate_label": "Apple M4 10-core GPU"
+    }
+  ]
+}

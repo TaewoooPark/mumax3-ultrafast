@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "model": {
+    "name": "M4-calibrated balanced-roofline projection",
+    "reference_label": "Apple M4 10-core GPU — MacBook Air",
+    "reference_throughput_mcells_per_second": 66.01873665128375,
+    "reference_memory_bandwidth_gbps": 120,
+    "formula": "reference_throughput * min(compute_ratio, memory_bandwidth_gbps / reference_memory_bandwidth_gbps)",
+    "scope": "Chip-level 4M-cell throughput projection; not a device or chassis measurement",
+    "assumptions": [
+      "The target uses the same mumax3 Metal backend and 4M-cell benchmark as the reference.",
+      "Apple's published graphics-performance ratios are used as compute-capacity proxies.",
+      "Binned GPU configurations scale their compute proxy linearly by active GPU-core count.",
+      "Backend efficiency, operating-system FFT selection, thermal behavior, and fixed overhead are held constant."
+    ]
+  },
+  "references": [
+    {
+      "id": "apple-metal-performance",
+      "title": "Metal Performance Primitives Programming Guide",
+      "url": "https://developer.apple.com/download/files/Metal-Performance-Primitives-Programming-Guide.pdf"
+    },
+    {
+      "id": "apple-m1-air-specs",
+      "title": "MacBook Air (M1, 2020) technical specifications",
+      "url": "https://support.apple.com/en-us/111883"
+    },
+    {
+      "id": "apple-m1-pro-max",
+      "title": "Introducing M1 Pro and M1 Max",
+      "url": "https://www.apple.com/newsroom/2021/10/introducing-m1-pro-and-m1-max-the-most-powerful-chips-apple-has-ever-built/"
+    },
+    {
+      "id": "apple-m1-ultra",
+      "title": "Apple unveils M1 Ultra",
+      "url": "https://www.apple.com/newsroom/2022/03/apple-unveils-m1-ultra-the-worlds-most-powerful-chip-for-a-personal-computer/"
+    },
+    {
+      "id": "apple-m2",
+      "title": "Apple unveils M2",
+      "url": "https://www.apple.com/ie/newsroom/2022/06/apple-unveils-m2-with-breakthrough-performance-and-capabilities/"
+    },
+    {
+      "id": "apple-m2-air-specs",
+      "title": "MacBook Air (M2, 2022) technical specifications",
+      "url": "https://support.apple.com/en-us/111867"
+    },
+    {
+      "id": "apple-m2-pro-max",
+      "title": "Apple unveils M2 Pro and M2 Max",
+      "url": "https://www.apple.com/newsroom/2023/01/apple-unveils-macbook-pro-featuring-m2-pro-and-m2-max/"
+    },
+    {
+      "id": "apple-m2-ultra",
+      "title": "Apple introduces M2 Ultra",
+      "url": "https://www.apple.com/uk/newsroom/2023/06/apple-introduces-m2-ultra/"
+    },
+    {
+      "id": "apple-m3-family",
+      "title": "Apple unveils M3, M3 Pro, and M3 Max",
+      "url": "https://www.apple.com/ae/newsroom/2023/10/apple-unveils-m3-m3-pro-and-m3-max-the-most-advanced-chips-for-a-personal-computer/"
+    },
+    {
+      "id": "apple-m3-air-specs",
+      "title": "MacBook Air (13-inch, M3, 2024) technical specifications",
+      "url": "https://support.apple.com/en-us/118551"
+    },
+    {
+      "id": "apple-m3-pro-max-specs",
+      "title": "MacBook Pro (16-inch, November 2023) technical specifications",
+      "url": "https://support.apple.com/en-us/117737"
+    },
+    {
+      "id": "apple-m3-ultra",
+      "title": "Apple reveals M3 Ultra",
+      "url": "https://www.apple.com/mu/newsroom/2025/03/apple-reveals-m3-ultra-taking-apple-silicon-to-a-new-extreme/"
+    },
+    {
+      "id": "apple-m3-ultra-specs",
+      "title": "Mac Studio (2025) technical specifications",
+      "url": "https://support.apple.com/en-us/122211"
+    },
+    {
+      "id": "apple-m4-family",
+      "title": "Apple introduces M4 Pro and M4 Max",
+      "url": "https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/"
+    },
+    {
+      "id": "apple-m4-air-specs",
+      "title": "MacBook Air (13-inch, M4, 2025) technical specifications",
+      "url": "https://support.apple.com/en-us/122209"
+    },
+    {
+      "id": "apple-m4-pro-max-specs",
+      "title": "MacBook Pro (16-inch, 2024) technical specifications",
+      "url": "https://support.apple.com/en-us/121554"
+    },
+    {
+      "id": "apple-m5",
+      "title": "Apple unleashes M5",
+      "url": "https://www.apple.com/ca/newsroom/2025/10/apple-unleashes-m5-the-next-big-leap-in-ai-performance-for-apple-silicon/"
+    },
+    {
+      "id": "apple-m5-air-specs",
+      "title": "MacBook Air technical specifications",
+      "url": "https://www.apple.com/macbook-air/specs/"
+    },
+    {
+      "id": "apple-m5-pro-max",
+      "title": "Apple debuts M5 Pro and M5 Max",
+      "url": "https://www.apple.com/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/"
+    },
+    {
+      "id": "apple-m5-pro-max-specs",
+      "title": "MacBook Pro technical specifications",
+      "url": "https://www.apple.com/macbook-pro/specs/"
+    }
+  ],
+  "estimates": [
+    {"label": "Apple M1 7-core GPU", "gpu_cores": 7, "memory_bandwidth_gbps": 66.6666667, "compute_ratio": 0.4375, "sources": ["apple-m1-air-specs", "apple-m2", "apple-m4-family"]},
+    {"label": "Apple M1 8-core GPU", "gpu_cores": 8, "memory_bandwidth_gbps": 66.6666667, "compute_ratio": 0.5, "sources": ["apple-m1-air-specs", "apple-m2", "apple-m4-family"]},
+    {"label": "Apple M2 8-core GPU", "gpu_cores": 8, "memory_bandwidth_gbps": 100, "compute_ratio": 0.54, "sources": ["apple-m2", "apple-m2-air-specs", "apple-m4-family"]},
+    {"label": "Apple M2 10-core GPU", "gpu_cores": 10, "memory_bandwidth_gbps": 100, "compute_ratio": 0.675, "sources": ["apple-m2", "apple-m2-air-specs", "apple-m4-family"]},
+    {"label": "Apple M3 8-core GPU", "gpu_cores": 8, "memory_bandwidth_gbps": 100, "compute_ratio": 0.66, "sources": ["apple-m3-family", "apple-m3-air-specs", "apple-m4-family"]},
+    {"label": "Apple M3 10-core GPU", "gpu_cores": 10, "memory_bandwidth_gbps": 100, "compute_ratio": 0.825, "sources": ["apple-m3-family", "apple-m3-air-specs", "apple-m4-family"]},
+    {"label": "Apple M4 8-core GPU", "gpu_cores": 8, "memory_bandwidth_gbps": 120, "compute_ratio": 0.8, "sources": ["apple-m4-family", "apple-m4-air-specs"]},
+    {"label": "Apple M5 8-core GPU", "gpu_cores": 8, "memory_bandwidth_gbps": 153, "compute_ratio": 1.04, "sources": ["apple-m5", "apple-m5-air-specs", "apple-m4-family"]},
+    {"label": "Apple M5 10-core GPU", "gpu_cores": 10, "memory_bandwidth_gbps": 153, "compute_ratio": 1.3, "sources": ["apple-m5", "apple-m5-air-specs", "apple-m4-family"]},
+
+    {"label": "Apple M1 Pro 14-core GPU", "gpu_cores": 14, "memory_bandwidth_gbps": 200, "compute_ratio": 0.875, "sources": ["apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M1 Pro 16-core GPU", "gpu_cores": 16, "memory_bandwidth_gbps": 200, "compute_ratio": 1.0, "sources": ["apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M2 Pro 16-core GPU", "gpu_cores": 16, "memory_bandwidth_gbps": 200, "compute_ratio": 1.0947368421, "sources": ["apple-m2-pro-max", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M2 Pro 19-core GPU", "gpu_cores": 19, "memory_bandwidth_gbps": 200, "compute_ratio": 1.3, "sources": ["apple-m2-pro-max", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M3 Pro 14-core GPU", "gpu_cores": 14, "memory_bandwidth_gbps": 150, "compute_ratio": 1.0888888889, "sources": ["apple-m3-family", "apple-m3-pro-max-specs", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M3 Pro 18-core GPU", "gpu_cores": 18, "memory_bandwidth_gbps": 150, "compute_ratio": 1.4, "sources": ["apple-m3-family", "apple-m3-pro-max-specs", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M4 Pro 16-core GPU", "gpu_cores": 16, "memory_bandwidth_gbps": 273, "compute_ratio": 1.6, "sources": ["apple-m4-family", "apple-m4-pro-max-specs"]},
+    {"label": "Apple M4 Pro 20-core GPU", "gpu_cores": 20, "memory_bandwidth_gbps": 273, "compute_ratio": 2.0, "sources": ["apple-m4-family", "apple-m4-pro-max-specs"]},
+    {"label": "Apple M5 Pro 16-core GPU", "gpu_cores": 16, "memory_bandwidth_gbps": 307, "compute_ratio": 1.92, "sources": ["apple-m5-pro-max", "apple-m5-pro-max-specs", "apple-m4-family"]},
+    {"label": "Apple M5 Pro 20-core GPU", "gpu_cores": 20, "memory_bandwidth_gbps": 307, "compute_ratio": 2.4, "sources": ["apple-m5-pro-max", "apple-m5-pro-max-specs", "apple-m4-family"]},
+
+    {"label": "Apple M1 Max 24-core GPU", "gpu_cores": 24, "memory_bandwidth_gbps": 400, "compute_ratio": 1.5, "sources": ["apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M1 Max 32-core GPU", "gpu_cores": 32, "memory_bandwidth_gbps": 400, "compute_ratio": 2.0, "sources": ["apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M2 Max 30-core GPU", "gpu_cores": 30, "memory_bandwidth_gbps": 400, "compute_ratio": 2.0526315789, "sources": ["apple-m2-pro-max", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M2 Max 38-core GPU", "gpu_cores": 38, "memory_bandwidth_gbps": 400, "compute_ratio": 2.6, "sources": ["apple-m2-pro-max", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M3 Max 30-core GPU", "gpu_cores": 30, "memory_bandwidth_gbps": 300, "compute_ratio": 2.25, "sources": ["apple-m3-family", "apple-m3-pro-max-specs", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M3 Max 40-core GPU", "gpu_cores": 40, "memory_bandwidth_gbps": 400, "compute_ratio": 3.0, "sources": ["apple-m3-family", "apple-m3-pro-max-specs", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M4 Max 32-core GPU", "gpu_cores": 32, "memory_bandwidth_gbps": 410, "compute_ratio": 3.04, "sources": ["apple-m4-family", "apple-m4-pro-max-specs", "apple-m1-pro-max"]},
+    {"label": "Apple M4 Max 40-core GPU", "gpu_cores": 40, "memory_bandwidth_gbps": 546, "compute_ratio": 3.8, "sources": ["apple-m4-family", "apple-m4-pro-max-specs", "apple-m1-pro-max"]},
+    {"label": "Apple M5 Max 32-core GPU", "gpu_cores": 32, "memory_bandwidth_gbps": 460, "compute_ratio": 3.648, "sources": ["apple-m5-pro-max", "apple-m5-pro-max-specs", "apple-m4-family"]},
+    {"label": "Apple M5 Max 40-core GPU", "gpu_cores": 40, "memory_bandwidth_gbps": 614, "compute_ratio": 4.56, "sources": ["apple-m5-pro-max", "apple-m5-pro-max-specs", "apple-m4-family"]},
+
+    {"label": "Apple M1 Ultra 48-core GPU", "gpu_cores": 48, "memory_bandwidth_gbps": 800, "compute_ratio": 3.0, "sources": ["apple-m1-ultra", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M1 Ultra 64-core GPU", "gpu_cores": 64, "memory_bandwidth_gbps": 800, "compute_ratio": 4.0, "sources": ["apple-m1-ultra", "apple-m1-pro-max", "apple-m4-family"]},
+    {"label": "Apple M2 Ultra 60-core GPU", "gpu_cores": 60, "memory_bandwidth_gbps": 800, "compute_ratio": 4.1052631579, "sources": ["apple-m2-ultra", "apple-m1-ultra", "apple-m4-family"]},
+    {"label": "Apple M2 Ultra 76-core GPU", "gpu_cores": 76, "memory_bandwidth_gbps": 800, "compute_ratio": 5.2, "sources": ["apple-m2-ultra", "apple-m1-ultra", "apple-m4-family"]},
+    {"label": "Apple M3 Ultra 60-core GPU", "gpu_cores": 60, "memory_bandwidth_gbps": 819, "compute_ratio": 7.8, "sources": ["apple-m3-ultra", "apple-m3-ultra-specs", "apple-m1-ultra"]},
+    {"label": "Apple M3 Ultra 80-core GPU", "gpu_cores": 80, "memory_bandwidth_gbps": 819, "compute_ratio": 10.4, "sources": ["apple-m3-ultra", "apple-m3-ultra-specs", "apple-m1-ultra"]}
+  ]
+}

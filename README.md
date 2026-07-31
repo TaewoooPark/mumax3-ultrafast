@@ -168,6 +168,72 @@ CUDA ranking currently published on the mumax³ website, it falls between the
 GTX 1050 mobile and GTX 860M: **55th out of 59 entries after insertion**.
 See the [benchmark method, raw runs, and interpretation](benchmark-results/apple-m4-macbook-air-20260731/).
 
+![Ranked mumax3 4-million-cell benchmark comparison: measured Apple Metal, estimated Apple Silicon, and published CUDA results](benchmark-results/apple-silicon-vs-cuda.svg)
+
+The chart uses **blue for measured Apple Metal**, **orange for calculated Apple
+Silicon projections**, and **gray for all 58 CUDA results in the mumax³ website
+snapshot**. Its position numbers sort all three categories together by
+throughput for visual comparison; they are not an official mumax³ ranking.
+Only the blue and gray bars are measurements.
+
+<details>
+<summary><strong>Estimated benchmark calculation method and references</strong></summary>
+
+The orange values use a deliberately simple, reproducible balanced-roofline
+projection. The only calibration point is the measured M4 10-core-GPU median:
+
+```text
+T₀ = 66.0187366513 million cells/s
+B₀ = 120 GB/s
+Rcompute = target graphics-performance proxy / M4 graphics-performance proxy
+Rbandwidth = target unified-memory bandwidth / 120 GB/s
+Ttarget = T₀ × min(Rcompute, Rbandwidth)
+```
+
+`Rcompute` comes from Apple's published, non-AI graphics-performance ratios.
+For a binned GPU from the same chip family, the ratio is scaled linearly by its
+active GPU-core count. `Rbandwidth` uses Apple's published unified-memory
+bandwidth. Taking the smaller ratio prevents either nominal shader capacity or
+memory bandwidth from being counted twice. Neural Accelerator/Neural Engine
+claims and ray-tracing-only gains are excluded because the current Metal
+backend uses ordinary FP32 compute kernels and MPSGraph FFTs, not those units.
+
+This is a chip-level estimate for the same 4-million-cell workload, not a
+measurement of any Mac model. It assumes unchanged backend efficiency, FFT
+selection, fixed overhead, cooling, and sustained clocks. A MacBook Air,
+MacBook Pro, Mac mini, iMac, and Mac Studio with the same chip can therefore
+produce different measured results. The method is intended to rank candidates
+for real testing, not to replace that testing.
+
+Machine-readable inputs and per-chip source mappings are in
+[`apple-silicon-estimates.json`](benchmark-results/apple-silicon-estimates.json).
+The SVG is regenerated from those inputs, the measurement
+[`registry.json`](benchmark-results/registry.json), and the frozen CUDA website
+snapshot by running `go run ./benchmark-results/tools/chart`. The limiting
+`min(compute, bandwidth)` structure follows the
+[Roofline performance model](https://doi.org/10.1145/1498765.1498785).
+
+Primary sources:
+
+- mumax³: [official benchmark input](https://github.com/mumax/3/blob/master/bench/bench.mx3), [published GPU chart](https://mumax.github.io/gpus.svg), and [website](https://mumax.github.io/)
+- Metal: [Metal Performance Primitives Programming Guide](https://developer.apple.com/download/files/Metal-Performance-Primitives-Programming-Guide.pdf) and [GPU memory-bandwidth measurement](https://developer.apple.com/documentation/xcode/measuring-the-gpus-use-of-memory-bandwidth)
+- M1 family: [M1 Pro and M1 Max](https://www.apple.com/newsroom/2021/10/introducing-m1-pro-and-m1-max-the-most-powerful-chips-apple-has-ever-built/) and [M1 Ultra](https://www.apple.com/newsroom/2022/03/apple-unveils-m1-ultra-the-worlds-most-powerful-chip-for-a-personal-computer/)
+- M2 family: [M2](https://www.apple.com/ie/newsroom/2022/06/apple-unveils-m2-with-breakthrough-performance-and-capabilities/), [M2 Pro and M2 Max](https://www.apple.com/newsroom/2023/01/apple-unveils-macbook-pro-featuring-m2-pro-and-m2-max/), and [M2 Ultra](https://www.apple.com/uk/newsroom/2023/06/apple-introduces-m2-ultra/)
+- M3 family: [M3, M3 Pro, and M3 Max](https://www.apple.com/ae/newsroom/2023/10/apple-unveils-m3-m3-pro-and-m3-max-the-most-advanced-chips-for-a-personal-computer/), [M3 Pro/Max specifications](https://support.apple.com/en-us/117737), [M3 Ultra](https://www.apple.com/mu/newsroom/2025/03/apple-reveals-m3-ultra-taking-apple-silicon-to-a-new-extreme/), and [M3 Ultra specifications](https://support.apple.com/en-us/122211)
+- M4 family: [M4, M4 Pro, and M4 Max](https://www.apple.com/newsroom/2024/10/apple-introduces-m4-pro-and-m4-max/) and [M4 Pro/Max specifications](https://support.apple.com/en-us/121554)
+- M5 family: [M5](https://www.apple.com/ca/newsroom/2025/10/apple-unleashes-m5-the-next-big-leap-in-ai-performance-for-apple-silicon/), [M5 Pro and M5 Max](https://www.apple.com/newsroom/2026/03/apple-debuts-m5-pro-and-m5-max-to-supercharge-the-most-demanding-pro-workflows/), and [current M5-family specifications](https://www.apple.com/macbook-pro/specs/)
+- Base-chip configurations: [M1 Air](https://support.apple.com/en-us/111883), [M2 Air](https://support.apple.com/en-us/111867), [M3 Air](https://support.apple.com/en-us/118551), [M4 Air](https://support.apple.com/en-us/122209), and [current M5 Air specifications](https://www.apple.com/macbook-air/specs/)
+
+</details>
+
+### Benchmark submissions welcome
+
+Have another Apple Silicon Mac? Run the exact five-run protocol and open a PR.
+The repository provides a non-overwriting runner, metadata template, statistics
+tool, review checklist, and a registry that automatically replaces a matching
+orange projection with a blue measurement. Start with the
+[benchmark submission guide](benchmark-results/submissions/).
+
 ## Downloads and documentation
 
 👉 Pre-compiled binaries, examples, and documentation are available on the [mumax³ homepage](https://mumax.github.io).
