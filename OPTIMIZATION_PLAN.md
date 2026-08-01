@@ -1057,3 +1057,144 @@ GPU busy는 0.236 → 0.311 s로 거의 그대로다. 늘어난 1초는 파이�
 4. **VkFFT 크기 게이팅** — 10절의 정정된 판정대로 padded ≤1024²에서 1.21~1.38×.
 
 1·2번이 붙으면 소형 메시에서 다시 2배 가까이 남아 있다.
+
+---
+
+## 12. 후속 재감사 최종 반영: 외삽, 파이프라인, VkFFT
+
+2026-08-01에 Apple M4, macOS 15.6, Go 1.26.5에서 현재 코드를 다시 전수 확인했다.
+11절 이후 후보를 실제 solver와 demag 경로에 붙여 교차 측정했고, 이득과 안전 경계가 함께
+확인된 것만 메인에 남겼다.
+
+### 12.1 반영 커밋과 효과
+
+| 커밋 | 반영 내용 | 검증된 결과 |
+|---|---|---|
+| `5bf70dfa` | 평균값·출력 리드백 배치 | 512² `average` 100회 약 0.19 → 0.05 s, **약 3.5×**; 결과 동일 |
+| `67e9b0c3` | Metal GPU의 demag 커널 압축 | 1024²/2048² 초기화 약 **10% 단축**; `B_demag` 바이트 동일 |
+| `a61cd270` | opt-in 고차 demag 외삽 | demag-heavy 고차 solver에서 **1.86~2.37×**; 기본값은 exact |
+| `4c04369a` | 캐시된 Metal launch의 cgo 인자 수명 표기 | 169.8 ns, 776 B, 2 alloc → **48.15 ns, 0 B, 0 alloc**; solver 중앙값 변화 -0.078%로 중립 |
+| `5b4cc919` | command-buffer 완료 토큰으로 LUT 슬롯 회수 | LUT 미세벤치 약 **10.2%**, adaptive RK 약 **3.2%**, 시간 의존 fixed-dt 약 **23.5%** 단축; 최종 `m` 동일 |
+| `37a6183b` | 직접 시간 점프 때 외삽 이력 리셋 | GUI/Go의 `t` 주입 뒤 오래된 시각 이력이 섞일 가능성 제거 |
+| `2e774cd0` | 제한된 2D demag에 VkFFT 도입 | 기본 게이트 구간에서 아래 12.4절의 end-to-end 이득, 나머지는 MPSGraph fallback |
+
+`5b4cc919`의 핵심은 LUT 업로드 버퍼를 재사용할 때 큐 전체를 비우지 않고, 그 슬롯을 마지막으로
+사용한 정확한 `MTLCommandBuffer`의 완료만 확인하는 것이다. 64개 슬롯을 16개씩 하나의 완료
+토큰에 묶고 벡터 LUT도 한 번의 연속 할당·업로드로 바꿨다. 300×3 순서 검증에서 값은 같고
+전체 큐 drain은 0회였다. `4c04369a`는 Go 1.24 이상에서 `#cgo noescape`/`nocallback`을 사용하며,
+Go 1.22 호환 경로는 그대로 둔다. 즉 cgo 호출 자체는 크게 싸졌지만 전체 solver에서는 그 비용이
+병목이 아니어서 성능을 과장하지 않는다.
+
+### 12.2 고차 demag 외삽: 효과는 크지만 opt-in
+
+구현은 [Lepadatu (2022)](https://arxiv.org/abs/2107.06729)의 방법처럼, 승인된 step 시작점의
+**정확한** demag field에서 현재 셀의 local self 항을 뺀 비국소 항만 다항 외삽하고 현재 local
+self 항은 매번 정확히 더한다. 최대 6개 이력을 보존하며 solver 4/5/6에서만 활성화된다.
+solver 차수에 따라 처음 5~6개의 승인 step 시작점은 정확한 field로 이력을 채운다.
+
+| 워크로드 | exact | 외삽 | 중앙값 배수 |
+|---|---:|---:|---:|
+| fixed DP, 512×512×1, 200 steps | 2.934 s | 1.579 s | **1.86×** |
+| adaptive µMAG standard problem 4, 1 ns | 2.363 s | 1.157 s | **2.04×** |
+| fixed DP, 128×32×1, 2000 steps | — | — | **2.37×** |
+
+standard problem 4의 최종 평균 `m` 오차는 `1.67e-7`, energy 상대오차는 `1.96e-6`, 전체
+field mean/RMS/max 오차는 `6.59e-5 / 8.55e-5 / 2.29e-4`였다. 불연속 field/current,
+250 GHz 구동, 실제 step rejection, 다중 region+PBC, solver 4/5/6, 중간 `B_demag`/`E_demag`
+조회도 별도로 통과했다. 상세 수치와 재현법은 `bench/demag-extrap/RESULTS.md`에 있다.
+
+이 기능은 **근사가 명시적으로 허용된 경우에만** 다음처럼 켠다.
+
+```go
+SetSolver(5)
+DemagExtrapolation = true
+```
+
+기본값은 `false`다. solver 2/3, 유한·시간 의존 `Temp`, 시간 의존 `Msat`,
+`NoDemagSpins`, post-step callback, relax/minimize에서는 자동으로 exact 경로로 닫힌다. 메시,
+PBC, accuracy, geometry, region, `Msat`, `M`, moving window, solver 또는 `t`가 불연속적으로
+바뀌면 이력을 버린다. Go 코드가 `M.Buffer()`를 직접 변경하면
+`ResetDemagExtrapolation()`을 호출해야 한다. 성능 카운터가 정확도 검증을 대신할 수 없으므로
+실제 연구 스크립트마다 exact A/B를 해야 한다.
+
+### 12.3 실험했지만 반영하지 않은 두 경로
+
+**3성분 forward FFT 배치**는 출력이 정확히 같고 128²에서는 약 8% 빨랐지만, 256²에서
+11%, 512²에서 7%, 1024²에서 4% 느려졌다. MPSGraph의 크기별 스케줄링 차이 때문에 공식
+경로로 쓸 수 없어 프로토타입만 폐기했다.
+
+**adaptive 오차의 targeted readback**도 폐기했다. 1000-step probe에서 `err`를 담은 buffer
+하나만 정확히 기다릴 수는 있었지만, 판정 시점에 뒤따르는 command buffer와 겹칠 유효 작업이
+항상 0개였다. 오차를 읽어야 accept/reject, `Dt`, rollback, FSAL이 결정되기 때문이다. 10쌍 A/B의
+중앙값은 기존 1.94437 s, targeted 1.95382 s로 새 경로가 **0.49% 느린 노이즈 범위**였고 최종
+`m`과 6001 eval은 같았다. 이 병목을 숨기려면 단순 wait 범위 변경이 아니라 투기 실행+rollback
+또는 GPU 주도 적분기가 필요하다.
+
+### 12.4 VkFFT: 버그를 격리한 뒤 제한적으로 채택
+
+[VkFFT](https://github.com/DTolm/VkFFT) 1.3.4와 bundled metal-cpp를 upstream commit
+`066a17c17068c0f11c9298d848c2976c71fad1c1`에서 수정 없이 vendor했다. 라이선스는 각각
+MIT와 Apache-2.0이며, FFT 설계의 배경은 [VkFFT 논문](https://ieeexplore.ieee.org/abstract/document/10036080/)도
+참고했다.
+
+통합 중 처음 나온 약 `1/(4π)` 크기의 demag 오차는 정규화 문제가 아니었다. 작은 직접 검증에서
+DC와 axis-0 native padding은 정확했지만, VkFFT 1.3.4 Metal backend가 **단방향
+forward-only/inverse-only plan의 axis-1 native zero padding**을 잘못 생성했다. 예를 들어 8×8
+round trip의 기대 scale 64가 8이 되고 DC도 복소수로 오염됐다. 최종 경로는 다음처럼 좁혔다.
+
+- axis-0 native padding만 사용한다.
+- in-place inverse가 덮은 trailing Y rows만 forward 직전에 한 번의 연속 fill로 지운다.
+- `specifyOffsetsAtLaunch`의 미선언 `PushConsts` codegen 버그를 피하고 allocation offset 0인
+  전용 demag 버퍼만 넘긴다.
+- kernel FFT는 검증된 out-of-place MPSGraph로 만들고, regular demag만 cuFFT 호환 in-place
+  R2C/C2R VkFFT 경로를 쓴다.
+
+기본 `auto` 정책은 **2D, batch 1, padded 두 축이 power of two, 실제 데이터가 strict prefix,
+padded ≤512×512**인 demag plan만 VkFFT로 보낸다. `MUMAX3_METAL_FFT_BACKEND=mps`는 전부
+MPSGraph로 고정한다. `MUMAX3_METAL_FFT_BACKEND=vkfft`는 검증된 padded 1024×1024 tier까지
+허용하지만, 3D·더 큰 크기·부적격 shape는 여전히 MPSGraph로 돌아간다. auto plan 생성 실패도
+MPSGraph로 fail-closed한다.
+
+실제 mumax3 end-to-end 7쌍 교차 실행 결과는 다음과 같다. 첫 두 행은 기본 auto 범위이고,
+real 512²는 padded 1024²라 명시적 opt-in 범위다.
+
+| real mesh (padded) | MPSGraph 중앙값 | VkFFT 중앙값 | 배수 | VkFFT 승리 |
+|---|---:|---:|---:|---:|
+| 128² (256²) | 0.5637 s | 0.3286 s | **1.716×** | 7/7 |
+| 256² (512²) | 0.7170 s | 0.5866 s | **1.222×** | 7/7 |
+| 512² (1024²) | 1.3583 s | 1.3371 s | **1.016×** | 6/7 |
+
+첫 두 tier의 cold/init 중앙값도 각각 22.0 → 16.8 ms, 39.7 → 30.2 ms로 줄었다. 반면
+real 512²에서 첫 VkFFT compile 213.5 ms outlier가 있었고 steady-state 이득도 1.6%뿐이라 이
+tier는 opt-in으로 남겼다. real 1024²(padded 2048²)는 강제 설정에서도 MPSGraph로 fallback했고
+출력이 동일했다.
+
+정확도 게이트는 직사각형 one-way spectrum의 CPU DFT 비교, 반복 in-place round trip,
+padding을 일부러 오염시킨 뒤의 반복 MPSGraph-vs-VkFFT demag, non-finite 검사, backend gate,
+race 검사, 전체 Go test/build와 `make check-metal`을 포함했다.
+
+**10.5절 구현 구조 정정**: 당시에는 VkFFT를 ARC인 기존 FFT translation unit에 함께 넣을 수
+있다고 판단했지만, 최종 구현은 metal-cpp의 명시적 retain/release 소유권과 Objective-C ARC인
+MPSGraph 코드를 섞지 않기 위해 `cuda/metal/vkfft`의 **별도 non-ARC C++ translation unit**으로
+분리했다. 따라서 "별도 Go 패키지 없이 같은 TU에 넣는다"는 10.5절의 구조 설명은 현재 코드에는
+적용되지 않는다. 크기별 게이팅과 offset 0 우회라는 판단만 유지된다.
+
+### 12.5 최종 메인 통합 후 재검증
+
+VkFFT를 11절 후속 최적화와 고차 외삽 위에 합친 `2e774cd0` 기준으로 다시
+`make check-metal`, `go test -vet=off ./...`, `go build ./...`를 통과했다. 실제
+`mumax3` 바이너로 181개 `.go`/`.mx3` 회귀를 끝까지 실행한 결과는 **179 OK,
+2 failed**였다. 두 실패는 선행 기준선에서 이미 기록된 `gammaLL.mx3`의 기준값 편차와
+Metal Philox 샘플의 `rk4temperature.mx3` 허용오차 초과였고, 추가 panic·fatal·VkFFT 실패는
+없었다.
+
+최종 바이너로 외삽 A/B도 재실행했다. 512² fixed Dormand--Prince 200 step의
+중앙값은 exact 2.6491 s, extrapolated 1.4448 s로 **1.834×**였다. 평균 자화 궤적
+최대 오차는 `1.02e-7`, energy 최대 상대오차는 `1.84e-7`였다.
+
+또 다른 최종 smoke A/B(128², 400 step, 3회 중앙값)에서 exact 경로는 MPSGraph 고정
+0.3937 s → auto VkFFT 0.2354 s로 **1.673×**, 외삽 경로는 0.1667 s → 0.1446 s로
+**1.153×**였다. exact MPSGraph 대비 auto VkFFT+외삽은 이 짧은 workload에서 **2.724×**였다.
+단, 이 합성 배수는 최종 통합 smoke check이며 12.4절의 7쌍 교차 게이트를 대체하지 않는다.
+exact MPSGraph/VkFFT 표의 마지막 평균 자화는 표시 정밀도에서 `mx`, `my`가 같고
+`mz`만 약 `6e-10` 차이였다.

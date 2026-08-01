@@ -79,6 +79,37 @@ reductions may differ in their last floating-point bits. Thermal simulations
 use Philox rather than cuRAND's XORWOW sequence, so a seed is reproducible on
 Metal but does not select the same sample sequence as CUDA.
 
+### Metal FFT backend selection
+
+The default Metal configuration automatically uses the vendored VkFFT backend
+for eligible 2D demagnetizing-field transforms whose padded dimensions are
+powers of two no larger than 512×512 and whose active data is a strict prefix.
+MPSGraph remains the fallback for 3D, larger, irregular, or unsupported
+transforms. The default is the recommended policy. For diagnosis or controlled
+benchmarking, set
+`MUMAX3_METAL_FFT_BACKEND=mps` to keep all plans on MPSGraph, or set it to
+`vkfft` to enable VkFFT for the measured padded 1024×1024 tier as well;
+ineligible plans still fall back to MPSGraph.
+
+### Optional demagnetizing-field extrapolation
+
+High-order demagnetizing-field extrapolation can substantially accelerate
+demag-heavy solver 4, 5, and 6 workloads, but it is an approximation and is off
+by default. Enable it only after comparing the intended simulation against an
+exact run:
+
+```go
+SetSolver(5)
+DemagExtrapolation = true
+```
+
+Unsupported solvers and unsafe model states fail closed to exact convolution.
+The error depends on the trajectory and time step, so a successful benchmark
+on another problem is not an accuracy guarantee. See the
+[validation results](bench/demag-extrap/RESULTS.md) and
+[A/B instructions](bench/demag-extrap/README.md) before using extrapolated
+results for scientific analysis.
+
 ## Downloads and documentation
 
 👉 Pre-compiled binaries, examples, and documentation are available on the [mumax³ homepage](https://mumax.github.io).
