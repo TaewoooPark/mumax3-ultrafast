@@ -253,9 +253,9 @@ func TestBatchedLaunchOrdering(t *testing.T) {
 	if err := Fill(deviceDst, 0, bytes); err != nil {
 		t.Fatalf("fill: %v", err)
 	}
+	kernel := NewKernel("mumax3_runtime_test_madd2")
 	for launch := 0; launch < launches; launch++ {
-		if err := Launch(
-			"mumax3_runtime_test_madd2",
+		if err := kernel.Launch(
 			Grid1D(count, 256),
 			BufferArg(deviceDst),
 			BufferArg(deviceSrc),
@@ -342,6 +342,86 @@ func BenchmarkBatchedLaunchAndSync(b *testing.B) {
 			float64(info.TrackedPeakAllocationSize)/(1024*1024),
 			"peak-MiB",
 		)
+	}
+}
+
+// BenchmarkCachedKernelLaunchEmpty isolates the Go/cgo cached-handle launch
+// path. A zero-sized grid is deliberately accepted as a no-op by the native
+// runtime, so this measures argument encoding and the C transition without
+// command-encoder or GPU execution noise.
+func BenchmarkCachedKernelLaunchEmpty(b *testing.B) {
+	requireTestLibrary(b)
+
+	kernel := NewKernel("mumax3_runtime_test_madd2")
+	cfg := Grid(0, 1, 1, 1, 1, 1)
+	args := []Arg{
+		BufferArg(nil),
+		BufferArg(nil),
+		F32(1),
+		I32(0),
+	}
+	if err := kernel.Launch(cfg, args...); err != nil {
+		b.Fatalf("resolve cached kernel: %v", err)
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for iteration := 0; iteration < b.N; iteration++ {
+		if err := kernel.Launch(cfg, args...); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkCachedBatchedLaunchAndSync(b *testing.B) {
+	requireTestLibrary(b)
+
+	const count = 1 << 20
+	const launchesPerBatch = 32
+	bytes := int64(count * 4)
+	deviceDst := MustAlloc(bytes)
+	deviceSrc := MustAlloc(bytes)
+	defer func() {
+		if err := Free(deviceSrc); err != nil {
+			b.Errorf("free source: %v", err)
+		}
+		if err := Free(deviceDst); err != nil {
+			b.Errorf("free destination: %v", err)
+		}
+	}()
+	if err := Fill(deviceDst, 0, bytes); err != nil {
+		b.Fatalf("fill destination: %v", err)
+	}
+	if err := Fill(deviceSrc, 1, bytes); err != nil {
+		b.Fatalf("fill source: %v", err)
+	}
+	if err := Sync(); err != nil {
+		b.Fatalf("initial synchronize: %v", err)
+	}
+
+	kernel := NewKernel("mumax3_runtime_test_madd2")
+	cfg := Grid1D(count, 256)
+	args := []Arg{
+		BufferArg(deviceDst),
+		BufferArg(deviceSrc),
+		F32(1),
+		I32(count),
+	}
+	if err := kernel.Launch(Grid(0, 1, 1, 1, 1, 1), args...); err != nil {
+		b.Fatalf("resolve cached kernel: %v", err)
+	}
+	b.SetBytes(bytes * 3 * launchesPerBatch)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for iteration := 0; iteration < b.N; iteration++ {
+		for launch := 0; launch < launchesPerBatch; launch++ {
+			if err := kernel.Launch(cfg, args...); err != nil {
+				b.Fatal(err)
+			}
+		}
+		if err := Sync(); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 

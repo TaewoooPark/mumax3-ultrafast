@@ -1,0 +1,30 @@
+// Dispatch-bound end-to-end benchmark for the cached Metal launch path.
+// m.average() deliberately drains queued GPU work before the wall clock stops.
+SetGridSize(128, 128, 1)
+SetCellSize(4e-9, 4e-9, 4e-9)
+EnableDemag = false
+
+Msat = 800e3
+Aex = 13e-12
+alpha = 0.01
+B_ext = vector(0, 0.01, 0)
+m = uniform(1, 0, 0)
+SetSolver(5)
+// Keep the benchmark on the dispatch path instead of timing adaptive-step
+// readback latency, which varies independently with command-buffer scheduling.
+FixDt = 1e-15
+
+// Resolve kernels and populate reusable buffers outside the measurement.
+Steps(20)
+m = uniform(1, 0, 0)
+t = 0
+SetSolver(5)
+
+start := now()
+neval0 := NEval.get()
+Steps(5000)
+avg := m.average()
+wall := since(start).Seconds()
+evaluations := NEval.get() - neval0
+
+print("CGO_BENCH", wall, evaluations, avg)
