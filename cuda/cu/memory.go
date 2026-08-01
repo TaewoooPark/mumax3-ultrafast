@@ -86,6 +86,14 @@ func MemcpyHtoD(dst DevicePtr, src unsafe.Pointer, bytes int64) {
 	}
 }
 
+// MemcpyHtoDUnordered exists for the Metal backend, where a plain upload has
+// to drain the queue because the destination is shared memory. The CUDA driver
+// already orders cuMemcpyHtoD against the legacy default stream, so there is
+// nothing to relax here.
+func MemcpyHtoDUnordered(dst DevicePtr, src unsafe.Pointer, bytes int64) {
+	MemcpyHtoD(dst, src, bytes)
+}
+
 // Asynchronously copies a number of bytes from host to device.
 // The host memory must be page-locked (see MemRegister)
 func MemcpyHtoDAsync(dst DevicePtr, src unsafe.Pointer, bytes int64, stream Stream) {

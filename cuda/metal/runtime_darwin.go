@@ -138,6 +138,20 @@ func CopyToDevice(dst, src unsafe.Pointer, bytes int64) error {
 	return runtimeStatus(C.mr_copy_to_device(dst, src, C.size_t(bytes), &message), message)
 }
 
+// CopyToDeviceUnordered writes dst without draining the queue first. The
+// caller must guarantee that no encoded work reads the destination range; see
+// mr_copy_to_device_unordered.
+func CopyToDeviceUnordered(dst, src unsafe.Pointer, bytes int64) error {
+	if bytes == 0 {
+		return nil
+	}
+	if err := validCopy(dst, src, bytes); err != nil {
+		return err
+	}
+	var message *C.char
+	return runtimeStatus(C.mr_copy_to_device_unordered(dst, src, C.size_t(bytes), &message), message)
+}
+
 func CopyToHost(dst, src unsafe.Pointer, bytes int64) error {
 	if bytes == 0 {
 		return nil

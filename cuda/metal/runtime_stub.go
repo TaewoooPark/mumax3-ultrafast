@@ -52,6 +52,10 @@ func CopyToDevice(dst, src unsafe.Pointer, bytes int64) error {
 	return ErrUnsupported
 }
 
+func CopyToDeviceUnordered(dst, src unsafe.Pointer, bytes int64) error {
+	return ErrUnsupported
+}
+
 func CopyToHost(dst, src unsafe.Pointer, bytes int64) error {
 	return ErrUnsupported
 }

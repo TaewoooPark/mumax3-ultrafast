@@ -110,6 +110,17 @@ int mr_get_address_range(const void *pointer,
                          char **error_message);
 int mr_copy(void *dst, const void *src, size_t bytes, char **error_message);
 int mr_copy_to_device(void *dst, const void *src, size_t bytes, char **error_message);
+/*
+ * Writes the destination without first draining the queue. Allocations are
+ * shared memory, so the store is visible to the GPU immediately and therefore
+ * also to work that is already encoded. Only safe when the caller guarantees
+ * that no in-flight kernel reads the destination range, for example by
+ * rotating through a ring of upload slots.
+ */
+int mr_copy_to_device_unordered(void *dst,
+                                const void *src,
+                                size_t bytes,
+                                char **error_message);
 int mr_copy_to_host(void *dst, const void *src, size_t bytes, char **error_message);
 int mr_fill(void *dst, uint8_t value, size_t bytes, char **error_message);
 int mr_fill_u32(void *dst, uint32_t value, size_t count, char **error_message);

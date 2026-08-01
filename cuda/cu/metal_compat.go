@@ -397,6 +397,19 @@ func MemcpyHtoDAsync(dst DevicePtr, src unsafe.Pointer, bytes int64, stream Stre
 	MemcpyHtoD(dst, src, bytes)
 }
 
+// MemcpyHtoDUnordered writes dst without waiting for encoded work to finish.
+// Metal allocations are shared memory, so the store lands immediately and is
+// visible even to kernels that were encoded earlier. Callers must therefore
+// guarantee that nothing in flight reads dst; the region look-up tables do
+// that by rotating through a ring of slots.
+func MemcpyHtoDUnordered(dst DevicePtr, src unsafe.Pointer, bytes int64) {
+	panicMetal(metal.CopyToDeviceUnordered(
+		unsafe.Pointer(uintptr(dst)),
+		src,
+		bytes,
+	))
+}
+
 func MemcpyDtoH(dst unsafe.Pointer, src DevicePtr, bytes int64) {
 	panicMetal(metal.CopyToHost(
 		dst,

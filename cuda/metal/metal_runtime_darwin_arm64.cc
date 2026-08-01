@@ -865,10 +865,11 @@ int mr_copy(void *dst,
     }
 }
 
-int mr_copy_to_device(void *dst,
-                      const void *src,
-                      size_t bytes,
-                      char **error_message) {
+int copyToDevice(void *dst,
+                 const void *src,
+                 size_t bytes,
+                 bool drain,
+                 char **error_message) {
     @autoreleasepool {
         if (bytes == 0) {
             return MR_SUCCESS;
@@ -893,15 +894,31 @@ int mr_copy_to_device(void *dst,
         if (status != MR_SUCCESS) {
             return fail(status, error_message, "copy destination: " + error);
         }
-        status = submitUnlocked(true, error);
-        if (status != MR_SUCCESS) {
-            return fail(status, error_message, error);
+        if (drain) {
+            status = submitUnlocked(true, error);
+            if (status != MR_SUCCESS) {
+                return fail(status, error_message, error);
+            }
         }
         std::memmove(static_cast<uint8_t *>(dst_buffer.contents) + dst_offset,
                      src,
                      bytes);
         return MR_SUCCESS;
     }
+}
+
+int mr_copy_to_device(void *dst,
+                      const void *src,
+                      size_t bytes,
+                      char **error_message) {
+    return copyToDevice(dst, src, bytes, true, error_message);
+}
+
+int mr_copy_to_device_unordered(void *dst,
+                                const void *src,
+                                size_t bytes,
+                                char **error_message) {
+    return copyToDevice(dst, src, bytes, false, error_message);
 }
 
 int mr_copy_to_host(void *dst,
