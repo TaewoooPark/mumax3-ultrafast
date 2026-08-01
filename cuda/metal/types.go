@@ -199,6 +199,11 @@ type RuntimeStats struct {
 	CompletionQueryHits       uint64
 	CompletionWaits           uint64
 	CompletionWaitSubmissions uint64
+	// KeepAliveSubmissions counts arithmetic-only fillers issued on a private
+	// queue just before the host blocks, which keep the Apple GPU from dropping
+	// out of its performance state. They read and write only their own scratch
+	// allocation, so they cannot change a result.
+	KeepAliveSubmissions uint64
 }
 
 // RuntimeError carries the stable C ABI error code as well as its diagnostic.

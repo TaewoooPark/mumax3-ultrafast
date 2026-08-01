@@ -1,28 +1,29 @@
-# Comparable-cost pairings for the 4.194304e6 cell benchmark, read by
-# bench/apple_svg.py to draw bench/apple-price-tiers.svg.
+# Launch-configuration price context for bench/apple-price-tiers.svg.
 #
-# Prices are approximate US launch prices in dollars and are here for
-# orientation only. Two things make them soft:
+# These are deliberately NOT labelled equal-budget pairs. Apple rows use the
+# US base launch price and an exact chip/configuration key from apple.txt.
+# NVIDIA rows use card launch MSRP plus the flat 800 USD host assumption in
+# apple_svg.py. The NVIDIA throughput snapshots are measured gpus.txt values.
 #
-#   - A GPU is not a computer. The NVIDIA rows add a flat 800 USD for a modest
-#     host (CPU, board, RAM, PSU, case, storage), so both columns describe a
-#     whole machine. Change HOST_USD in apple_svg.py to re-do the arithmetic
-#     with a different assumption.
-#   - Street prices move, and the RTX 50 series has spent much of its life well
-#     above MSRP; the RTX 5090 in particular has traded far above its 1999 USD
-#     launch price. Using MSRP therefore flatters the NVIDIA column.
+# The M4 MuMax3 anchor was measured in a fanless MacBook Air, not a Mac mini.
+# Its use below is an explicit same-chip chassis transfer with no invented
+# adjustment. Every Apple price-chart bar is therefore drawn as model/context.
 #
-# Apple throughputs come from bench/apple.txt, so only the M4 one is measured;
-# the numeric values below are readable snapshots and the renderer rejects them
-# if they drift from apple.txt. NVIDIA values come from bench/gpus.txt and are
-# all measured.
+# Apple US base launch configurations represented here:
+#   Mac mini M4, 10-core GPU                         599 USD
+#   Mac mini M4 Pro, 16-core GPU                  1,399 USD
+#   Mac Studio M4 Max, 32-core GPU                1,999 USD
+#   Mac Studio M3 Ultra, 60-core GPU              3,999 USD
+# Sources:
+#   https://www.apple.com/newsroom/2024/10/apples-new-mac-mini-is-more-mighty-more-mini-and-built-for-apple-intelligence/
+#   https://www.apple.com/newsroom/2025/03/apple-unveils-new-mac-studio-the-most-powerful-mac-ever/
 #
-# columns: tier  vendor  price_usd  throughput_M_cell_evals_per_s  "label"
-entry   apple     599  105.0   "Mac mini M4"
-entry   nvidia    499  300.0   "RTX 4060 Ti PC"
-mid     apple    1399  210.0   "Mac mini M4 Pro"
-mid     nvidia    599  498.8   "RTX 4070 PC"
-high    apple    2499  419.9   "Mac Studio M4 Max"
-high    nvidia    999  926.2   "RTX 5080 PC"
-top     apple    5299  609.2   "Mac Studio M3 Ultra"
-top     nvidia   1999 1917.1   "RTX 5090 PC"
+# columns: group vendor price_usd result_or_apple_key "label"
+entry  apple    599  "Apple M4 10c"             "Mac mini M4 10c"
+entry  nvidia   499  299.8894490556958           "RTX 4060 Ti PC"
+mid    apple   1399  "Apple M4 Pro 16c"         "Mac mini M4 Pro 16c"
+mid    nvidia   599  498.7517543189467           "RTX 4070 PC"
+high   apple   1999  "Apple M4 Max 32c"         "Mac Studio M4 Max 32c"
+high   nvidia   999  926.1662301517465           "RTX 5080 PC"
+top    apple   3999  "Apple M3 Ultra 60c"       "Mac Studio M3 Ultra 60c"
+top    nvidia  1999  1917.053016568692           "RTX 5090 PC"

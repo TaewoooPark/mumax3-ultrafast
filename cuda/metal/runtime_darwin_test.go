@@ -582,6 +582,55 @@ func BenchmarkCachedBatchedLaunchAndSync(b *testing.B) {
 	}
 }
 
+// The keep-alive filler exists purely to stop the GPU from dropping out of its
+// performance state while the host blocks. It runs on a private queue and owns
+// its own scratch allocation, so a drain must both arm it and leave the data
+// that the drain was waiting for completely untouched.
+func TestKeepAliveArmsOnDrainWithoutDisturbingData(t *testing.T) {
+	const count = 1024
+	const bytes = int64(count * 4)
+	buffer := MustAlloc(bytes)
+	defer func() {
+		if err := Free(buffer); err != nil {
+			t.Errorf("free buffer: %v", err)
+		}
+	}()
+	if err := Sync(); err != nil {
+		t.Fatal(err)
+	}
+	if err := ResetRuntimeStats(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := FillUint32(buffer, 0x5A5A5A5A, count); err != nil {
+		t.Fatal(err)
+	}
+	if err := Sync(); err != nil {
+		t.Fatal(err)
+	}
+
+	stats, err := GetRuntimeStats()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.FullDrains == 0 {
+		t.Fatal("expected the explicit Sync to be counted as a full drain")
+	}
+	if stats.KeepAliveSubmissions == 0 {
+		t.Fatal("a blocking drain did not arm the GPU keep-alive filler")
+	}
+
+	host := make([]uint32, count)
+	if err := CopyToHost(unsafe.Pointer(&host[0]), buffer, bytes); err != nil {
+		t.Fatal(err)
+	}
+	for index, value := range host {
+		if value != 0x5A5A5A5A {
+			t.Fatalf("keep-alive disturbed element %d: got %#x", index, value)
+		}
+	}
+}
+
 func ExampleInfo() {
 	info, err := Info()
 	if err != nil {

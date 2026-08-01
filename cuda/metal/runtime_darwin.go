@@ -395,6 +395,7 @@ func GetRuntimeStats() (RuntimeStats, error) {
 		CompletionQueryHits:       uint64(stats.completion_query_hits),
 		CompletionWaits:           uint64(stats.completion_waits),
 		CompletionWaitSubmissions: uint64(stats.completion_wait_submissions),
+		KeepAliveSubmissions:      uint64(stats.keepalive_submissions),
 	}, nil
 }
 

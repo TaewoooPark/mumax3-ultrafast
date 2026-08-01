@@ -1,42 +1,66 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="464" height="618" viewBox="0 0 464 618">
+<svg xmlns="http://www.w3.org/2000/svg" width="544" height="664" viewBox="0 0 544 664">
 <defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" stroke-width="2.1"/></pattern></defs>
-<rect width="464" height="618" fill="#ffffff"/>
-<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">Largest MuMax3 simulation that fits in memory</text>
-<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">At the 133.1 bytes per cell measured on this M4. Below</text>
-<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">roughly 240M cells a same-cost PC is 2.2-3.1x faster; above</text>
-<text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">it the largest consumer NVIDIA card cannot run the problem at</text>
-<text x="78" y="93" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">all.</text>
-<line x1="78" y1="382.0" x2="438" y2="382.0" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="386.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
-<line x1="78" y1="338.7" x2="438" y2="338.7" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="342.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">500</text>
-<line x1="78" y1="295.3" x2="438" y2="295.3" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="299.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1000</text>
-<line x1="78" y1="252.0" x2="438" y2="252.0" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="256.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1500</text>
-<line x1="78" y1="208.7" x2="438" y2="208.7" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="212.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2000</text>
-<line x1="78" y1="165.3" x2="438" y2="165.3" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="169.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2500</text>
-<line x1="78" y1="122.0" x2="438" y2="122.0" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="126.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">3000</text>
-<line x1="78" y1="122" x2="78" y2="382" stroke="#5f6368" stroke-width="1"/>
-<line x1="78" y1="382" x2="438" y2="382" stroke="#5f6368" stroke-width="1"/>
-<text x="18" y="252.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 252.0)">largest simulation (M cells)</text>
-<rect x="89.4" y="374.3" width="37.2" height="7.7" fill="#8d9299"/>
-<text x="108.0" y="389.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 108.0 389.0)">RTX 4070 (9437^2)</text>
-<rect x="149.4" y="366.8" width="37.2" height="15.2" fill="#0b4f9e"/>
-<text x="168.0" y="389.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 168.0 389.0)">Mac mini M4 (13249^2)</text>
-<rect x="209.4" y="366.6" width="37.2" height="15.4" fill="#8d9299"/>
-<text x="228.0" y="389.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 228.0 389.0)">RTX 4090 (13346^2)</text>
-<rect x="269.4" y="361.4" width="37.2" height="20.6" fill="#8d9299"/>
-<text x="288.0" y="389.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 288.0 389.0)">RTX 5090 (15410^2)</text>
-<rect x="329.4" y="321.1" width="37.2" height="60.9" fill="#0b4f9e"/>
-<text x="348.0" y="389.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 348.0 389.0)">Mac Studio M4 Max (26498^2)</text>
-<rect x="389.4" y="138.6" width="37.2" height="243.4" fill="#0b4f9e"/>
-<text x="408.0" y="389.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 408.0 389.0)">Mac Studio M3 Ultra (52996^2)</text>
-<rect x="78" y="587" width="11" height="11" fill="#0b4f9e"/>
-<text x="95" y="596" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple, unified memory</text>
-<rect x="245.0" y="587" width="11" height="11" fill="#8d9299"/>
-<text x="262.0" y="596" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">NVIDIA, VRAM</text>
+<rect width="544" height="664" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">Estimated largest MuMax3 simulation that fits in memory</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">Uses 133.1 B/cell measured on the M4 Air and explicit usable-memory</text>
+<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">assumptions: 68% for Apple unified memory, 92% for NVIDIA VRAM. These are</text>
+<text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">capacity estimates, not throughput results.</text>
+<line x1="78" y1="386.0" x2="518.0" y2="386.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="390.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
+<line x1="78" y1="339.3" x2="518.0" y2="339.3" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="343.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">500</text>
+<line x1="78" y1="292.7" x2="518.0" y2="292.7" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="296.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1000</text>
+<line x1="78" y1="246.0" x2="518.0" y2="246.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="250.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1500</text>
+<line x1="78" y1="199.3" x2="518.0" y2="199.3" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="203.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2000</text>
+<line x1="78" y1="152.7" x2="518.0" y2="152.7" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="156.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2500</text>
+<line x1="78" y1="106.0" x2="518.0" y2="106.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="110.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">3000</text>
+<line x1="78" y1="106" x2="78" y2="386" stroke="#5f6368" stroke-width="1"/>
+<line x1="78" y1="386" x2="518.0" y2="386" stroke="#5f6368" stroke-width="1"/>
+<text x="18" y="246.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 246.0)">largest simulation (M cells)</text>
+<g><title>RTX 4070 12 GB (9437^2): 89.1 M cells</title>
+<rect x="103.7" y="377.7" width="22.0" height="8.3" fill="#8d9299"/>
+<text x="114.7" y="372.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">89</text>
+</g>
+<text x="114.7" y="393.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 114.7 393.0)">RTX 4070 12 GB (9437^2)</text>
+<g><title>MacBook Air M4 32 GB (13249^2): 175.5 M cells</title>
+<rect x="177.0" y="369.6" width="22.0" height="16.4" fill="#4b9ae8"/>
+<rect x="177.0" y="369.6" width="22.0" height="16.4" fill="url(#hatch)"/>
+<text x="188.0" y="364.6" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">176</text>
+</g>
+<text x="188.0" y="393.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 188.0 393.0)">MacBook Air M4 32 GB (13249^2)</text>
+<g><title>RTX 4090 24 GB (13346^2): 178.1 M cells</title>
+<rect x="250.3" y="369.4" width="22.0" height="16.6" fill="#8d9299"/>
+<text x="261.3" y="364.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">178</text>
+</g>
+<text x="261.3" y="393.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 261.3 393.0)">RTX 4090 24 GB (13346^2)</text>
+<g><title>RTX 5090 32 GB (15410^2): 237.5 M cells</title>
+<rect x="323.7" y="363.8" width="22.0" height="22.2" fill="#8d9299"/>
+<text x="334.7" y="358.8" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">237</text>
+</g>
+<text x="334.7" y="393.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 334.7 393.0)">RTX 5090 32 GB (15410^2)</text>
+<g><title>Mac Studio M4 Max 128 GB (26498^2): 702.2 M cells</title>
+<rect x="397.0" y="320.5" width="22.0" height="65.5" fill="#4b9ae8"/>
+<rect x="397.0" y="320.5" width="22.0" height="65.5" fill="url(#hatch)"/>
+<text x="408.0" y="315.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">702</text>
+</g>
+<text x="408.0" y="393.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 408.0 393.0)">Mac Studio M4 Max 128 GB (26498^2)</text>
+<g><title>Mac Studio M3 Ultra 512 GB (52996^2): 2808.7 M cells</title>
+<rect x="470.3" y="123.9" width="22.0" height="262.1" fill="#4b9ae8"/>
+<rect x="470.3" y="123.9" width="22.0" height="262.1" fill="url(#hatch)"/>
+<text x="481.3" y="118.9" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">2809</text>
+</g>
+<text x="481.3" y="393.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 481.3 393.0)">Mac Studio M3 Ultra 512 GB (52996^2)</text>
+<rect x="78.0" y="633" width="11" height="11" fill="#4b9ae8"/>
+<rect x="78.0" y="633" width="11" height="11" fill="url(#hatch)"/>
+<line x1="83.5" y1="632.0" x2="83.5" y2="645.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="79.5" y1="645.0" x2="87.5" y2="645.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="79.5" y1="632.0" x2="87.5" y2="632.0" stroke="#173a5e" stroke-width="1.4"/>
+<text x="95.0" y="642" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple capacity estimate</text>
+<rect x="265.0" y="633" width="11" height="11" fill="#8d9299"/>
+<text x="282.0" y="642" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">NVIDIA capacity estimate</text>
 </svg>

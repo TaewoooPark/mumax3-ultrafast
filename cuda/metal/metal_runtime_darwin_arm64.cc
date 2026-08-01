@@ -6,6 +6,7 @@
 #include <dispatch/dispatch.h>
 
 #include <algorithm>
+#include <chrono>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
@@ -49,6 +50,36 @@ uint64_t external_sequence = 0;
 uint64_t active_external_token = 0;
 mr_runtime_stats runtime_stats = {};
 
+/*
+ * GPU keep-alive. On Apple GPUs a blocking readback empties the queue, the GPU
+ * drops out of its high performance state, and the next submission pays a
+ * wake-up. Workloads whose drains are frequent relative to the work between
+ * them - minimize(), relax(), any low-order adaptive stepper - lose about a
+ * factor of two to that alone. Arming a short arithmetic-only kernel on a
+ * separate queue just before the host blocks keeps the GPU resident across the
+ * host's decision window.
+ *
+ * It runs on its own queue and touches only keepalive_buffer, so it is ordered
+ * independently of simulation work and cannot alter a single result bit.
+ */
+id<MTLCommandQueue> keepalive_queue = nil;
+id<MTLComputePipelineState> keepalive_pipeline = nil;
+id<MTLBuffer> keepalive_buffer = nil;
+id<MTLCommandBuffer> keepalive_inflight = nil;
+bool keepalive_enabled = true;
+bool keepalive_configured = false;
+uint32_t keepalive_iterations = 0;
+/*
+ * Tuned on an M4 with relax() at 128^2: the optimum is a broad plateau for at
+ * most 16 threadgroups and at most 100 us, and it degrades once the filler
+ * grows enough to compete for issue slots (64 groups / 250 us was 8% worse, 256
+ * groups / 1000 us was 26% worse). What matters is only that the queue is not
+ * empty, not that the GPU is loaded, so stay deliberately small.
+ */
+NSUInteger keepalive_threadgroups = 8;
+NSUInteger keepalive_threads_per_group = 64;
+double keepalive_target_microseconds = 50.0;
+
 constexpr size_t zero_buffer_bytes = 4096;
 constexpr size_t max_buffer_arguments = 31;
 constexpr uint32_t max_operations_per_command_buffer = 256;
@@ -67,7 +98,30 @@ kernel void mumax3_runtime_fill_u32(
         destination[index] = value;
     }
 }
+
+/*
+ * Pure-arithmetic occupancy filler. It reads and writes only its own scratch
+ * allocation, so it can never affect a simulation buffer, and its working set
+ * is a few kilobytes, so it costs no meaningful bandwidth. Its only job is to
+ * keep the GPU out of an idle power state while the host is deciding what to
+ * encode next. The fma chain converges to a fixed point rather than diverging,
+ * and the store keeps the compiler from eliminating the loop.
+ */
+kernel void mumax3_runtime_keepalive(
+    device float *scratch [[buffer(0)]],
+    constant uint &iterations [[buffer(1)]],
+    uint index [[thread_position_in_grid]])
+{
+    float value = scratch[index];
+    for (uint i = 0; i < iterations; ++i) {
+        value = fma(value, 0.5f, 0.25f);
+    }
+    scratch[index] = value;
+}
 )METAL";
+
+// Defined below, next to the pipeline helper it needs.
+void armKeepAliveUnlocked();
 
 int fail(int code, char **error_message, const std::string &message) {
     if (error_message != nullptr) {
@@ -201,6 +255,7 @@ int retireSubmittedUnlocked(bool wait, std::string &error) {
          * executing asynchronously.
          */
         id<MTLCommandBuffer> oldest = submitted_command_buffers.firstObject;
+        armKeepAliveUnlocked();
         [oldest waitUntilCompleted];
         int status = checkSubmittedCommandUnlocked(oldest, error);
         [submitted_command_buffers removeObjectAtIndex:0];
@@ -209,6 +264,7 @@ int retireSubmittedUnlocked(bool wait, std::string &error) {
 
     int first_status = MR_SUCCESS;
     std::string first_error;
+    armKeepAliveUnlocked();
     for (id<MTLCommandBuffer> submitted in submitted_command_buffers) {
         [submitted waitUntilCompleted];
         std::string submitted_error;
@@ -382,6 +438,157 @@ id<MTLComputePipelineState> pipelineUnlocked(const char *name,
     pipelines[kernel_name] = pipeline;
     status = MR_SUCCESS;
     return pipeline;
+}
+
+bool environmentDisables(const char *name) {
+    const char *value = std::getenv(name);
+    if (value == nullptr) {
+        return false;
+    }
+    std::string setting(value);
+    return setting == "0" || setting == "off" || setting == "no" ||
+           setting == "false";
+}
+
+double environmentDouble(const char *name, double fallback) {
+    const char *value = std::getenv(name);
+    if (value == nullptr) {
+        return fallback;
+    }
+    double parsed = std::atof(value);
+    return parsed > 0.0 ? parsed : fallback;
+}
+
+/*
+ * Submit one keep-alive dispatch and return how long the GPU took, so the
+ * iteration count can be scaled to a wall-clock target instead of hard-coding a
+ * number that means different things on an M1 and an M4.
+ */
+double timeKeepAliveProbeUnlocked(uint32_t iterations) {
+    id<MTLCommandBuffer> command_buffer = [keepalive_queue commandBuffer];
+    id<MTLComputeCommandEncoder> encoder =
+        [command_buffer computeCommandEncoder];
+    if (command_buffer == nil || encoder == nil) {
+        return 0.0;
+    }
+    [encoder setComputePipelineState:keepalive_pipeline];
+    [encoder setBuffer:keepalive_buffer offset:0 atIndex:0];
+    [encoder setBytes:&iterations length:sizeof(iterations) atIndex:1];
+    [encoder dispatchThreadgroups:MTLSizeMake(keepalive_threadgroups, 1, 1)
+           threadsPerThreadgroup:MTLSizeMake(keepalive_threads_per_group, 1, 1)];
+    [encoder endEncoding];
+    auto start = std::chrono::steady_clock::now();
+    [command_buffer commit];
+    [command_buffer waitUntilCompleted];
+    auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double, std::micro>(end - start).count();
+}
+
+void setupKeepAliveUnlocked() {
+    keepalive_configured = true;
+    if (environmentDisables("MUMAX3_METAL_GPU_KEEPALIVE")) {
+        keepalive_enabled = false;
+        return;
+    }
+    keepalive_target_microseconds =
+        environmentDouble("MUMAX3_METAL_GPU_KEEPALIVE_US",
+                          keepalive_target_microseconds);
+    keepalive_threadgroups = static_cast<NSUInteger>(
+        environmentDouble("MUMAX3_METAL_GPU_KEEPALIVE_GROUPS",
+                          static_cast<double>(keepalive_threadgroups)));
+
+    int status = MR_SUCCESS;
+    std::string error;
+    id<MTLComputePipelineState> pipeline =
+        pipelineUnlocked("mumax3_runtime_keepalive", status, error);
+    if (pipeline == nil || status != MR_SUCCESS) {
+        keepalive_enabled = false;
+        return;
+    }
+    keepalive_pipeline = pipeline;
+    keepalive_threads_per_group =
+        std::min(keepalive_threads_per_group,
+                 pipeline.maxTotalThreadsPerThreadgroup);
+    keepalive_queue = [device newCommandQueue];
+    if (keepalive_queue == nil) {
+        keepalive_enabled = false;
+        return;
+    }
+    keepalive_queue.label = @"MuMax3 keep-alive";
+    size_t bytes = static_cast<size_t>(keepalive_threadgroups) *
+                   static_cast<size_t>(keepalive_threads_per_group) *
+                   sizeof(float);
+    keepalive_buffer = [device newBufferWithLength:bytes
+                                          options:MTLResourceStorageModePrivate];
+    if (keepalive_buffer == nil) {
+        keepalive_queue = nil;
+        keepalive_enabled = false;
+        return;
+    }
+    keepalive_buffer.label = @"MuMax3 keep-alive scratch";
+
+    /*
+     * The first dispatch pays pipeline warm-up, so calibrate on the second.
+     */
+    const uint32_t probe_iterations = 8192;
+    timeKeepAliveProbeUnlocked(probe_iterations);
+    double elapsed = timeKeepAliveProbeUnlocked(probe_iterations);
+    if (elapsed <= 0.0) {
+        keepalive_enabled = false;
+        return;
+    }
+    double scaled = static_cast<double>(probe_iterations) *
+                    keepalive_target_microseconds / elapsed;
+    if (scaled < 1.0) {
+        scaled = 1.0;
+    }
+    if (scaled > 4.0e6) {
+        scaled = 4.0e6;
+    }
+    keepalive_iterations = static_cast<uint32_t>(scaled);
+}
+
+/*
+ * Called immediately before the host blocks. One dispatch is kept in flight at
+ * a time: if the previous filler is still running the GPU is already resident
+ * and re-arming would only add queue pressure.
+ */
+void armKeepAliveUnlocked() {
+    if (!keepalive_configured) {
+        setupKeepAliveUnlocked();
+    }
+    if (!keepalive_enabled || keepalive_pipeline == nil ||
+        keepalive_iterations == 0) {
+        return;
+    }
+    if (keepalive_inflight != nil) {
+        MTLCommandBufferStatus status = keepalive_inflight.status;
+        if (status != MTLCommandBufferStatusCompleted &&
+            status != MTLCommandBufferStatusError) {
+            return;
+        }
+        keepalive_inflight = nil;
+    }
+    id<MTLCommandBuffer> command_buffer = [keepalive_queue commandBuffer];
+    if (command_buffer == nil) {
+        return;
+    }
+    id<MTLComputeCommandEncoder> encoder =
+        [command_buffer computeCommandEncoder];
+    if (encoder == nil) {
+        return;
+    }
+    [encoder setComputePipelineState:keepalive_pipeline];
+    [encoder setBuffer:keepalive_buffer offset:0 atIndex:0];
+    [encoder setBytes:&keepalive_iterations
+              length:sizeof(keepalive_iterations)
+             atIndex:1];
+    [encoder dispatchThreadgroups:MTLSizeMake(keepalive_threadgroups, 1, 1)
+           threadsPerThreadgroup:MTLSizeMake(keepalive_threads_per_group, 1, 1)];
+    [encoder endEncoding];
+    [command_buffer commit];
+    keepalive_inflight = command_buffer;
+    ++runtime_stats.keepalive_submissions;
 }
 
 /*
@@ -584,6 +791,17 @@ int mr_shutdown(char **error_message) {
         if (status != MR_SUCCESS) {
             return fail(status, error_message, error);
         }
+
+        if (keepalive_inflight != nil) {
+            [keepalive_inflight waitUntilCompleted];
+            keepalive_inflight = nil;
+        }
+        keepalive_pipeline = nil;
+        keepalive_buffer = nil;
+        keepalive_queue = nil;
+        keepalive_configured = false;
+        keepalive_enabled = true;
+        keepalive_iterations = 0;
 
         for (const auto &entry : allocations) {
             releaseAllocation(entry.second);
@@ -1367,6 +1585,7 @@ int mr_wait_completion(mr_completion *completion,
                     "completion token refers to an unsubmitted stale "
                     "Metal command buffer");
             }
+            armKeepAliveUnlocked();
             [command_buffer waitUntilCompleted];
         }
 

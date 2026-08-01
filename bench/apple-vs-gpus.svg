@@ -1,208 +1,457 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1319" height="838" viewBox="0 0 1319 838">
+<svg xmlns="http://www.w3.org/2000/svg" width="1364" height="859" viewBox="0 0 1364 859">
 <defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" stroke-width="2.1"/></pattern></defs>
-<rect width="1319" height="838" fill="#ffffff"/>
-<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">MuMax3 throughput, 4.19M cells (2048x2048): Apple Silicon vs CUDA GPUs</text>
-<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">CUDA figures measured, from bench/gpus.txt. Apple M4 measured with the Metal backend; the other Apple bars are projections from bench/apple_project.py, not benchmarks.</text>
-<line x1="78" y1="620.0" x2="1293" y2="620.0" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="624.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
-<line x1="78" y1="483.5" x2="1293" y2="483.5" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="487.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">500</text>
-<line x1="78" y1="347.0" x2="1293" y2="347.0" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="351.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1000</text>
-<line x1="78" y1="210.5" x2="1293" y2="210.5" stroke="#e4e6e9" stroke-width="1"/>
-<text x="70" y="214.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1500</text>
-<line x1="78" y1="74.0" x2="1293" y2="74.0" stroke="#e4e6e9" stroke-width="1"/>
+<rect width="1364" height="859" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">MuMax3 at 4.19M cells: Apple proxy model vs measured CUDA GPUs</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">CUDA bars come from bench/gpus.txt. Apple M4 10c was measured on the Metal backend; all other Apple central values and whiskers are proxy-model results, not MuMax3 benchmarks or confidence intervals.</text>
+<line x1="78" y1="641.0" x2="1338.0" y2="641.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="645.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
+<line x1="78" y1="499.2" x2="1338.0" y2="499.2" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="503.2" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">500</text>
+<line x1="78" y1="357.5" x2="1338.0" y2="357.5" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="361.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1000</text>
+<line x1="78" y1="215.8" x2="1338.0" y2="215.8" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="219.8" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">1500</text>
+<line x1="78" y1="74.0" x2="1338.0" y2="74.0" stroke="#e4e6e9" stroke-width="1"/>
 <text x="70" y="78.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2000</text>
-<line x1="78" y1="74" x2="78" y2="620" stroke="#5f6368" stroke-width="1"/>
-<line x1="78" y1="620" x2="1293" y2="620" stroke="#5f6368" stroke-width="1"/>
-<text x="18" y="347.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 347.0)">throughput (M cell-evals/s)</text>
-<rect x="80.8" y="612.7" width="9.3" height="7.3" fill="#8d9299"/>
-<text x="85.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 85.5 627.0)">940MX</text>
-<rect x="95.8" y="610.5" width="9.3" height="9.5" fill="#8d9299"/>
-<text x="100.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 100.5 627.0)">MX250</text>
-<rect x="110.8" y="610.5" width="9.3" height="9.5" fill="#8d9299"/>
-<text x="115.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 115.5 627.0)">MX150</text>
-<rect x="125.8" y="604.9" width="9.3" height="15.1" fill="#8d9299"/>
-<text x="130.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 130.5 627.0)">GTX 860M</text>
-<rect x="140.8" y="603.7" width="9.3" height="16.3" fill="#4b9ae8"/>
-<rect x="140.8" y="603.7" width="9.3" height="16.3" fill="url(#hatch)"/>
-<text x="145.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 145.5 627.0)">Apple M1</text>
-<rect x="155.8" y="600.2" width="9.3" height="19.8" fill="#8d9299"/>
-<text x="160.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 160.5 627.0)">GTX 1050 (mobile)</text>
-<rect x="170.8" y="599.2" width="9.3" height="20.8" fill="#8d9299"/>
-<text x="175.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 175.5 627.0)">RTX A400</text>
-<rect x="185.8" y="597.6" width="9.3" height="22.4" fill="#8d9299"/>
-<text x="190.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 190.5 627.0)">GTX 1050Ti (mobile)</text>
-<rect x="200.8" y="596.8" width="9.3" height="23.2" fill="#8d9299"/>
-<text x="205.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 205.5 627.0)">RTX 2050 (mobile)</text>
-<rect x="215.8" y="596.1" width="9.3" height="23.9" fill="#4b9ae8"/>
-<rect x="215.8" y="596.1" width="9.3" height="23.9" fill="url(#hatch)"/>
-<text x="220.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 220.5 627.0)">Apple M2</text>
-<rect x="230.8" y="595.5" width="9.3" height="24.5" fill="#4b9ae8"/>
-<rect x="230.8" y="595.5" width="9.3" height="24.5" fill="url(#hatch)"/>
-<text x="235.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 235.5 627.0)">Apple M3</text>
-<rect x="245.8" y="593.4" width="9.3" height="26.6" fill="#8d9299"/>
-<text x="250.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 250.5 627.0)">GTX 1650 (mobile)</text>
-<rect x="260.9" y="591.3" width="9.3" height="28.7" fill="#0b4f9e"/>
-<text x="265.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 265.5 627.0)">Apple M4</text>
-<rect x="275.9" y="587.4" width="9.3" height="32.6" fill="#4b9ae8"/>
-<rect x="275.9" y="587.4" width="9.3" height="32.6" fill="url(#hatch)"/>
-<text x="280.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 280.5 627.0)">Apple M1 Pro</text>
-<rect x="290.9" y="587.1" width="9.3" height="32.9" fill="#8d9299"/>
-<text x="295.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 295.5 627.0)">GTX 970</text>
-<rect x="305.9" y="585.1" width="9.3" height="34.9" fill="#8d9299"/>
-<text x="310.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 310.5 627.0)">GTX 1060</text>
-<rect x="320.9" y="585.0" width="9.3" height="35.0" fill="#8d9299"/>
-<text x="325.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 325.5 627.0)">GTX 1060 (mobile)</text>
-<rect x="335.9" y="583.9" width="9.3" height="36.1" fill="#8d9299"/>
-<text x="340.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 340.5 627.0)">GTX 980</text>
-<rect x="350.9" y="583.3" width="9.3" height="36.7" fill="#4b9ae8"/>
-<rect x="350.9" y="583.3" width="9.3" height="36.7" fill="url(#hatch)"/>
-<text x="355.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 355.5 627.0)">Apple M3 Pro</text>
-<rect x="365.9" y="583.3" width="9.3" height="36.7" fill="#4b9ae8"/>
-<rect x="365.9" y="583.3" width="9.3" height="36.7" fill="url(#hatch)"/>
-<text x="370.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 370.5 627.0)">Apple M5</text>
-<rect x="380.9" y="581.2" width="9.3" height="38.8" fill="#8d9299"/>
-<text x="385.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 385.5 627.0)">Quadro M5000</text>
-<rect x="395.9" y="575.2" width="9.3" height="44.8" fill="#8d9299"/>
-<text x="400.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 400.5 627.0)">GTX 1660</text>
-<rect x="410.9" y="574.6" width="9.3" height="45.4" fill="#4b9ae8"/>
-<rect x="410.9" y="574.6" width="9.3" height="45.4" fill="url(#hatch)"/>
-<text x="415.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 415.5 627.0)">Apple M2 Pro</text>
-<rect x="425.9" y="573.5" width="9.3" height="46.5" fill="#8d9299"/>
-<text x="430.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 430.5 627.0)">GTX 1070</text>
-<rect x="440.9" y="572.0" width="9.3" height="48.0" fill="#8d9299"/>
-<text x="445.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 445.5 627.0)">RTX 4050 (mobile)</text>
-<rect x="455.9" y="568.2" width="9.3" height="51.8" fill="#8d9299"/>
-<text x="460.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 460.5 627.0)">GTX 1080</text>
-<rect x="470.9" y="568.0" width="9.3" height="52.0" fill="#8d9299"/>
-<text x="475.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 475.5 627.0)">Tesla T4</text>
-<rect x="485.9" y="566.1" width="9.3" height="53.9" fill="#8d9299"/>
-<text x="490.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 490.5 627.0)">Tesla M40</text>
-<rect x="500.9" y="565.5" width="9.3" height="54.5" fill="#8d9299"/>
-<text x="505.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 505.5 627.0)">GTX 980 Ti</text>
-<rect x="515.9" y="564.3" width="9.3" height="55.7" fill="#8d9299"/>
-<text x="520.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 520.5 627.0)">RTX 2000 Ada</text>
-<rect x="530.9" y="564.2" width="9.3" height="55.8" fill="#8d9299"/>
-<text x="535.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 535.5 627.0)">Quadro P5000</text>
-<rect x="545.9" y="563.7" width="9.3" height="56.3" fill="#8d9299"/>
-<text x="550.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 550.5 627.0)">RTX 3050 Ti</text>
-<rect x="560.9" y="562.7" width="9.3" height="57.3" fill="#4b9ae8"/>
-<rect x="560.9" y="562.7" width="9.3" height="57.3" fill="url(#hatch)"/>
-<text x="565.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 565.5 627.0)">Apple M4 Pro</text>
-<rect x="575.9" y="554.8" width="9.3" height="65.2" fill="#4b9ae8"/>
-<rect x="575.9" y="554.8" width="9.3" height="65.2" fill="url(#hatch)"/>
-<text x="580.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 580.5 627.0)">Apple M1 Max</text>
-<rect x="590.9" y="554.6" width="9.3" height="65.4" fill="#8d9299"/>
-<text x="595.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 595.5 627.0)">Tesla P40</text>
-<rect x="605.9" y="552.4" width="9.3" height="67.6" fill="#8d9299"/>
-<text x="610.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 610.5 627.0)">GTX 1660 Ti</text>
-<rect x="620.9" y="548.4" width="9.3" height="71.6" fill="#4b9ae8"/>
-<rect x="620.9" y="548.4" width="9.3" height="71.6" fill="url(#hatch)"/>
-<text x="625.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 625.5 627.0)">Apple M3 Max 30c</text>
-<rect x="635.9" y="546.7" width="9.3" height="73.3" fill="#4b9ae8"/>
-<rect x="635.9" y="546.7" width="9.3" height="73.3" fill="url(#hatch)"/>
-<text x="640.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 640.5 627.0)">Apple M5 Pro</text>
-<rect x="650.9" y="545.0" width="9.3" height="75.0" fill="#8d9299"/>
-<text x="655.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 655.5 627.0)">GTX TITAN X (Pascal)</text>
-<rect x="665.9" y="544.9" width="9.3" height="75.1" fill="#8d9299"/>
-<text x="670.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 670.5 627.0)">GTX 1080 Ti</text>
-<rect x="680.9" y="542.3" width="9.3" height="77.7" fill="#8d9299"/>
-<text x="685.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 685.5 627.0)">RTX 2060</text>
-<rect x="695.9" y="538.7" width="9.3" height="81.3" fill="#8d9299"/>
-<text x="700.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 700.5 627.0)">RTX 2070</text>
-<rect x="710.9" y="538.1" width="9.3" height="81.9" fill="#8d9299"/>
-<text x="715.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 715.5 627.0)">RTX 4060 Ti</text>
-<rect x="725.9" y="531.8" width="9.3" height="88.2" fill="#8d9299"/>
-<text x="730.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 730.5 627.0)">RTX A4000 (ECC On)</text>
-<rect x="740.9" y="529.3" width="9.3" height="90.7" fill="#4b9ae8"/>
-<rect x="740.9" y="529.3" width="9.3" height="90.7" fill="url(#hatch)"/>
-<text x="745.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 745.5 627.0)">Apple M2 Max</text>
-<rect x="755.9" y="528.3" width="9.3" height="91.7" fill="#4b9ae8"/>
-<rect x="755.9" y="528.3" width="9.3" height="91.7" fill="url(#hatch)"/>
-<text x="760.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 760.5 627.0)">Apple M4 Max 32c</text>
-<rect x="770.9" y="526.8" width="9.3" height="93.2" fill="#8d9299"/>
-<text x="775.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 775.5 627.0)">GTX TITAN Xp</text>
-<rect x="785.9" y="522.2" width="9.3" height="97.8" fill="#4b9ae8"/>
-<rect x="785.9" y="522.2" width="9.3" height="97.8" fill="url(#hatch)"/>
-<text x="790.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 790.5 627.0)">Apple M3 Max 40c</text>
-<rect x="800.9" y="521.2" width="9.3" height="98.8" fill="#8d9299"/>
-<text x="805.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 805.5 627.0)">Tesla P100</text>
-<rect x="815.9" y="518.6" width="9.3" height="101.4" fill="#8d9299"/>
-<text x="820.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 820.5 627.0)">RTX 2060 SUPER</text>
-<rect x="830.9" y="516.3" width="9.3" height="103.7" fill="#8d9299"/>
-<text x="835.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 835.5 627.0)">RTX 2080</text>
-<rect x="845.9" y="511.1" width="9.3" height="108.9" fill="#8d9299"/>
-<text x="850.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 850.5 627.0)">Tesla P100 SXM2</text>
-<rect x="860.9" y="510.6" width="9.3" height="109.4" fill="#8d9299"/>
-<text x="865.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 865.5 627.0)">RTX 3080 (mobile)</text>
-<rect x="875.9" y="510.1" width="9.3" height="109.9" fill="#4b9ae8"/>
-<rect x="875.9" y="510.1" width="9.3" height="109.9" fill="url(#hatch)"/>
-<text x="880.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 880.5 627.0)">Apple M5 Max 32c</text>
-<rect x="890.9" y="505.4" width="9.3" height="114.6" fill="#4b9ae8"/>
-<rect x="890.9" y="505.4" width="9.3" height="114.6" fill="url(#hatch)"/>
-<text x="895.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 895.5 627.0)">Apple M4 Max 40c</text>
-<rect x="905.9" y="504.1" width="9.3" height="115.9" fill="#8d9299"/>
-<text x="910.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 910.5 627.0)">RTX 2080 SUPER</text>
-<rect x="920.9" y="503.1" width="9.3" height="116.9" fill="#8d9299"/>
-<text x="925.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 925.5 627.0)">RTX 2080 Ti</text>
-<rect x="935.9" y="501.2" width="9.3" height="118.8" fill="#8d9299"/>
-<text x="940.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 940.5 627.0)">RTX 3060 Ti</text>
-<rect x="950.9" y="496.6" width="9.3" height="123.4" fill="#8d9299"/>
-<text x="955.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 955.5 627.0)">RTX 4070 SUPER</text>
-<rect x="965.9" y="492.0" width="9.3" height="128.0" fill="#8d9299"/>
-<text x="970.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 970.5 627.0)">TITAN V</text>
-<rect x="980.9" y="489.6" width="9.3" height="130.4" fill="#4b9ae8"/>
-<rect x="980.9" y="489.6" width="9.3" height="130.4" fill="url(#hatch)"/>
-<text x="985.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 985.5 627.0)">Apple M1 Ultra</text>
-<rect x="995.9" y="483.8" width="9.3" height="136.2" fill="#8d9299"/>
-<text x="1000.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1000.5 627.0)">RTX 4070</text>
-<rect x="1010.9" y="481.5" width="9.3" height="138.5" fill="#8d9299"/>
-<text x="1015.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1015.5 627.0)">RTX 2080 Ti OC</text>
-<rect x="1025.8" y="475.4" width="9.3" height="144.6" fill="#8d9299"/>
-<text x="1030.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1030.5 627.0)">TITAN RTX</text>
-<rect x="1040.8" y="473.4" width="9.3" height="146.6" fill="#4b9ae8"/>
-<rect x="1040.8" y="473.4" width="9.3" height="146.6" fill="url(#hatch)"/>
-<text x="1045.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1045.5 627.0)">Apple M5 Max 40c</text>
-<rect x="1055.8" y="470.7" width="9.3" height="149.3" fill="#8d9299"/>
-<text x="1060.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1060.5 627.0)">RTX 3070 Ti Lite Hash Rate</text>
-<rect x="1070.8" y="467.6" width="9.3" height="152.4" fill="#8d9299"/>
-<text x="1075.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1075.5 627.0)">RTX A6000 (ECC On)</text>
-<rect x="1085.8" y="463.1" width="9.3" height="156.9" fill="#8d9299"/>
-<text x="1090.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1090.5 627.0)">A40</text>
-<rect x="1100.8" y="457.6" width="9.3" height="162.4" fill="#4b9ae8"/>
-<rect x="1100.8" y="457.6" width="9.3" height="162.4" fill="url(#hatch)"/>
-<text x="1105.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1105.5 627.0)">Apple M2 Ultra</text>
-<rect x="1115.8" y="453.7" width="9.3" height="166.3" fill="#4b9ae8"/>
-<rect x="1115.8" y="453.7" width="9.3" height="166.3" fill="url(#hatch)"/>
-<text x="1120.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1120.5 627.0)">Apple M3 Ultra</text>
-<rect x="1130.8" y="453.0" width="9.3" height="167.0" fill="#8d9299"/>
-<text x="1135.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1135.5 627.0)">V100-SXM2-32GB</text>
-<rect x="1145.8" y="432.2" width="9.3" height="187.8" fill="#8d9299"/>
-<text x="1150.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1150.5 627.0)">RTX 3080</text>
-<rect x="1160.8" y="426.8" width="9.3" height="193.2" fill="#8d9299"/>
-<text x="1165.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1165.5 627.0)">RTX A6000 (ECC Off)</text>
-<rect x="1175.8" y="413.7" width="9.3" height="206.3" fill="#8d9299"/>
-<text x="1180.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1180.5 627.0)">RTX 3080 (12Gb)</text>
-<rect x="1190.8" y="408.2" width="9.3" height="211.8" fill="#8d9299"/>
-<text x="1195.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1195.5 627.0)">RTX 5070 Ti</text>
-<rect x="1205.8" y="391.8" width="9.3" height="228.2" fill="#8d9299"/>
-<text x="1210.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1210.5 627.0)">RTX 3090</text>
-<rect x="1220.8" y="367.2" width="9.3" height="252.8" fill="#8d9299"/>
-<text x="1225.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1225.5 627.0)">RTX 5080</text>
-<rect x="1235.8" y="360.2" width="9.3" height="259.8" fill="#8d9299"/>
-<text x="1240.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1240.5 627.0)">A100</text>
-<rect x="1250.8" y="284.8" width="9.3" height="335.2" fill="#8d9299"/>
-<text x="1255.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1255.5 627.0)">RTX 4090</text>
-<rect x="1265.8" y="96.6" width="9.3" height="523.4" fill="#8d9299"/>
-<text x="1270.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1270.5 627.0)">RTX 5090</text>
-<rect x="1280.8" y="79.4" width="9.3" height="540.6" fill="#8d9299"/>
-<text x="1285.5" y="627.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1285.5 627.0)">H100</text>
-<rect x="78" y="807" width="11" height="11" fill="#0b4f9e"/>
-<text x="95" y="816" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple M4, measured</text>
-<rect x="224.0" y="807" width="11" height="11" fill="#4b9ae8"/>
-<rect x="224.0" y="807" width="11" height="11" fill="url(#hatch)"/>
-<text x="241.0" y="816" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple, projected</text>
-<rect x="356.0" y="807" width="11" height="11" fill="#8d9299"/>
-<text x="373.0" y="816" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">NVIDIA, measured</text>
+<line x1="78" y1="74" x2="78" y2="641" stroke="#5f6368" stroke-width="1"/>
+<line x1="78" y1="641" x2="1338.0" y2="641" stroke="#5f6368" stroke-width="1"/>
+<text x="18" y="357.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 357.5)">throughput (M cell-evals/s)</text>
+<g><title>940MX: 26.6 M cell-evals/s</title>
+<rect x="80.8" y="633.5" width="9.3" height="7.5" fill="#8d9299"/>
+</g>
+<text x="85.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 85.5 648.0)">940MX</text>
+<g><title>MX250: 34.9 M cell-evals/s</title>
+<rect x="95.8" y="631.1" width="9.3" height="9.9" fill="#8d9299"/>
+</g>
+<text x="100.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 100.5 648.0)">MX250</text>
+<g><title>MX150: 35.0 M cell-evals/s</title>
+<rect x="110.8" y="631.1" width="9.3" height="9.9" fill="#8d9299"/>
+</g>
+<text x="115.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 115.5 648.0)">MX150</text>
+<g><title>GTX 860M: 55.3 M cell-evals/s</title>
+<rect x="125.8" y="625.3" width="9.3" height="15.7" fill="#8d9299"/>
+</g>
+<text x="130.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 130.5 648.0)">GTX 860M</text>
+<g><title>Apple M1 8c: 61.3 M cell-evals/s; workload/model range 55.5–84.0 (not CI)</title>
+<rect x="140.8" y="623.6" width="9.3" height="17.4" fill="#4b9ae8"/>
+<rect x="140.8" y="623.6" width="9.3" height="17.4" fill="url(#hatch)"/>
+<line x1="145.5" y1="617.2" x2="145.5" y2="625.3" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="141.6" y1="625.3" x2="149.4" y2="625.3" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="141.6" y1="617.2" x2="149.4" y2="617.2" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="145.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 145.5 648.0)">Apple M1 8c</text>
+<g><title>GTX 1050 (mobile): 72.6 M cell-evals/s</title>
+<rect x="155.8" y="620.4" width="9.3" height="20.6" fill="#8d9299"/>
+</g>
+<text x="160.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 160.5 648.0)">GTX 1050 (mobile)</text>
+<g><title>RTX A400: 76.2 M cell-evals/s</title>
+<rect x="170.8" y="619.4" width="9.3" height="21.6" fill="#8d9299"/>
+</g>
+<text x="175.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 175.5 648.0)">RTX A400</text>
+<g><title>GTX 1050Ti (mobile): 81.9 M cell-evals/s</title>
+<rect x="185.8" y="617.8" width="9.3" height="23.2" fill="#8d9299"/>
+</g>
+<text x="190.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 190.5 648.0)">GTX 1050Ti (mobile)</text>
+<g><title>RTX 2050 (mobile): 84.9 M cell-evals/s</title>
+<rect x="200.8" y="616.9" width="9.3" height="24.1" fill="#8d9299"/>
+</g>
+<text x="205.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 205.5 648.0)">RTX 2050 (mobile)</text>
+<g><title>Apple M2 10c: 93.4 M cell-evals/s; workload/model range 85.2–105.0 (not CI)</title>
+<rect x="215.8" y="614.5" width="9.3" height="26.5" fill="#4b9ae8"/>
+<rect x="215.8" y="614.5" width="9.3" height="26.5" fill="url(#hatch)"/>
+<line x1="220.5" y1="611.2" x2="220.5" y2="616.9" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="216.6" y1="616.9" x2="224.4" y2="616.9" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="216.6" y1="611.2" x2="224.4" y2="611.2" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="220.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 220.5 648.0)">Apple M2 10c</text>
+<g><title>Apple M3 10c: 93.9 M cell-evals/s; workload/model range 87.5–105.0 (not CI)</title>
+<rect x="230.8" y="614.4" width="9.3" height="26.6" fill="#4b9ae8"/>
+<rect x="230.8" y="614.4" width="9.3" height="26.6" fill="url(#hatch)"/>
+<line x1="235.5" y1="611.2" x2="235.5" y2="616.2" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="231.6" y1="616.2" x2="239.4" y2="616.2" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="231.6" y1="611.2" x2="239.4" y2="611.2" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="235.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 235.5 648.0)">Apple M3 10c</text>
+<g><title>GTX 1650 (mobile): 97.5 M cell-evals/s</title>
+<rect x="245.8" y="613.3" width="9.3" height="27.7" fill="#8d9299"/>
+</g>
+<text x="250.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 250.5 648.0)">GTX 1650 (mobile)</text>
+<g><title>Apple M4 10c: 105.0 M cell-evals/s</title>
+<rect x="260.9" y="611.2" width="9.3" height="29.8" fill="#0b4f9e"/>
+</g>
+<text x="265.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 265.5 648.0)">Apple M4 10c</text>
+<g><title>GTX 970: 120.6 M cell-evals/s</title>
+<rect x="275.9" y="606.8" width="9.3" height="34.2" fill="#8d9299"/>
+</g>
+<text x="280.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 280.5 648.0)">GTX 970</text>
+<g><title>Apple M5 10c: 123.2 M cell-evals/s; workload/model range 105.0–133.8 (not CI)</title>
+<rect x="290.9" y="606.1" width="9.3" height="34.9" fill="#4b9ae8"/>
+<rect x="290.9" y="606.1" width="9.3" height="34.9" fill="url(#hatch)"/>
+<line x1="295.5" y1="603.1" x2="295.5" y2="611.2" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="291.6" y1="611.2" x2="299.4" y2="611.2" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="291.6" y1="603.1" x2="299.4" y2="603.1" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="295.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 295.5 648.0)">Apple M5 10c</text>
+<g><title>GTX 1060: 128.0 M cell-evals/s</title>
+<rect x="305.9" y="604.7" width="9.3" height="36.3" fill="#8d9299"/>
+</g>
+<text x="310.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 310.5 648.0)">GTX 1060</text>
+<g><title>GTX 1060 (mobile): 128.3 M cell-evals/s</title>
+<rect x="320.9" y="604.6" width="9.3" height="36.4" fill="#8d9299"/>
+</g>
+<text x="325.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 325.5 648.0)">GTX 1060 (mobile)</text>
+<g><title>GTX 980: 132.2 M cell-evals/s</title>
+<rect x="335.9" y="603.5" width="9.3" height="37.5" fill="#8d9299"/>
+</g>
+<text x="340.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 340.5 648.0)">GTX 980</text>
+<g><title>Quadro M5000: 142.1 M cell-evals/s</title>
+<rect x="350.9" y="600.7" width="9.3" height="40.3" fill="#8d9299"/>
+</g>
+<text x="355.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 355.5 648.0)">Quadro M5000</text>
+<g><title>Apple M3 Pro 18c: 146.7 M cell-evals/s; workload/model range 131.2–189.0 (not CI)</title>
+<rect x="365.9" y="599.4" width="9.3" height="41.6" fill="#4b9ae8"/>
+<rect x="365.9" y="599.4" width="9.3" height="41.6" fill="url(#hatch)"/>
+<line x1="370.5" y1="587.4" x2="370.5" y2="603.8" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="366.6" y1="603.8" x2="374.4" y2="603.8" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="366.6" y1="587.4" x2="374.4" y2="587.4" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="370.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 370.5 648.0)">Apple M3 Pro 18c</text>
+<g><title>Apple M1 Pro 16c: 153.2 M cell-evals/s; workload/model range 126.6–175.0 (not CI)</title>
+<rect x="380.9" y="597.6" width="9.3" height="43.4" fill="#4b9ae8"/>
+<rect x="380.9" y="597.6" width="9.3" height="43.4" fill="url(#hatch)"/>
+<line x1="385.5" y1="591.4" x2="385.5" y2="605.1" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="381.6" y1="605.1" x2="389.4" y2="605.1" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="381.6" y1="591.4" x2="389.4" y2="591.4" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="385.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 385.5 648.0)">Apple M1 Pro 16c</text>
+<g><title>GTX 1660: 164.1 M cell-evals/s</title>
+<rect x="395.9" y="594.5" width="9.3" height="46.5" fill="#8d9299"/>
+</g>
+<text x="400.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 400.5 648.0)">GTX 1660</text>
+<g><title>GTX 1070: 170.3 M cell-evals/s</title>
+<rect x="410.9" y="592.7" width="9.3" height="48.3" fill="#8d9299"/>
+</g>
+<text x="415.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 415.5 648.0)">GTX 1070</text>
+<g><title>Apple M2 Pro 19c: 175.9 M cell-evals/s; workload/model range 161.8–199.5 (not CI)</title>
+<rect x="425.9" y="591.1" width="9.3" height="49.9" fill="#4b9ae8"/>
+<rect x="425.9" y="591.1" width="9.3" height="49.9" fill="url(#hatch)"/>
+<line x1="430.5" y1="584.5" x2="430.5" y2="595.1" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="426.6" y1="595.1" x2="434.4" y2="595.1" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="426.6" y1="584.5" x2="434.4" y2="584.5" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="430.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 430.5 648.0)">Apple M2 Pro 19c</text>
+<g><title>RTX 4050 (mobile): 176.0 M cell-evals/s</title>
+<rect x="440.9" y="591.1" width="9.3" height="49.9" fill="#8d9299"/>
+</g>
+<text x="445.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 445.5 648.0)">RTX 4050 (mobile)</text>
+<g><title>GTX 1080: 189.7 M cell-evals/s</title>
+<rect x="455.9" y="587.2" width="9.3" height="53.8" fill="#8d9299"/>
+</g>
+<text x="460.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 460.5 648.0)">GTX 1080</text>
+<g><title>Tesla T4: 190.4 M cell-evals/s</title>
+<rect x="470.9" y="587.0" width="9.3" height="54.0" fill="#8d9299"/>
+</g>
+<text x="475.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 475.5 648.0)">Tesla T4</text>
+<g><title>Tesla M40: 197.5 M cell-evals/s</title>
+<rect x="485.9" y="585.0" width="9.3" height="56.0" fill="#8d9299"/>
+</g>
+<text x="490.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 490.5 648.0)">Tesla M40</text>
+<g><title>GTX 980 Ti: 199.6 M cell-evals/s</title>
+<rect x="500.9" y="584.4" width="9.3" height="56.6" fill="#8d9299"/>
+</g>
+<text x="505.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 505.5 648.0)">GTX 980 Ti</text>
+<g><title>RTX 2000 Ada: 204.1 M cell-evals/s</title>
+<rect x="515.9" y="583.1" width="9.3" height="57.9" fill="#8d9299"/>
+</g>
+<text x="520.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 520.5 648.0)">RTX 2000 Ada</text>
+<g><title>Quadro P5000: 204.5 M cell-evals/s</title>
+<rect x="530.9" y="583.0" width="9.3" height="58.0" fill="#8d9299"/>
+</g>
+<text x="535.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 535.5 648.0)">Quadro P5000</text>
+<g><title>RTX 3050 Ti: 206.3 M cell-evals/s</title>
+<rect x="545.9" y="582.5" width="9.3" height="58.5" fill="#8d9299"/>
+</g>
+<text x="550.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 550.5 648.0)">RTX 3050 Ti</text>
+<g><title>Apple M4 Pro 16c: 208.8 M cell-evals/s; workload/model range 168.0–238.8 (not CI)</title>
+<rect x="560.9" y="581.8" width="9.3" height="59.2" fill="#4b9ae8"/>
+<rect x="560.9" y="581.8" width="9.3" height="59.2" fill="url(#hatch)"/>
+<line x1="565.5" y1="573.3" x2="565.5" y2="593.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="561.6" y1="593.4" x2="569.4" y2="593.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="561.6" y1="573.3" x2="569.4" y2="573.3" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="565.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 565.5 648.0)">Apple M4 Pro 16c</text>
+<g><title>Apple M4 Pro 20c: 235.3 M cell-evals/s; workload/model range 209.8–260.3 (not CI)</title>
+<rect x="575.9" y="574.3" width="9.3" height="66.7" fill="#4b9ae8"/>
+<rect x="575.9" y="574.3" width="9.3" height="66.7" fill="url(#hatch)"/>
+<line x1="580.5" y1="567.2" x2="580.5" y2="581.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="576.6" y1="581.5" x2="584.4" y2="581.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="576.6" y1="567.2" x2="584.4" y2="567.2" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="580.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 580.5 648.0)">Apple M4 Pro 20c</text>
+<g><title>Apple M5 Pro 16c: 237.9 M cell-evals/s; workload/model range 168.0–269.6 (not CI)</title>
+<rect x="590.9" y="573.6" width="9.3" height="67.4" fill="#4b9ae8"/>
+<rect x="590.9" y="573.6" width="9.3" height="67.4" fill="url(#hatch)"/>
+<line x1="595.5" y1="564.6" x2="595.5" y2="593.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="591.6" y1="593.4" x2="599.4" y2="593.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="591.6" y1="564.6" x2="599.4" y2="564.6" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="595.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 595.5 648.0)">Apple M5 Pro 16c</text>
+<g><title>Tesla P40: 239.4 M cell-evals/s</title>
+<rect x="605.9" y="573.1" width="9.3" height="67.9" fill="#8d9299"/>
+</g>
+<text x="610.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 610.5 648.0)">Tesla P40</text>
+<g><title>GTX 1660 Ti: 247.4 M cell-evals/s</title>
+<rect x="620.9" y="570.8" width="9.3" height="70.2" fill="#8d9299"/>
+</g>
+<text x="625.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 625.5 648.0)">GTX 1660 Ti</text>
+<g><title>Apple M5 Pro 20c: 252.0 M cell-evals/s; workload/model range 210.0–273.2 (not CI)</title>
+<rect x="635.9" y="569.6" width="9.3" height="71.4" fill="#4b9ae8"/>
+<rect x="635.9" y="569.6" width="9.3" height="71.4" fill="url(#hatch)"/>
+<line x1="640.5" y1="563.5" x2="640.5" y2="581.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="636.6" y1="581.5" x2="644.4" y2="581.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="636.6" y1="563.5" x2="644.4" y2="563.5" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="640.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 640.5 648.0)">Apple M5 Pro 20c</text>
+<g><title>Apple M3 Max 30c: 270.9 M cell-evals/s; workload/model range 256.0–314.9 (not CI)</title>
+<rect x="650.9" y="564.2" width="9.3" height="76.8" fill="#4b9ae8"/>
+<rect x="650.9" y="564.2" width="9.3" height="76.8" fill="url(#hatch)"/>
+<line x1="655.5" y1="551.7" x2="655.5" y2="568.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="651.6" y1="568.4" x2="659.4" y2="568.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="651.6" y1="551.7" x2="659.4" y2="551.7" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="655.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 655.5 648.0)">Apple M3 Max 30c</text>
+<g><title>GTX TITAN X (Pascal): 274.8 M cell-evals/s</title>
+<rect x="665.9" y="563.1" width="9.3" height="77.9" fill="#8d9299"/>
+</g>
+<text x="670.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 670.5 648.0)">GTX TITAN X (Pascal)</text>
+<g><title>GTX 1080 Ti: 275.2 M cell-evals/s</title>
+<rect x="680.9" y="563.0" width="9.3" height="78.0" fill="#8d9299"/>
+</g>
+<text x="685.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 685.5 648.0)">GTX 1080 Ti</text>
+<g><title>Apple M1 Max 32c: 283.6 M cell-evals/s; workload/model range 251.8–349.9 (not CI)</title>
+<rect x="695.9" y="560.6" width="9.3" height="80.4" fill="#4b9ae8"/>
+<rect x="695.9" y="560.6" width="9.3" height="80.4" fill="url(#hatch)"/>
+<line x1="700.5" y1="541.8" x2="700.5" y2="569.6" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="696.6" y1="569.6" x2="704.4" y2="569.6" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="696.6" y1="541.8" x2="704.4" y2="541.8" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="700.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 700.5 648.0)">Apple M1 Max 32c</text>
+<g><title>RTX 2060: 284.7 M cell-evals/s</title>
+<rect x="710.9" y="560.3" width="9.3" height="80.7" fill="#8d9299"/>
+</g>
+<text x="715.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 715.5 648.0)">RTX 2060</text>
+<g><title>RTX 2070: 297.8 M cell-evals/s</title>
+<rect x="725.9" y="556.6" width="9.3" height="84.4" fill="#8d9299"/>
+</g>
+<text x="730.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 730.5 648.0)">RTX 2070</text>
+<g><title>RTX 4060 Ti: 299.9 M cell-evals/s</title>
+<rect x="740.9" y="556.0" width="9.3" height="85.0" fill="#8d9299"/>
+</g>
+<text x="745.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 745.5 648.0)">RTX 4060 Ti</text>
+<g><title>RTX A4000 (ECC On): 323.0 M cell-evals/s</title>
+<rect x="755.9" y="549.4" width="9.3" height="91.6" fill="#8d9299"/>
+</g>
+<text x="760.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 760.5 648.0)">RTX A4000 (ECC On)</text>
+<g><title>Apple M2 Max 38c: 331.2 M cell-evals/s; workload/model range 305.2–398.9 (not CI)</title>
+<rect x="770.9" y="547.1" width="9.3" height="93.9" fill="#4b9ae8"/>
+<rect x="770.9" y="547.1" width="9.3" height="93.9" fill="url(#hatch)"/>
+<line x1="775.5" y1="527.9" x2="775.5" y2="554.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="771.6" y1="554.5" x2="779.4" y2="554.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="771.6" y1="527.9" x2="779.4" y2="527.9" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="775.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 775.5 648.0)">Apple M2 Max 38c</text>
+<g><title>Apple M4 Max 32c: 333.5 M cell-evals/s; workload/model range 321.9–358.7 (not CI)</title>
+<rect x="785.9" y="546.5" width="9.3" height="94.5" fill="#4b9ae8"/>
+<rect x="785.9" y="546.5" width="9.3" height="94.5" fill="url(#hatch)"/>
+<line x1="790.5" y1="539.3" x2="790.5" y2="549.8" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="786.6" y1="549.8" x2="794.4" y2="549.8" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="786.6" y1="539.3" x2="794.4" y2="539.3" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="790.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 790.5 648.0)">Apple M4 Max 32c</text>
+<g><title>GTX TITAN Xp: 341.4 M cell-evals/s</title>
+<rect x="800.9" y="544.2" width="9.3" height="96.8" fill="#8d9299"/>
+</g>
+<text x="805.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 805.5 648.0)">GTX TITAN Xp</text>
+<g><title>Apple M3 Max 40c: 357.8 M cell-evals/s; workload/model range 309.3–419.9 (not CI)</title>
+<rect x="815.9" y="539.6" width="9.3" height="101.4" fill="#4b9ae8"/>
+<rect x="815.9" y="539.6" width="9.3" height="101.4" fill="url(#hatch)"/>
+<line x1="820.5" y1="522.0" x2="820.5" y2="553.3" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="816.6" y1="553.3" x2="824.4" y2="553.3" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="816.6" y1="522.0" x2="824.4" y2="522.0" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="820.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 820.5 648.0)">Apple M3 Max 40c</text>
+<g><title>Tesla P100: 362.0 M cell-evals/s</title>
+<rect x="830.9" y="538.4" width="9.3" height="102.6" fill="#8d9299"/>
+</g>
+<text x="835.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 835.5 648.0)">Tesla P100</text>
+<g><title>RTX 2060 SUPER: 371.5 M cell-evals/s</title>
+<rect x="845.9" y="535.7" width="9.3" height="105.3" fill="#8d9299"/>
+</g>
+<text x="850.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 850.5 648.0)">RTX 2060 SUPER</text>
+<g><title>RTX 2080: 379.8 M cell-evals/s</title>
+<rect x="860.9" y="533.3" width="9.3" height="107.7" fill="#8d9299"/>
+</g>
+<text x="865.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 865.5 648.0)">RTX 2080</text>
+<g><title>Apple M5 Max 32c: 383.3 M cell-evals/s; workload/model range 335.9–402.4 (not CI)</title>
+<rect x="875.9" y="532.3" width="9.3" height="108.7" fill="#4b9ae8"/>
+<rect x="875.9" y="532.3" width="9.3" height="108.7" fill="url(#hatch)"/>
+<line x1="880.5" y1="526.9" x2="880.5" y2="545.8" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="876.6" y1="545.8" x2="884.4" y2="545.8" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="876.6" y1="526.9" x2="884.4" y2="526.9" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="880.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 880.5 648.0)">Apple M5 Max 32c</text>
+<g><title>Tesla P100 SXM2: 398.8 M cell-evals/s</title>
+<rect x="890.9" y="527.9" width="9.3" height="113.1" fill="#8d9299"/>
+</g>
+<text x="895.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 895.5 648.0)">Tesla P100 SXM2</text>
+<g><title>RTX 3080 (mobile): 400.8 M cell-evals/s</title>
+<rect x="905.9" y="527.4" width="9.3" height="113.6" fill="#8d9299"/>
+</g>
+<text x="910.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 910.5 648.0)">RTX 3080 (mobile)</text>
+<g><title>Apple M4 Max 40c: 413.9 M cell-evals/s; workload/model range 389.3–477.6 (not CI)</title>
+<rect x="920.9" y="523.7" width="9.3" height="117.3" fill="#4b9ae8"/>
+<rect x="920.9" y="523.7" width="9.3" height="117.3" fill="url(#hatch)"/>
+<line x1="925.5" y1="505.6" x2="925.5" y2="530.6" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="921.6" y1="530.6" x2="929.4" y2="530.6" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="921.6" y1="505.6" x2="929.4" y2="505.6" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="925.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 925.5 648.0)">Apple M4 Max 40c</text>
+<g><title>RTX 2080 SUPER: 424.5 M cell-evals/s</title>
+<rect x="935.9" y="520.7" width="9.3" height="120.3" fill="#8d9299"/>
+</g>
+<text x="940.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 940.5 648.0)">RTX 2080 SUPER</text>
+<g><title>RTX 2080 Ti: 428.4 M cell-evals/s</title>
+<rect x="950.9" y="519.6" width="9.3" height="121.4" fill="#8d9299"/>
+</g>
+<text x="955.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 955.5 648.0)">RTX 2080 Ti</text>
+<g><title>RTX 3060 Ti: 435.3 M cell-evals/s</title>
+<rect x="965.9" y="517.6" width="9.3" height="123.4" fill="#8d9299"/>
+</g>
+<text x="970.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 970.5 648.0)">RTX 3060 Ti</text>
+<g><title>RTX 4070 SUPER: 452.2 M cell-evals/s</title>
+<rect x="980.9" y="512.8" width="9.3" height="128.2" fill="#8d9299"/>
+</g>
+<text x="985.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 985.5 648.0)">RTX 4070 SUPER</text>
+<g><title>TITAN V: 468.8 M cell-evals/s</title>
+<rect x="995.9" y="508.1" width="9.3" height="132.9" fill="#8d9299"/>
+</g>
+<text x="1000.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1000.5 648.0)">TITAN V</text>
+<g><title>Apple M5 Max 40c: 475.9 M cell-evals/s; workload/model range 419.9–537.1 (not CI)</title>
+<rect x="1010.9" y="506.1" width="9.3" height="134.9" fill="#4b9ae8"/>
+<rect x="1010.9" y="506.1" width="9.3" height="134.9" fill="url(#hatch)"/>
+<line x1="1015.5" y1="488.7" x2="1015.5" y2="522.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1011.6" y1="522.0" x2="1019.4" y2="522.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1011.6" y1="488.7" x2="1019.4" y2="488.7" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="1015.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1015.5 648.0)">Apple M5 Max 40c</text>
+<g><title>Apple M1 Ultra 64c: 494.4 M cell-evals/s; workload/model range 411.4–699.8 (not CI)</title>
+<rect x="1025.8" y="500.8" width="9.3" height="140.2" fill="#4b9ae8"/>
+<rect x="1025.8" y="500.8" width="9.3" height="140.2" fill="url(#hatch)"/>
+<line x1="1030.5" y1="442.6" x2="1030.5" y2="524.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1026.6" y1="524.4" x2="1034.4" y2="524.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1026.6" y1="442.6" x2="1034.4" y2="442.6" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="1030.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1030.5 648.0)">Apple M1 Ultra 64c</text>
+<g><title>RTX 4070: 498.8 M cell-evals/s</title>
+<rect x="1040.8" y="499.6" width="9.3" height="141.4" fill="#8d9299"/>
+</g>
+<text x="1045.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1045.5 648.0)">RTX 4070</text>
+<g><title>RTX 2080 Ti OC: 507.2 M cell-evals/s</title>
+<rect x="1055.8" y="497.2" width="9.3" height="143.8" fill="#8d9299"/>
+</g>
+<text x="1060.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1060.5 648.0)">RTX 2080 Ti OC</text>
+<g><title>Apple M3 Ultra 60c: 521.1 M cell-evals/s; workload/model range 435.5–716.6 (not CI)</title>
+<rect x="1070.8" y="493.3" width="9.3" height="147.7" fill="#4b9ae8"/>
+<rect x="1070.8" y="493.3" width="9.3" height="147.7" fill="url(#hatch)"/>
+<line x1="1075.5" y1="437.8" x2="1075.5" y2="517.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1071.6" y1="517.5" x2="1079.4" y2="517.5" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1071.6" y1="437.8" x2="1079.4" y2="437.8" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="1075.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1075.5 648.0)">Apple M3 Ultra 60c</text>
+<g><title>TITAN RTX: 529.6 M cell-evals/s</title>
+<rect x="1085.8" y="490.9" width="9.3" height="150.1" fill="#8d9299"/>
+</g>
+<text x="1090.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1090.5 648.0)">TITAN RTX</text>
+<g><title>RTX 3070 Ti Lite Hash Rate: 547.0 M cell-evals/s</title>
+<rect x="1100.8" y="485.9" width="9.3" height="155.1" fill="#8d9299"/>
+</g>
+<text x="1105.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1105.5 648.0)">RTX 3070 Ti Lite Hash Rate</text>
+<g><title>RTX A6000 (ECC On): 558.1 M cell-evals/s</title>
+<rect x="1115.8" y="482.8" width="9.3" height="158.2" fill="#8d9299"/>
+</g>
+<text x="1120.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1120.5 648.0)">RTX A6000 (ECC On)</text>
+<g><title>Apple M2 Ultra 76c: 573.6 M cell-evals/s; workload/model range 460.5–797.8 (not CI)</title>
+<rect x="1130.8" y="478.4" width="9.3" height="162.6" fill="#4b9ae8"/>
+<rect x="1130.8" y="478.4" width="9.3" height="162.6" fill="url(#hatch)"/>
+<line x1="1135.5" y1="414.8" x2="1135.5" y2="510.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1131.6" y1="510.4" x2="1139.4" y2="510.4" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1131.6" y1="414.8" x2="1139.4" y2="414.8" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="1135.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1135.5 648.0)">Apple M2 Ultra 76c</text>
+<g><title>A40: 574.6 M cell-evals/s</title>
+<rect x="1145.8" y="478.1" width="9.3" height="162.9" fill="#8d9299"/>
+</g>
+<text x="1150.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1150.5 648.0)">A40</text>
+<g><title>V100-SXM2-32GB: 611.9 M cell-evals/s</title>
+<rect x="1160.8" y="467.5" width="9.3" height="173.5" fill="#8d9299"/>
+</g>
+<text x="1165.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1165.5 648.0)">V100-SXM2-32GB</text>
+<g><title>RTX 3080: 687.9 M cell-evals/s</title>
+<rect x="1175.8" y="446.0" width="9.3" height="195.0" fill="#8d9299"/>
+</g>
+<text x="1180.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1180.5 648.0)">RTX 3080</text>
+<g><title>RTX A6000 (ECC Off): 707.8 M cell-evals/s</title>
+<rect x="1190.8" y="440.3" width="9.3" height="200.7" fill="#8d9299"/>
+</g>
+<text x="1195.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1195.5 648.0)">RTX A6000 (ECC Off)</text>
+<g><title>Apple M3 Ultra 80c: 731.5 M cell-evals/s; workload/model range 445.9–839.8 (not CI)</title>
+<rect x="1205.8" y="433.6" width="9.3" height="207.4" fill="#4b9ae8"/>
+<rect x="1205.8" y="433.6" width="9.3" height="207.4" fill="url(#hatch)"/>
+<line x1="1210.5" y1="402.9" x2="1210.5" y2="514.6" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1206.6" y1="514.6" x2="1214.4" y2="514.6" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="1206.6" y1="402.9" x2="1214.4" y2="402.9" stroke="#173a5e" stroke-width="1.4"/>
+</g>
+<text x="1210.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1210.5 648.0)">Apple M3 Ultra 80c</text>
+<g><title>RTX 3080 (12Gb): 755.8 M cell-evals/s</title>
+<rect x="1220.8" y="426.7" width="9.3" height="214.3" fill="#8d9299"/>
+</g>
+<text x="1225.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1225.5 648.0)">RTX 3080 (12Gb)</text>
+<g><title>RTX 5070 Ti: 775.9 M cell-evals/s</title>
+<rect x="1235.8" y="421.0" width="9.3" height="220.0" fill="#8d9299"/>
+</g>
+<text x="1240.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1240.5 648.0)">RTX 5070 Ti</text>
+<g><title>RTX 3090: 835.9 M cell-evals/s</title>
+<rect x="1250.8" y="404.0" width="9.3" height="237.0" fill="#8d9299"/>
+</g>
+<text x="1255.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1255.5 648.0)">RTX 3090</text>
+<g><title>RTX 5080: 926.2 M cell-evals/s</title>
+<rect x="1265.8" y="378.4" width="9.3" height="262.6" fill="#8d9299"/>
+</g>
+<text x="1270.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1270.5 648.0)">RTX 5080</text>
+<g><title>A100: 951.5 M cell-evals/s</title>
+<rect x="1280.8" y="371.2" width="9.3" height="269.8" fill="#8d9299"/>
+</g>
+<text x="1285.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1285.5 648.0)">A100</text>
+<g><title>RTX 4090: 1228.0 M cell-evals/s</title>
+<rect x="1295.8" y="292.9" width="9.3" height="348.1" fill="#8d9299"/>
+</g>
+<text x="1300.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1300.5 648.0)">RTX 4090</text>
+<g><title>RTX 5090: 1917.1 M cell-evals/s</title>
+<rect x="1310.8" y="97.5" width="9.3" height="543.5" fill="#8d9299"/>
+</g>
+<text x="1315.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1315.5 648.0)">RTX 5090</text>
+<g><title>H100: 1980.0 M cell-evals/s</title>
+<rect x="1325.8" y="79.7" width="9.3" height="561.3" fill="#8d9299"/>
+</g>
+<text x="1330.5" y="648.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 1330.5 648.0)">H100</text>
+<rect x="78.0" y="828" width="11" height="11" fill="#0b4f9e"/>
+<text x="95.0" y="837" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">M4 10c Air, measured</text>
+<rect x="244.0" y="828" width="11" height="11" fill="#4b9ae8"/>
+<rect x="244.0" y="828" width="11" height="11" fill="url(#hatch)"/>
+<line x1="249.5" y1="827.0" x2="249.5" y2="840.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="245.5" y1="840.0" x2="253.5" y2="840.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="245.5" y1="827.0" x2="253.5" y2="827.0" stroke="#173a5e" stroke-width="1.4"/>
+<text x="261.0" y="837" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">Apple proxy ensemble + model range</text>
+<rect x="508.0" y="828" width="11" height="11" fill="#8d9299"/>
+<text x="525.0" y="837" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">CUDA, measured</text>
 </svg>

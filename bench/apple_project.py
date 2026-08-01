@@ -1,171 +1,440 @@
 #!/usr/bin/env python3
-"""Project MuMax3's 4.19M cell throughput across Apple Silicon.
+"""Build the auditable Apple-Silicon proxy model used by the SVG charts.
 
-Writes bench/apple.txt, which bench/apple_svg.py then renders. Only the M4 row
-is a measurement; everything else comes out of the model below.
+Only one number in this file is a MuMax3 benchmark: the 10-GPU-core M4 in a
+fanless MacBook Air.  Every other Apple result is a *model estimate*.  The
+model deliberately does not pretend that memory bandwidth or core count alone
+predicts this Metal backend.  It combines distinct public proxy families
+(which are not assumed statistically independent):
 
-Why not simply scale by quoted bandwidth
-----------------------------------------
-Quoted bandwidth alone puts M1 Ultra (800 GB/s) ahead of M4 Max (546 GB/s) and
-would leave the M5 parts out entirely. The first result is misleading: a GPU can
-only pull as much bandwidth as it can keep requests in flight for, and an M1 core
-does that less well than an M4 core. Ultra parts have a second problem, in that
-their figure is the sum across two dies joined by UltraFusion, which a single
-strided workload does not see in full.
+* direct Metal STREAM bandwidth (closest to the memory-heavy part of MuMax3),
+* token generation from one fixed llama.cpp build (memory-heavy),
+* prompt processing from that same build (a compute-heavy counterpoint),
+* published unified-memory bandwidth and GPU width (structural endpoints), and
+* a low-weight MLX compiled-SumAll cross-generation check for M5.
 
-The model therefore takes the smaller of two limits.
+Ratios are combined in log space with a weighted Huber location.  Generation
+and within-generation tier effects are estimated separately, which lets the
+sparse direct Metal measurements contribute without inventing missing points.
+The reported low/high interval is the envelope of coherent single-proxy paths,
+the full model, and leave-one-proxy-family-out fits.  It is a workload/model
+sensitivity range, NOT a confidence interval and NOT a benchmark error bar.
+A separate degree-2/degree-3 fit to the four base-chip generations was rejected:
+with so few points it reversed or exploded, putting M5/M4 anywhere from 0.82 to
+2.31.  No polynomial-extrapolation output enters the chart.
 
-Limit 1, the memory system:
+Primary inputs and provenance
+-----------------------------
+Metal STREAM / architecture study:
+  https://arxiv.org/abs/2502.05317
+  https://github.com/Arraying/AppleSilicons
+Direct Metal STREAM validation for M4 Pro and M3 Ultra (DaMoN 2026):
+  https://db.in.tum.de/~beischl/papers/Evaluating_Apple_Silicon_for_Data_Processing.pdf
+Same-build llama.cpp table and pinned build:
+  https://github.com/ggml-org/llama.cpp/discussions/4167
+  https://github.com/ggml-org/llama.cpp/commit/8e672efe632bb6a7333964a255c4b96f018b9a65
+Pinned MLX table used only for the M5 generation prior:
+  https://github.com/TristanBilot/mlx-benchmark/blob/fc7b2fa714bc8109a3b36f21ed091e542e35a728/benchmarks/average_benchmark.md
+Apple configuration/specification references:
+  https://support.apple.com/en-us/121554
+  https://support.apple.com/en-us/126318
 
-    spec_bandwidth * MEMORY_EFFICIENCY * die_penalty
+Protocol for the MuMax3 anchor
+------------------------------
+``bench/bench.mx3`` was run at 2048 x 2048 with solver 2 (Heun).  Heun performs
+two torque evaluations per timed step, hence:
 
-MEMORY_EFFICIENCY comes from measured GPU STREAM numbers for the base chips in
-Kunkel et al., "Apple vs. Oranges: Evaluating the Apple Silicon M-Series SoCs for
-HPC Performance and Efficiency" (arXiv:2502.05317): M1 60/67, M2 91/100,
-M3 92/100, M4 100/120, i.e. 90%, 91%, 92% and 83%. The paper concludes that all
-of them reach roughly 85% of peak, which is the value used here.
+    2048 * 2048 * 100 * 2 / median_wall_seconds
 
-Limit 2, the GPU width:
-
-    gpu_cores * per_core_bandwidth(generation)
-
-per_core_bandwidth is derived from each generation's base chip, where the memory
-system is the binding limit and so the achieved figure divided by core count is a
-lower bound on what one core can pull. It rises across generations, from
-7.25 GB/s on M1 to 13.1 GB/s on M5, which is what stops an old wide part from
-being credited with a modern part's efficiency.
-
-Throughput is then the achievable bandwidth times a constant calibrated so the
-model reproduces the measured M4 result exactly.
-
-Caveats worth repeating when quoting these numbers
---------------------------------------------------
-  - Everything except M4 is unmeasured. Treat the ordering as more trustworthy
-    than the absolute values.
-  - per_core_bandwidth is a lower bound taken from memory-bound base chips, so
-    the wide parts could do better than shown if their cores are not in fact the
-    limit.
-  - The Ultra die penalty is an estimate, not a measurement.
-  - This is the 4.19M cell operating point, where the simulation is bandwidth
-    bound. Wider GPUs help the small-mesh, dispatch-bound regime more than they
-    help here, so do not read this table as a general speedup ranking.
+Seven fresh processes after warm-up gave a 7.99095925 s median.  The within-
+session throughput range was 1.03604e8..1.05704e8 cell-evals/s (CV 0.72%).
+That repeatability range is intentionally not mixed with the proxy envelope.
+The historical run's seven raw wall times were not retained in this repository,
+so only the anchor arithmetic from the retained median is reproducible here;
+the range and CV are retained summary statistics.
 """
 
+import math
 import os
+
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# Re-measured on this machine from final commit 081c74da with the isolated
-# 2048x2048 point of bench/bench.mx3 (solver 2): seven consecutive fresh
-# processes, each with the benchmark's kernel/solver warm-up. The median was
-# 1.0497623298479466e8 cells*evals/s (7.99095925 s for 100 steps); the seven-run
-# range was 1.03604e8..1.05704e8 and CV 0.72%. Session-local repetition matters:
-# the same binary has historically differed by as much as 15% hours apart.
-MEASURED_CHIP = "Apple M4"
-MEASURED_THROUGHPUT = 1.0497623298479466e08
+MESH_X = 2048
+MESH_Y = 2048
+TIMED_STEPS = 100
+HEUN_EVALS_PER_STEP = 2
+MEDIAN_WALL_SECONDS = 7.99095925
+ANCHOR_THROUGHPUT = (
+    MESH_X
+    * MESH_Y
+    * TIMED_STEPS
+    * HEUN_EVALS_PER_STEP
+    / MEDIAN_WALL_SECONDS
+)
 
-# Fraction of quoted bandwidth a GPU streaming kernel reaches (arXiv:2502.05317).
-MEMORY_EFFICIENCY = 0.85
-# Extra derate for two-die parts, where the quoted figure is the sum of both
-# dies and a single strided workload does not see all of it. Estimated.
-ULTRA_DIE_PENALTY = 0.85
+# Same fixed llama.cpp build. Tuple order is Q8 PP, Q4 PP, Q8 TG, Q4 TG.
+# Q8 and Q4 are correlated measurements, so q_family() collapses them into
+# one geometric mean before the proxy is given any weight.
+LLAMA = {
+    "M1": (117.25, 117.96, 7.91, 14.15),
+    "M1 Pro": (270.37, 266.25, 22.34, 36.41),
+    "M1 Max": (537.37, 530.06, 40.20, 61.19),
+    "M1 Ultra": (1042.95, 1030.04, 59.87, 83.73),
+    "M2": (181.40, 179.57, 12.21, 21.91),
+    "M2 Pro": (344.50, 341.19, 23.01, 38.86),
+    "M2 Max": (677.91, 671.31, 41.83, 65.95),
+    "M2 Ultra": (1248.59, 1238.48, 66.64, 94.27),
+    "M3": (187.52, 186.75, 12.27, 21.34),
+    "M3 Pro": (344.66, 341.67, 17.53, 30.74),
+    "M3 Max 30c": (566.40, 567.59, 34.30, 56.58),
+    "M3 Max 40c": (757.64, 759.70, 42.75, 66.31),
+    "M3 Ultra 60c": (1085.76, 1073.09, 63.55, 88.40),
+    "M3 Ultra": (1487.51, 1471.24, 63.93, 92.14),
+    "M4": (223.64, 221.29, 13.54, 24.11),
+    "M4 Pro 16c": (367.13, 364.06, 30.54, 49.64),
+    "M4 Pro": (449.62, 439.78, 30.69, 50.74),
+    "M4 Max 32c": (718.56, 713.93, 43.87, 69.95),
+    "M4 Max 40c": (891.94, 885.68, 54.05, 83.06),
+    "M5": (264.15, 247.68, 16.62, 29.62),
+    "M5 Pro 16c": (431.14, 403.19, 35.86, 60.04),
+}
 
-# name -> (quoted GB/s, GPU cores, generation, is_ultra)
-# Core counts are the top configuration of each part.
-CHIPS = [
-    ("Apple M1",          68.25,  8, "M1", False),
-    ("Apple M1 Pro",     200.0,  16, "M1", False),
-    ("Apple M1 Max",     400.0,  32, "M1", False),
-    ("Apple M1 Ultra",   800.0,  64, "M1", True),
-    ("Apple M2",         100.0,  10, "M2", False),
-    ("Apple M2 Pro",     200.0,  19, "M2", False),
-    ("Apple M2 Max",     400.0,  38, "M2", False),
-    ("Apple M2 Ultra",   800.0,  76, "M2", True),
-    ("Apple M3",         102.4,  10, "M3", False),
-    ("Apple M3 Pro",     153.6,  18, "M3", False),
-    ("Apple M3 Max 30c", 300.0,  30, "M3", False),
-    ("Apple M3 Max 40c", 409.6,  40, "M3", False),
-    ("Apple M3 Ultra",   819.3,  80, "M3", True),
-    ("Apple M4",         120.0,  10, "M4", False),
-    ("Apple M4 Pro",     273.0,  20, "M4", False),
-    ("Apple M4 Max 32c", 410.0,  32, "M4", False),
-    ("Apple M4 Max 40c", 546.0,  40, "M4", False),
-    ("Apple M5",         153.6,  10, "M5", False),
-    ("Apple M5 Pro",     307.0,  20, "M5", False),
-    ("Apple M5 Max 32c", 460.0,  32, "M5", False),
-    ("Apple M5 Max 40c", 614.0,  40, "M5", False),
-]
+# Two independent rows for the 40-core M5 Max in the same public table.
+M5_MAX40_RUNS = (
+    (1051.59, 987.10, 64.61, 102.93),
+    (1054.83, 990.53, 65.11, 104.03),
+)
 
-# Base chip of each generation, used to derive per-core bandwidth.
-BASE = {"M1": 68.25, "M2": 100.0, "M3": 102.4, "M4": 120.0, "M5": 153.6}
-BASE_CORES = {"M1": 8, "M2": 10, "M3": 10, "M4": 10, "M5": 10}
+# Direct GPU-side Metal streaming throughput, decimal GB/s.  M4 Pro 20c and
+# M3 Ultra 80c are ten-run medians from the peer-reviewed DaMoN paper.
+STREAM = {
+    "M1": 60.0,
+    "M2": 91.0,
+    "M3": 92.0,
+    "M4": 100.0,
+    "M4 Pro": 248.0,
+    "M3 Ultra": 738.0,
+}
+
+# Published decimal GB/s. Apple did not publish a direct M1-base figure; 67 is
+# the secondary value tabulated by Kunkel et al. M3 Ultra uses the 819.2 GB/s
+# theoretical value used by DaMoN, rather than rounding it down to 800.
+BANDWIDTH = {
+    "M1": 67.0,
+    "M1 Pro": 200.0,
+    "M1 Max": 400.0,
+    "M1 Ultra": 800.0,
+    "M2": 100.0,
+    "M2 Pro": 200.0,
+    "M2 Max": 400.0,
+    "M2 Ultra": 800.0,
+    "M3": 100.0,
+    "M3 Pro": 150.0,
+    "M3 Max 30c": 300.0,
+    "M3 Max 40c": 400.0,
+    "M3 Ultra 60c": 819.2,
+    "M3 Ultra": 819.2,
+    "M4": 120.0,
+    "M4 Pro 16c": 273.0,
+    "M4 Pro": 273.0,
+    "M4 Max 32c": 410.0,
+    "M4 Max 40c": 546.0,
+    "M5": 153.0,
+    "M5 Pro 16c": 307.0,
+    "M5 Pro": 307.0,
+    "M5 Max 32c": 460.0,
+    "M5 Max 40c": 614.0,
+}
+
+GPU_CORES = {
+    "M1": 8,
+    "M1 Pro": 16,
+    "M1 Max": 32,
+    "M1 Ultra": 64,
+    "M2": 10,
+    "M2 Pro": 19,
+    "M2 Max": 38,
+    "M2 Ultra": 76,
+    "M3": 10,
+    "M3 Pro": 18,
+    "M3 Max 30c": 30,
+    "M3 Max 40c": 40,
+    "M3 Ultra 60c": 60,
+    "M3 Ultra": 80,
+    "M4": 10,
+    "M4 Pro 16c": 16,
+    "M4 Pro": 20,
+    "M4 Max 32c": 32,
+    "M4 Max 40c": 40,
+    "M5": 10,
+    "M5 Pro 16c": 16,
+    "M5 Pro": 20,
+    "M5 Max 32c": 32,
+    "M5 Max 40c": 40,
+}
+
+# Engineering influence weights, not statistical inverse-variance weights.
+# The order reflects closeness to this backend; sparse structural proxies are
+# deliberately unable to overpower direct Metal and same-build workload data.
+PROXY_WEIGHTS = {
+    "stream": 4.0,
+    "tg": 3.0,
+    "pp": 2.0,
+    "bw": 1.0,
+    "cores": 1.0,
+    "mlx": 1.0,
+}
+
+# Pinned-table compiled SumAll latency ratio, M4 Max / M5 Max = speed uplift.
+# The rows used different MLX patch versions (0.31.2 and 0.31.1), which is why
+# this is a weight-1 sanity check rather than primary evidence. It is neither a
+# four-operation mean nor a MuMax3 measurement.
+M5_MLX_GENERATION = 1.01 / 0.89
+
+GENERATIONS = {
+    "M1": "M1",
+    "M1 Pro": "M1",
+    "M1 Max": "M1",
+    "M1 Ultra": "M1",
+    "M2": "M2",
+    "M2 Pro": "M2",
+    "M2 Max": "M2",
+    "M2 Ultra": "M2",
+    "M3": "M3",
+    "M3 Pro": "M3",
+    "M3 Max 30c": "M3",
+    "M3 Max 40c": "M3",
+    "M3 Ultra 60c": "M3",
+    "M3 Ultra": "M3",
+    "M4": "M4",
+    "M4 Pro 16c": "M4",
+    "M4 Pro": "M4",
+    "M4 Max 32c": "M4",
+    "M4 Max 40c": "M4",
+    "M5": "M5",
+    "M5 Pro 16c": "M5",
+    "M5 Pro": "M5",
+    "M5 Max 32c": "M5",
+    "M5 Max 40c": "M5",
+}
+
+OUTPUT_ORDER = list(GENERATIONS)
 
 
-def per_core_bandwidth(generation):
-    return MEMORY_EFFICIENCY * BASE[generation] / BASE_CORES[generation]
+def geometric_mean(left, right):
+    return math.sqrt(left * right)
 
 
-def achievable_bandwidth(spec, cores, generation, is_ultra):
-    memory_limit = spec * MEMORY_EFFICIENCY * (ULTRA_DIE_PENALTY if is_ultra else 1.0)
-    width_limit = cores * per_core_bandwidth(generation)
-    return min(memory_limit, width_limit), memory_limit, width_limit
+def q_family(name, kind):
+    """Collapse the correlated Q8/Q4 pair into one PP or TG proxy."""
+    offset = 0 if kind == "pp" else 2
+    values = LLAMA[name]
+    return geometric_mean(values[offset], values[offset + 1])
+
+
+def add_m5_transfers():
+    """Fill public-table configurations by transparent same-family transfer."""
+    LLAMA["M5 Max 40c"] = tuple(
+        geometric_mean(left, right)
+        for left, right in zip(*M5_MAX40_RUNS)
+    )
+    LLAMA["M5 Pro"] = tuple(
+        LLAMA["M5 Pro 16c"][index]
+        * LLAMA["M4 Pro"][index]
+        / LLAMA["M4 Pro 16c"][index]
+        for index in range(4)
+    )
+    LLAMA["M5 Max 32c"] = tuple(
+        LLAMA["M5 Max 40c"][index]
+        * LLAMA["M4 Max 32c"][index]
+        / LLAMA["M4 Max 40c"][index]
+        for index in range(4)
+    )
+
+
+def weighted_median(values, weights):
+    ordered = sorted(zip(values, weights))
+    threshold = sum(weights) / 2.0
+    cumulative = 0.0
+    for value, weight in ordered:
+        cumulative += weight
+        if cumulative >= threshold:
+            return value
+    raise AssertionError("non-empty positive weights must have a median")
+
+
+def robust_log_center(ratios):
+    """Weighted Huber location in log-ratio space."""
+    if not ratios:
+        raise ValueError("at least one proxy ratio is required")
+    logs = [math.log(value) for value in ratios.values()]
+    weights = [PROXY_WEIGHTS[name] for name in ratios]
+    center = weighted_median(logs, weights)
+    mad = weighted_median([abs(value - center) for value in logs], weights)
+    scale = max(math.log(1.05), 1.4826 * mad)
+    for _ in range(100):
+        effective = []
+        for value, weight in zip(logs, weights):
+            distance = abs(value - center) / scale
+            effective.append(
+                weight if distance <= 1.5 else weight * 1.5 / distance
+            )
+        updated = sum(
+            weight * value for weight, value in zip(effective, logs)
+        ) / sum(effective)
+        if abs(updated - center) < 1e-12:
+            center = updated
+            break
+        center = updated
+    return math.exp(center)
+
+
+def proxy_ratios(chip):
+    """Return generation and within-generation proxy ratio dictionaries."""
+    base = GENERATIONS[chip]
+    generation = {
+        "tg": q_family(base, "tg") / q_family("M4", "tg"),
+        "pp": q_family(base, "pp") / q_family("M4", "pp"),
+        "bw": BANDWIDTH[base] / BANDWIDTH["M4"],
+        "cores": GPU_CORES[base] / GPU_CORES["M4"],
+    }
+    tier = {
+        "tg": q_family(chip, "tg") / q_family(base, "tg"),
+        "pp": q_family(chip, "pp") / q_family(base, "pp"),
+        "bw": BANDWIDTH[chip] / BANDWIDTH[base],
+        "cores": GPU_CORES[chip] / GPU_CORES[base],
+    }
+    if base in STREAM:
+        generation["stream"] = STREAM[base] / STREAM["M4"]
+    if chip in STREAM and base in STREAM:
+        tier["stream"] = STREAM[chip] / STREAM[base]
+    if base == "M5":
+        generation["mlx"] = M5_MLX_GENERATION
+    return generation, tier
+
+
+def model_ratio(chip):
+    """Return central ratio and workload/model envelope relative to M4."""
+    if chip == "M4":
+        return 1.0, 1.0, 1.0
+
+    generation, tier = proxy_ratios(chip)
+    central = robust_log_center(generation) * robust_log_center(tier)
+
+    # Coherent paths never splice (for example) a STREAM generation ratio to a
+    # core-count tier ratio. Each candidate follows one family end to end.
+    candidates = [central]
+    candidates.extend(
+        generation[family] * tier[family]
+        for family in generation.keys() & tier.keys()
+    )
+
+    # Leave-one-proxy-family-out sensitivity. A family is removed from both the
+    # generation and tier stages to avoid retaining half of a correlated path.
+    for family in PROXY_WEIGHTS:
+        reduced_generation = dict(generation)
+        reduced_tier = dict(tier)
+        reduced_generation.pop(family, None)
+        reduced_tier.pop(family, None)
+        if reduced_generation and reduced_tier:
+            candidates.append(
+                robust_log_center(reduced_generation)
+                * robust_log_center(reduced_tier)
+            )
+    return central, min(candidates), max(candidates)
+
+
+def display_name(chip):
+    family = chip
+    final_token = family.rsplit(" ", 1)[-1]
+    if final_token.endswith("c") and final_token[:-1].isdigit():
+        family = family.rsplit(" ", 1)[0]
+    return f"Apple {family} {GPU_CORES[chip]}c"
+
+
+def build_rows():
+    add_m5_transfers()
+    rows = []
+    for chip in OUTPUT_ORDER:
+        central, low, high = model_ratio(chip)
+        rows.append(
+            {
+                "chip": chip,
+                "name": display_name(chip),
+                "bandwidth": BANDWIDTH[chip],
+                "cores": GPU_CORES[chip],
+                "value": ANCHOR_THROUGHPUT * central,
+                "low": ANCHOR_THROUGHPUT * low,
+                "high": ANCHOR_THROUGHPUT * high,
+                "status": "measured" if chip == "M4" else "modeled",
+            }
+        )
+    return rows
+
+
+def verify(rows):
+    """Catch unit, protocol, input, and accidental model changes."""
+    recorded = 1.0497623298479466e08
+    assert math.isclose(ANCHOR_THROUGHPUT, recorded, rel_tol=0, abs_tol=0.05)
+    assert set(LLAMA) == set(GENERATIONS)
+    assert set(BANDWIDTH) == set(GENERATIONS)
+    assert set(GPU_CORES) == set(GENERATIONS)
+    by_chip = {row["chip"]: row for row in rows}
+    expected_millions = {
+        "M1": 61.3,
+        "M3 Ultra 60c": 521.1,
+        "M3 Ultra": 731.5,
+        "M4 Pro 16c": 208.8,
+        "M4 Pro": 235.3,
+        "M4 Max 32c": 333.5,
+        "M4 Max 40c": 413.9,
+        "M5": 123.2,
+        "M5 Pro": 252.0,
+        "M5 Max 32c": 383.3,
+        "M5 Max 40c": 475.9,
+    }
+    for chip, expected in expected_millions.items():
+        actual = by_chip[chip]["value"] / 1e6
+        assert abs(actual - expected) < 0.051, (chip, actual, expected)
+    anchor = by_chip["M4"]
+    assert anchor["value"] == anchor["low"] == anchor["high"]
 
 
 def main():
-    reference = next(c for c in CHIPS if c[0] == MEASURED_CHIP)
-    reference_bw, _, _ = achievable_bandwidth(*reference[1:])
-    scale = MEASURED_THROUGHPUT / reference_bw
-
-    rows = []
-    for name, spec, cores, generation, is_ultra in CHIPS:
-        bandwidth, memory_limit, width_limit = achievable_bandwidth(
-            spec, cores, generation, is_ultra
-        )
-        rows.append(
-            {
-                "name": name,
-                "spec": spec,
-                "cores": cores,
-                "bandwidth": bandwidth,
-                "limit": "memory" if memory_limit <= width_limit else "gpu-width",
-                "throughput": bandwidth * scale,
-                "status": "measured" if name == MEASURED_CHIP else "projected",
-            }
-        )
-    rows.sort(key=lambda row: row["throughput"])
-
+    rows = build_rows()
+    verify(rows)
     lines = [
-        "# MuMax3 throughput at the 4.194304e6 cell (2048x2048) operating point",
-        "# of bench/bench.mx3, the same point recorded in bench/gpus.txt.",
+        "# Apple-Silicon MuMax3 proxy ensemble, anchored to one measurement.",
+        "# Generated by bench/apple_project.py; do not edit numeric rows.",
         "#",
-        "# Generated by bench/apple_project.py. Do not edit by hand; that script",
-        "# documents the model and its caveats. Only the Apple M4 row is measured.",
+        "# measured: MacBook Air M4 10-GPU-core, 32 GB, fanless; 2048x2048,",
+        "# solver 2 (Heun), 100 timed steps, seven fresh-process median.",
+        "# Historical raw run times were not retained; only the median and",
+        "# summary range/CV survive, so do not treat them as rederived here.",
+        "# Modeled rows are not MuMax3 benchmarks. low..high is a workload/model",
+        "# envelope (coherent proxy paths + leave-one-family-out), not a CI.",
+        "# See the generator docstring for model definition and source URLs.",
         "#",
-        f"# Calibration: {MEASURED_CHIP} measured at {MEASURED_THROUGHPUT:.4g}"
-        f" cells*evals/s,",
-        f"# giving {scale:.4g} cells*evals/s per GB/s of achievable bandwidth.",
-        "#",
-        "# columns: spec_GB_s  achievable_GB_s  binding_limit  throughput  status  \"name\"",
+        "# columns: bandwidth_GB_s  gpu_cores  central  low  high  status  \"name\"",
     ]
     for row in rows:
         lines.append(
-            f'{row["spec"]:7.1f} {row["bandwidth"]:8.1f} {row["limit"]:>9s}'
-            f'  {row["throughput"]:.4g}  {row["status"]:9s} "{row["name"]}"'
+            f'{row["bandwidth"]:.10g}  {row["cores"]}  '
+            f'{row["value"]:.17g}  {row["low"]:.17g}  '
+            f'{row["high"]:.17g}  {row["status"]}  "{row["name"]}"'
         )
     path = os.path.join(HERE, "apple.txt")
     with open(path, "w") as handle:
         handle.write("\n".join(lines) + "\n")
 
     print(f"wrote {path}")
-    print(
-        f"{'chip':18s} {'spec':>7s} {'achv':>7s} {'limit':>10s} "
-        f"{'M cell-evals/s':>14s}"
-    )
     for row in rows:
+        marker = "measured" if row["status"] == "measured" else "model"
         print(
-            f'{row["name"]:18s} {row["spec"]:7.1f} {row["bandwidth"]:7.1f} '
-            f'{row["limit"]:>10s} {row["throughput"]/1e6:10.1f}'
-            f'{"   <- measured" if row["status"] == "measured" else ""}'
+            f'{row["name"]}: {row["value"] / 1e6:.1f} '
+            f'[{row["low"] / 1e6:.1f}, {row["high"] / 1e6:.1f}] M/s '
+            f'({marker})'
         )
 
 

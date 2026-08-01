@@ -109,6 +109,12 @@ typedef struct mr_runtime_stats {
     uint64_t completion_query_hits;
     uint64_t completion_waits;
     uint64_t completion_wait_submissions;
+    /*
+     * Arithmetic-only fillers submitted on a private queue right before the
+     * host blocks, so the GPU does not fall out of its performance state across
+     * the host's decision window. They touch no simulation buffer.
+     */
+    uint64_t keepalive_submissions;
 } mr_runtime_stats;
 
 int mr_initialize(char **error_message);
