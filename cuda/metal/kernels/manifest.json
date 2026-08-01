@@ -1,7 +1,106 @@
 {
   "schema_version": 1,
-  "kernel_count": 66,
+  "kernel_count": 67,
   "kernels": [
+    {
+      "source": "bbminimize.cu",
+      "name": "bbminimize",
+      "arguments": [
+        {
+          "name": "mx",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 0,
+          "nullable": false
+        },
+        {
+          "name": "my",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 1,
+          "nullable": false
+        },
+        {
+          "name": "mz",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 2,
+          "nullable": false
+        },
+        {
+          "name": "m0x",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 3,
+          "nullable": false
+        },
+        {
+          "name": "m0y",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 4,
+          "nullable": false
+        },
+        {
+          "name": "m0z",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 5,
+          "nullable": false
+        },
+        {
+          "name": "tx",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 6,
+          "nullable": false
+        },
+        {
+          "name": "ty",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 7,
+          "nullable": false
+        },
+        {
+          "name": "tz",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 8,
+          "nullable": false
+        },
+        {
+          "name": "nomPartials",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 9,
+          "nullable": false
+        },
+        {
+          "name": "divPartials",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 10,
+          "nullable": false
+        },
+        {
+          "name": "slots",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 11,
+          "nullable": false
+        },
+        {
+          "name": "N",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 12,
+          "nullable": false
+        }
+      ],
+      "pointer_mask_buffer_index": null,
+      "source_sha256": "81816a1149b851ee9faabf31cfa25d2fceb8d7e88410a658036d8e7d8de751b9"
+    },
     {
       "source": "cellindices.cu",
       "name": "cellindices",

@@ -14,6 +14,15 @@ var (
 	StopMaxDm             float64 = 1e-6 // stop minimizer if sampled dm is smaller than this
 	MinimizeWallClockTime float64 = -1.0 // wall-clock time limit for minimization
 	MinimizeConverged     bool           // true if minimize converged, and false if the maximum wall-clock time is reached
+
+	// MinimizeOnGPU keeps the Barzilai-Borwein step size in device memory
+	// instead of routing it through the host, which is what otherwise costs one
+	// full pipeline drain per iteration. Each descent is bit-identical: the
+	// kernel re-adds the same partial slots in the same order the host does. The
+	// convergence norm is resolved one iteration late, so a minimization can
+	// stop one iteration later than it otherwise would - always on the more
+	// converged side. Opt-in for that reason.
+	MinimizeOnGPU = false
 )
 
 func init() {
@@ -21,6 +30,7 @@ func init() {
 	DeclVar("MinimizerStop", &StopMaxDm, "Stopping max dM for Minimize")
 	DeclVar("MinimizerSamples", &DmSamples, "Number of max dM to collect for Minimize convergence check.")
 	DeclVar("MinimizeWallClockTime", &MinimizeWallClockTime, "Wall-clock time limit (seconds) for Minimize that will interrupt the minimization if exceeded. Set to -1 (default) to disable. An interrupted minimization does not guarantee a correct solution.")
+	DeclVar("MinimizeOnGPU", &MinimizeOnGPU, "Keep the Minimize step size in device memory so an iteration does not drain the GPU pipeline (default=false). Each descent is bit-identical; the convergence check is one iteration late, so a minimization may take one extra step.")
 }
 
 // fixed length FIFO. Items can be added but not removed
@@ -57,6 +67,12 @@ type Minimizer struct {
 	k      *data.Slice // torque saved to calculate time step
 	lastDm fifoRing
 	h      float32
+
+	// Device-resident step size, used when MinimizeOnGPU is on. The step size
+	// then never reaches the host, so an iteration no longer has to drain the
+	// pipeline before the next descent can be encoded.
+	bb        *cuda.BBStep
+	dmPending *cuda.Pending // convergence norm of the previous iteration
 }
 
 func (mini *Minimizer) Step() {
@@ -68,6 +84,15 @@ func (mini *Minimizer) Step() {
 		torqueFn(mini.k)
 	}
 
+	onGPU := minimizeOnGPUEligible()
+	if !onGPU {
+		mini.Settle()
+	}
+	if onGPU && mini.bb == nil {
+		mini.bb = cuda.NewBBStep()
+		mini.bb.Seed(mini.h)
+	}
+
 	k := mini.k
 	h := mini.h
 
@@ -77,7 +102,11 @@ func (mini *Minimizer) Step() {
 	data.Copy(m0, m)
 
 	// make descent
-	cuda.Minimize(m, m0, k, h)
+	if onGPU {
+		cuda.MinimizeBB(m, m0, k, mini.bb)
+	} else {
+		cuda.Minimize(m, m0, k, h)
+	}
 
 	// calculate new torque for next step
 	k0 := cuda.Buffer(3, size)
@@ -93,6 +122,21 @@ func (mini *Minimizer) Step() {
 	// calculate step difference of m and k
 	cuda.Madd2(dm, m, m0, 1., -1.)
 	cuda.Madd2(dk, k, k0, -1., 1.) // reversed due to LLNoPrecess sign
+
+	if onGPU {
+		// The step size for the next descent stays on the device, so nothing
+		// here has to be read back. The convergence norm still has to reach the
+		// host eventually, but it only decides when to stop, so it is resolved
+		// one iteration late - by which time a whole iteration of GPU work sits
+		// behind it and the wait overlaps instead of stalling.
+		mini.bb.Update(dm, dk, NSteps%2 == 0)
+		pending := cuda.MaxVecNormAsync(dm).Targeted()
+		mini.resolveDm()
+		mini.dmPending = pending
+		M.normalize()
+		NSteps++ // as a convention, time does not advance during relax
+		return
+	}
 
 	// The convergence norm and both BB step-size terms are independent. Queue
 	// all three reductions before reading any result so one GPU drain serves the
@@ -123,7 +167,37 @@ func (mini *Minimizer) Step() {
 	NSteps++
 }
 
+// Settle records the convergence norm of an iteration that was left in flight,
+// so that the stopping test sees every sample. runWhile calls this on the way out
+// of the loop and then re-tests its condition, which is what keeps the criterion
+// from being evaluated against a short history.
+func (mini *Minimizer) Settle() {
+	mini.resolveDm()
+}
+
+func (mini *Minimizer) resolveDm() {
+	if mini.dmPending == nil {
+		return
+	}
+	maxDm := mini.dmPending.Value()
+	mini.dmPending = nil
+	mini.lastDm.Add(maxDm)
+	setLastErr(mini.lastDm.Max()) // report maxDm to user as LastErr
+}
+
+// minimizeOnGPUEligible reports whether the descent may take its step size from
+// device memory.
+func minimizeOnGPUEligible() bool {
+	return MinimizeOnGPU && cuda.BBStepSupported
+}
+
 func (mini *Minimizer) Free() {
+	if mini.dmPending != nil {
+		mini.dmPending.Value() // releases the reduction slots
+		mini.dmPending = nil
+	}
+	mini.bb.Free()
+	mini.bb = nil
 	mini.k.Free()
 }
 

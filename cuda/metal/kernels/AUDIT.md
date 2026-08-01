@@ -1,9 +1,16 @@
 # CUDA-to-Metal kernel audit
 
 This directory contains the deterministic Metal translation of every
-production kernel in `cuda/*.cu`. The inventory is intentionally pinned at 66
+production kernel in `cuda/*.cu`. The inventory is intentionally pinned at 67
 kernels. Adding or removing a `.cu` file makes generation fail until the
 translator and this audit are reviewed.
+
+`bbminimize` is the one kernel whose CUDA launch wrapper is not checked in. It
+takes the Barzilai-Borwein step size from device memory rather than from a host
+scalar, so that `Minimize` does not have to drain the pipeline once per
+iteration; the `.cu` source is the shared truth, but generating its CUDA wrapper
+needs `nvcc` through `cuda/Makefile`. Until that is run, `cuda.BBStepSupported`
+is false on CUDA and the minimizer keeps computing the step size on the host.
 
 ## Reproduce
 
@@ -21,7 +28,7 @@ The generator writes:
 - `cuda/*_wrapper_metal.go`: typed Darwin/arm64 launch wrappers.
 - `mumax3_kernels.metal`: one self-contained MSL library.
 - `manifest.json`: the source hash, kernel name, ordered ABI, nullability, and
-  binding index for all 66 kernels.
+  binding index for all 67 kernels.
 
 `source.go` embeds the combined library as `kernels.Source`; the Darwin runtime
 must register that value before the first launch.
@@ -83,14 +90,16 @@ floating-point reduction-order tolerance, not bitwise deterministic.
 The Hopf summand source constructs `cuDoubleComplex` values from float arrays
 and writes a float output. Apple GPUs do not expose native FP64, so that
 intermediate complex algebra is translated to native `float2`. This is the only
-identified precision-width divergence in the 66-kernel corpus and needs a
+identified precision-width divergence in the 67-kernel corpus and needs a
 CUDA/CPU tolerance test on the Hopf observable.
 
 ## Coverage
 
 - Element-wise/vector: `cellindices`, `crossproduct`, `pointwise_div`,
   `dotproduct`, `llnoprecess`, `lltorque2`, `madd2` through `madd7`, `minimize`,
-  `mul`, `normalize`, `setPhi`, `setTheta`, `settemperature2`.
+  `mul`, `normalize`, `setPhi`, `setTheta`, `settemperature2`, and
+  `bbminimize`, which is `minimize` with its step size re-derived per thread
+  from the partial reduction slots in host addition order.
 - Anisotropy/torque/elastic: `addcubicanisotropy2`,
   `adduniaxialanisotropy2`, `addslonczewskitorque2`, `addzhanglitorque2`,
   `addmagnetoelasticfield`, `getmagnetoelasticforce`.

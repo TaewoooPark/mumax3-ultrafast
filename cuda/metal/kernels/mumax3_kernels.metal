@@ -215,6 +215,69 @@ inline void atomicFmaxabs(device float* address, float value) {
     }
 
 // -----------------------------------------------------------------------------
+// Source: cuda/bbminimize.cu
+// -----------------------------------------------------------------------------
+#line 1 "bbminimize.cu"
+
+// Steepest descent energy minimizer taking its Barzilai-Borwein step size from
+// device memory instead of from a host scalar.
+//
+// nomPartials and divPartials are the un-combined partial slots of the two dot
+// products the step size is built from. Every thread re-adds the same few slots
+// in the same index order the host would, so the scalar is bit-identical to
+// computing it on the CPU - and the host never has to read the reductions back,
+// which is what otherwise forces a full pipeline drain on every iteration.
+//
+// The redundant re-add is deliberate. Reducing the slots in one place would need
+// either a second dispatch or a grid-wide barrier, whereas each thread summing
+// two dozen floats costs nothing against the nine buffer accesses below.
+//
+// Body identical to minimize() apart from where dt comes from:
+//   m = 1 / (4 + t^2(m x H)^2) [{4 - t^2(m x H)^2} m - 4t(m x m x H)]
+// note: torque from LLNoPrecess has negative sign
+kernel void bbminimize(
+    device float* mx [[buffer(0)]],
+    device float* my [[buffer(1)]],
+    device float* mz [[buffer(2)]],
+    device float* m0x [[buffer(3)]],
+    device float* m0y [[buffer(4)]],
+    device float* m0z [[buffer(5)]],
+    device float* tx [[buffer(6)]],
+    device float* ty [[buffer(7)]],
+    device float* tz [[buffer(8)]],
+    device float* nomPartials [[buffer(9)]],
+    device float* divPartials [[buffer(10)]],
+    constant int& slots [[buffer(11)]],
+    constant int& N [[buffer(12)]],
+    uint3 mumaxGid [[thread_position_in_grid]],
+    uint3 mumaxThreadsPerGrid [[threads_per_grid]]) {
+
+    float nom = 0.0f;
+    float divisorSum = 0.0f;
+    for (int s = 0; s < slots; s++) {
+        nom += nomPartials[s];
+        divisorSum += divPartials[s];
+    }
+    // Matches the host fallback, including its division-by-zero guard.
+    float dt = (divisorSum != 0.0f) ? (nom / divisorSum) : 1e-4f;
+
+    int i = int(mumaxGid.y * mumaxThreadsPerGrid.x + mumaxGid.x);
+    if (i < N) {
+
+        float3 m0 = {m0x[i], m0y[i], m0z[i]};
+        float3 t = {tx[i], ty[i], tz[i]};
+
+        float t2 = dt*dt*dot(t, t);
+        float3 result = (4 - t2) * m0 + 4 * dt * t;
+        float divisor = 4 + t2;
+
+        mx[i] = result.x / divisor;
+        my[i] = result.y / divisor;
+        mz[i] = result.z / divisor;
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Source: cuda/cellindices.cu
 // -----------------------------------------------------------------------------
 #line 1 "cellindices.cu"
