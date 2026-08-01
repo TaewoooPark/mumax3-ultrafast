@@ -15,6 +15,8 @@ type lut struct {
 	gpu_ok  bool               // gpu cache up-to date with cpu source?
 	cpu_buf [][NREGION]float32 // table data on cpu
 	source  updater            // updates cpu data
+	ring    []cuda.LUTPtrs     // upload slots, see rotate
+	ringPos int
 }
 
 type updater interface {
@@ -33,20 +35,50 @@ func (p *lut) cpuLUT() [][NREGION]float32 {
 	return p.cpu_buf
 }
 
+// Number of upload slots a table rotates through. A table that never changes
+// only ever allocates the first one.
+const lutRing = 64
+
 // get an up-to-date version of the lookup-table on GPU
 func (p *lut) gpuLUT() cuda.LUTPtrs {
 	p.source.update()
 	if !p.gpu_ok {
-		// upload to GPU
-		p.assureAlloc()
-		cuda.Sync() // sync previous kernels, may still be using gpu lut
+		// Upload to GPU. rotate hands back a table no encoded kernel can still
+		// be reading, which is what used to require draining the pipeline
+		// before and after the 1 KB write. A parameter that is a function of
+		// time is re-uploaded on every solver stage, so those two drains were
+		// the dominant cost of the whole step on Metal.
+		p.rotate()
 		for c := range p.gpu_buf {
-			cuda.MemCpyHtoD(p.gpu_buf[c], unsafe.Pointer(&p.cpu_buf[c][0]), cu.SIZEOF_FLOAT32*NREGION)
+			cuda.MemCpyHtoDUnordered(p.gpu_buf[c], unsafe.Pointer(&p.cpu_buf[c][0]), cu.SIZEOF_FLOAT32*NREGION)
 		}
 		p.gpu_ok = true
-		cuda.Sync() //sync upload
 	}
 	return p.gpu_buf
+}
+
+// rotate points gpu_buf at a slot that no in-flight kernel reads.
+//
+// Slots are allocated on demand, so a static table keeps a single one. Once
+// the ring is full it is reused from the start, and only that wrap needs a
+// synchronization: every slot handed out after it was last written before the
+// wrap. That turns two drains per upload into one drain per lutRing uploads.
+func (p *lut) rotate() {
+	switch {
+	case len(p.ring) < lutRing:
+		slot := make(cuda.LUTPtrs, len(p.cpu_buf))
+		for c := range slot {
+			slot[c] = cuda.MemAlloc(NREGION * cu.SIZEOF_FLOAT32)
+		}
+		p.ring = append(p.ring, slot)
+		p.ringPos = len(p.ring) - 1
+	case p.ringPos+1 < lutRing:
+		p.ringPos++
+	default:
+		cuda.Sync() // the ring wrapped: retire every reader of every slot
+		p.ringPos = 0
+	}
+	p.gpu_buf = p.ring[p.ringPos]
 }
 
 // utility for LUT of single-component data
@@ -81,14 +113,6 @@ func (p *lut) hasZero() bool {
 		}
 	}
 	return false
-}
-
-func (p *lut) assureAlloc() {
-	if p.gpu_buf[0] == nil {
-		for i := range p.gpu_buf {
-			p.gpu_buf[i] = cuda.MemAlloc(NREGION * cu.SIZEOF_FLOAT32)
-		}
-	}
 }
 
 func (b *lut) NComp() int { return len(b.cpu_buf) }
