@@ -163,6 +163,7 @@ def render(
     y_label="throughput (M cell-evals/s)",
     value_unit="M cell-evals/s",
     show_values=False,
+    value_format="{:.0f}",
 ):
     bar_slot = 26 if len(rows) <= 24 else 15
     left, right = 78, 26
@@ -261,7 +262,8 @@ def render(
             add(
                 f'<text x="{center_x:.1f}" y="{y_of(high) - 5:.1f}" '
                 f'font-family="{FONT}" font-size="9" fill="{COLOR_TEXT}" '
-                f'text-anchor="middle">{row["value"]:.0f}</text>'
+                f'text-anchor="middle">'
+                f'{value_format.format(row["value"])}</text>'
             )
         add("</g>")
 
@@ -297,6 +299,39 @@ def render(
     with open(path, "w") as handle:
         handle.write("\n".join(out) + "\n")
     print(f"wrote {path} ({len(rows)} bars)")
+
+
+def read_latency(path):
+    """Speedups on latency-bound workloads, from bench/latency.txt.
+
+    Two bars per workload: the shipped default, and the same binary with the
+    workload's opt-in flag enabled. Both are measured, so neither is hatched -
+    hatching in these charts means "projected", which none of these are.
+    """
+    rows = []
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            name, mesh, baseline, default, optin, flag = shlex.split(line)[:6]
+            if baseline == "-":
+                # The sweep row has no single-run baseline: -j 1 is the baseline.
+                baseline, default = default, None
+            for value, label, status in (
+                (default, "default", "measured"),
+                (optin, flag, "other"),
+            ):
+                if value in (None, "-"):
+                    continue
+                rows.append(
+                    {
+                        "name": f"{name} {mesh}^2 [{label}]",
+                        "value": float(baseline) / float(value),
+                        "status": status,
+                    }
+                )
+    return rows
 
 
 def read_tiers(path, apple_rows):
@@ -578,6 +613,27 @@ def main():
         y_label="largest simulation (M cells)",
         value_unit="M cells",
         show_values=True,
+    )
+
+    latency = read_latency(os.path.join(HERE, "latency.txt"))
+    render(
+        latency,
+        "Speedup on latency-bound MuMax3 workloads (Apple M4 10c)",
+        "Same binary against commit a02cfd9b, medians of three interleaved runs in one "
+        "session. These are the workloads whose step rate is set by host round trips "
+        "rather than by arithmetic. The published 4.19M-cell point is bandwidth-bound "
+        "and does not move: 1.0498e8 before against 1.0583e8 after, inside a single "
+        "set's 0.91% CV. The sweep bar compares -j 3 against -j 1, so it is aggregate "
+        "throughput, not single-run speed.",
+        os.path.join(HERE, "apple-latency.svg"),
+        [
+            ("shipped default", "measured"),
+            ("with the named opt-in enabled", "other"),
+        ],
+        y_label="speedup over a02cfd9b",
+        value_unit="x",
+        show_values=True,
+        value_format="{:.2f}x",
     )
 
     measured = read_gpus(os.path.join(HERE, "gpus.txt"), include_apple=True)

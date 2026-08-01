@@ -46,12 +46,24 @@ two torque evaluations per timed step, hence:
 
     2048 * 2048 * 100 * 2 / median_wall_seconds
 
-Seven fresh processes after warm-up gave a 7.99095925 s median.  The within-
-session throughput range was 1.03604e8..1.05704e8 cell-evals/s (CV 0.72%).
+Seven fresh processes after warm-up gave a 7.926141958 s median.  The within-
+session throughput range was 1.05430e8..1.08134e8 cell-evals/s (CV 0.91%).
 That repeatability range is intentionally not mixed with the proxy envelope.
-The historical run's seven raw wall times were not retained in this repository,
-so only the anchor arithmetic from the retained median is reproducible here;
-the range and CV are retained summary statistics.
+
+The seven wall times behind the current median, in run order, were 7.757570834,
+7.956545250, 7.846818666, 7.926141958, 7.950234208, 7.928319375 and 7.911491000
+seconds.  An immediately preceding set of seven in the same session gave a
+7.884222250 s median, so the spread between whole sets is about 0.5% and no
+single set should be read as more than that precise.
+
+The previous anchor was 7.99095925 s (1.0497623e8 cell-evals/s), measured before
+the GPU keep-alive, the FFT tensor-view cache, speculative stepping and the
+device-resident minimizer step.  The 0.8% difference is inside the 0.91% CV of a
+single set, which is the expected result: this operating point is bandwidth-bound
+with rare drains, so none of those changes move it.  They were measured on
+latency-bound workloads instead, where the same binary is 1.6x to 2.2x faster.
+The anchor is refreshed here only because it is a fresh measurement of the
+shipped build, not because it improved.
 """
 
 import math
@@ -64,7 +76,7 @@ MESH_X = 2048
 MESH_Y = 2048
 TIMED_STEPS = 100
 HEUN_EVALS_PER_STEP = 2
-MEDIAN_WALL_SECONDS = 7.99095925
+MEDIAN_WALL_SECONDS = 7.926141958
 ANCHOR_THROUGHPUT = (
     MESH_X
     * MESH_Y
@@ -375,24 +387,28 @@ def build_rows():
 
 def verify(rows):
     """Catch unit, protocol, input, and accidental model changes."""
-    recorded = 1.0497623298479466e08
+    recorded = 1.0583469289915033e08
     assert math.isclose(ANCHOR_THROUGHPUT, recorded, rel_tol=0, abs_tol=0.05)
     assert set(LLAMA) == set(GENERATIONS)
     assert set(BANDWIDTH) == set(GENERATIONS)
     assert set(GPU_CORES) == set(GENERATIONS)
     by_chip = {row["chip"]: row for row in rows}
+    # The model is linear in the anchor, so refreshing the anchor moves every
+    # projection by exactly one scalar. These values are the previously audited
+    # ones multiplied by 7.99095925 / 7.926141958 = 1.0081776597, not values read
+    # back out of the model, so the check still catches a structural change.
     expected_millions = {
-        "M1": 61.3,
-        "M3 Ultra 60c": 521.1,
-        "M3 Ultra": 731.5,
-        "M4 Pro 16c": 208.8,
-        "M4 Pro": 235.3,
-        "M4 Max 32c": 333.5,
-        "M4 Max 40c": 413.9,
-        "M5": 123.2,
-        "M5 Pro": 252.0,
-        "M5 Max 32c": 383.3,
-        "M5 Max 40c": 475.9,
+        "M1": 61.8,
+        "M3 Ultra 60c": 525.3,
+        "M3 Ultra": 737.5,
+        "M4 Pro 16c": 210.5,
+        "M4 Pro": 237.2,
+        "M4 Max 32c": 336.2,
+        "M4 Max 40c": 417.3,
+        "M5": 124.2,
+        "M5 Pro": 254.1,
+        "M5 Max 32c": 386.5,
+        "M5 Max 40c": 479.8,
     }
     for chip, expected in expected_millions.items():
         actual = by_chip[chip]["value"] / 1e6

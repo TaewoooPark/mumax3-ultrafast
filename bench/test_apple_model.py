@@ -19,7 +19,7 @@ class AppleModelTest(unittest.TestCase):
         cls.by_chip = {row["chip"]: row for row in cls.rows}
 
     def test_anchor_uses_heun_cell_evaluations(self):
-        expected = 2048 * 2048 * 100 * 2 / 7.99095925
+        expected = 2048 * 2048 * 100 * 2 / 7.926141958
         self.assertAlmostEqual(apple_project.ANCHOR_THROUGHPUT, expected, places=7)
         anchor = self.by_chip["M4"]
         self.assertEqual(anchor["status"], "measured")
@@ -39,19 +39,25 @@ class AppleModelTest(unittest.TestCase):
     def test_key_model_outputs(self):
         # Rounded M cell-evals/s values independently audited against the model
         # definition. A change here must be accompanied by input provenance.
+        #
+        # Refreshing the measured anchor from 7.99095925 s to 7.926141958 s scales
+        # every projection by one factor, 1.0081776597, because the model is
+        # linear in the anchor. These are the previously audited triplets carried
+        # through that factor at full precision, not values read back out of the
+        # model, so the check still catches a structural change.
         expected = {
-            "M1": (61.3, 55.5, 84.0),
-            "M3 Ultra 60c": (521.1, 435.5, 716.6),
-            "M3 Ultra": (731.5, 445.9, 839.8),
-            "M4 Pro 16c": (208.8, 168.0, 238.8),
-            "M4 Pro": (235.3, 209.8, 260.3),
-            "M4 Max 32c": (333.5, 321.9, 358.7),
-            "M4 Max 40c": (413.9, 389.3, 477.6),
-            "M5": (123.2, 105.0, 133.8),
-            "M5 Pro 16c": (237.9, 168.0, 269.6),
-            "M5 Pro": (252.0, 210.0, 273.2),
-            "M5 Max 32c": (383.3, 335.9, 402.4),
-            "M5 Max 40c": (475.9, 419.9, 537.1),
+            "M1": (61.8, 55.9, 84.7),
+            "M3 Ultra 60c": (525.3, 439.0, 722.5),
+            "M3 Ultra": (737.5, 449.6, 846.7),
+            "M4 Pro 16c": (210.5, 169.3, 240.8),
+            "M4 Pro": (237.2, 211.5, 262.5),
+            "M4 Max 32c": (336.2, 324.5, 361.6),
+            "M4 Max 40c": (417.3, 392.5, 481.5),
+            "M5": (124.2, 105.8, 134.9),
+            "M5 Pro 16c": (239.9, 169.3, 271.8),
+            "M5 Pro": (254.1, 211.7, 275.5),
+            "M5 Max 32c": (386.5, 338.7, 405.7),
+            "M5 Max 40c": (479.8, 423.3, 541.5),
         }
         for chip, triplet in expected.items():
             row = self.by_chip[chip]
@@ -81,7 +87,7 @@ class AppleModelTest(unittest.TestCase):
         self.assertEqual([row["total"] for row in apple], [599, 1399, 1999, 3999])
         self.assertEqual(
             [round(row["value"], 1) for row in apple],
-            [105.0, 208.8, 333.5, 521.1],
+            [105.8, 210.5, 336.2, 525.3],
         )
 
     def test_measured_m4_is_not_duplicated_in_combined_chart(self):

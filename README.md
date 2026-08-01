@@ -110,6 +110,40 @@ on another problem is not an accuracy guarantee. See the
 [A/B instructions](bench/demag-extrap/README.md) before using extrapolated
 results for scientific analysis.
 
+### Speeding up latency-bound runs
+
+At research mesh sizes an Apple GPU is often idle waiting for the host rather
+than short of arithmetic: at 128x128 the host takes longer to encode a
+Dormand-Prince step than the GPU takes to run it. Three knobs address that, and
+none of them change what the default build does.
+
+`SpeculativeStep = true` lets an adaptive solver encode the next step before
+judging the current one, so encoding and execution overlap. Step rejection still
+enforces `MaxErr`, but it happens one step late, so the sequence of time steps
+differs from the exact controller. Measured 1.62x at 128x128 and within a few
+percent of what pinning `dt` would give. It closes itself under `FixDt`, finite
+`Temp`, `relax()`, `DemagExtrapolation`, and post-step hooks.
+
+`MinimizeOnGPU = true` keeps `minimize()`'s Barzilai-Borwein step size in device
+memory instead of routing it through the host once per iteration. Each descent
+is bit-identical; only the convergence check is one iteration late, so a
+minimization can stop one iteration further along. Measured 1.71x on a
+hysteresis loop.
+
+`-j N` runs N queued input files concurrently on each GPU. A single simulation
+frequently cannot saturate the device, and the only thing that fills that time
+is other useful work. Measured 2.53x aggregate for three `minimize()` jobs at
+`-j 3`; returns flatten past three or four, and the effect disappears once a
+single run is bandwidth-bound.
+
+```sh
+mumax3 -j 3 sweep_*.mx3
+```
+
+Validate any of the first two against a default run for your own problem. See
+[section 13 of the optimization log](OPTIMIZATION_PLAN.md) for the measurements,
+the accuracy checks, and what is still on the table.
+
 ## Downloads and documentation
 
 👉 Pre-compiled binaries, examples, and documentation are available on the [mumax³ homepage](https://mumax.github.io).

@@ -56,8 +56,8 @@
 <rect x="215.8" y="471.6" width="9.3" height="20.4" fill="#8d9299"/>
 </g>
 <text x="220.5" y="499.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 220.5 499.0)">GTX 1650 (mobile)</text>
-<g><title>MacBook Air M4 10c (Metal): 105.0 M cell-evals/s</title>
-<rect x="230.8" y="470.1" width="9.3" height="21.9" fill="#0b4f9e"/>
+<g><title>MacBook Air M4 10c (Metal): 105.8 M cell-evals/s</title>
+<rect x="230.8" y="469.9" width="9.3" height="22.1" fill="#0b4f9e"/>
 </g>
 <text x="235.5" y="499.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 235.5 499.0)">MacBook Air M4 10c (Metal)</text>
 <g><title>GTX 970: 120.6 M cell-evals/s</title>

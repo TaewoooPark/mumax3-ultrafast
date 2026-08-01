@@ -1,0 +1,22 @@
+# Speedup on latency-bound workloads: what the drain-hiding round actually bought.
+#
+# The published 4.19M-cell operating point (bench/gpus.txt, doc/static/gpus.svg)
+# is bandwidth-bound with rare drains, so it does not move: 1.0498e8 before this
+# round against 1.0583e8 after, a 0.8% difference inside a single set's 0.91% CV.
+# Everything below is the same binary on workloads whose step rate is set by host
+# round trips instead of by arithmetic, which is where research runs on a Mac
+# actually sit.
+#
+# Machine: Apple M4 10-GPU-core, 32 GB, macOS 15.6, go 1.26.5.
+# Baseline: commit a02cfd9b, immediately before this round.
+# Protocol: medians of three interleaved runs, wall-clock seconds, same session.
+#
+# "default" is the shipped default configuration. "opt-in" additionally enables
+# the flag named in the last column; both are the same binary.
+#
+# name                       mesh    baseline  default  optin  optin_flag
+"relax() from a vortex"      128     14.486    8.515    -      -
+"minimize() hysteresis, 40 pts" 128  39.730    18.055   10.916 MinimizeOnGPU
+"adaptive RK45DP, 2000 steps" 128     4.180    2.274    1.275  SpeculativeStep
+"adaptive RK45DP, 200 steps"  512     3.518    3.399    2.696  SpeculativeStep
+"3-job sweep, hysteresis"     128     -        32.539   16.518 "-j 3"
