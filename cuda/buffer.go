@@ -14,9 +14,19 @@ import (
 	"github.com/mumax/3/data"
 )
 
+// A pooled buffer holds all of its components in one allocation, so that
+// elementwise kernels can cover them in a single launch. The pool is therefore
+// keyed by shape rather than by component: a block is handed out and taken back
+// whole, which is what keeps the components adjacent for the lifetime of the
+// process.
+type bufShape struct {
+	N     int
+	nComp int
+}
+
 var (
-	buf_pool  = make(map[int][]unsafe.Pointer)    // pool of GPU buffers indexed by size
-	buf_check = make(map[unsafe.Pointer]struct{}) // checks if pointer originates here to avoid unintended recycle
+	buf_pool  = make(map[bufShape][]unsafe.Pointer) // pool of GPU blocks indexed by shape
+	buf_check = make(map[unsafe.Pointer]struct{})   // checks if pointer originates here to avoid unintended recycle
 )
 
 const buf_max = 100 // maximum number of buffers to allocate (detect memory leak early)
@@ -27,27 +37,26 @@ func Buffer(nComp int, size [3]int) *data.Slice {
 		Sync()
 	}
 
-	ptrs := make([]unsafe.Pointer, nComp)
-
-	// re-use as many buffers as possible form our stack
 	N := prod(size)
-	pool := buf_pool[N]
-	nFromPool := iMin(nComp, len(pool))
-	for i := 0; i < nFromPool; i++ {
-		ptrs[i] = pool[len(pool)-i-1]
-	}
-	buf_pool[N] = pool[:len(pool)-nFromPool]
+	shape := bufShape{N, nComp}
+	pool := buf_pool[shape]
 
-	// allocate as much new memory as needed
-	for i := nFromPool; i < nComp; i++ {
+	var base unsafe.Pointer
+	if len(pool) > 0 {
+		base = pool[len(pool)-1]
+		buf_pool[shape] = pool[:len(pool)-1]
+	} else {
+		// Counts distinct addresses, not allocations: a caller that frees a
+		// pooled block outside Recycle (Minimizer.Free does) gets the same
+		// address back from the allocator, and that must not read as a leak.
 		if len(buf_check) >= buf_max {
 			log.Panic("too many buffers in use, possible memory leak")
 		}
-		ptrs[i] = MemAlloc(int64(cu.SIZEOF_FLOAT32 * N))
-		buf_check[ptrs[i]] = struct{}{} // mark this pointer as mine
+		base = MemAlloc(int64(cu.SIZEOF_FLOAT32 * N * nComp))
+		buf_check[base] = struct{}{} // mark this pointer as mine
 	}
 
-	return data.SliceFromPtrs(size, data.GPUMemory, ptrs)
+	return data.SliceFromContiguousPtrs(size, data.GPUMemory, componentPtrs(base, N, nComp))
 }
 
 // Returns a buffer obtained from GetBuffer to the pool.
@@ -56,32 +65,29 @@ func Recycle(s *data.Slice) {
 		Sync()
 	}
 
-	N := s.Len()
-	pool := buf_pool[N]
-	// put each component buffer back on the stack
-	for i := 0; i < s.NComp(); i++ {
-		ptr := s.DevPtr(i)
-		if ptr == unsafe.Pointer(uintptr(0)) {
-			continue
-		}
-		if _, ok := buf_check[ptr]; !ok {
+	if s.NComp() == 0 {
+		return
+	}
+	shape := bufShape{s.Len(), s.NComp()}
+	base := s.DevPtr(0)
+	if base != unsafe.Pointer(uintptr(0)) {
+		if _, ok := buf_check[base]; !ok {
 			log.Panic("recyle: was not obtained with getbuffer")
 		}
-		pool = append(pool, ptr)
+		buf_pool[shape] = append(buf_pool[shape], base)
 	}
 	s.Disable() // make it unusable, protect against accidental use after recycle
-	buf_pool[N] = pool
 }
 
 // Frees all buffers. Called after mesh resize.
 func FreeBuffers() {
 	Sync()
-	for _, size := range buf_pool {
-		for i := range size {
-			cu.DevicePtr(uintptr(size[i])).Free()
-			size[i] = nil
+	for _, blocks := range buf_pool {
+		for i := range blocks {
+			cu.DevicePtr(uintptr(blocks[i])).Free()
+			blocks[i] = nil
 		}
 	}
-	buf_pool = make(map[int][]unsafe.Pointer)
+	buf_pool = make(map[bufShape][]unsafe.Pointer)
 	buf_check = make(map[unsafe.Pointer]struct{})
 }

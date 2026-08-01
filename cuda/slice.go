@@ -20,16 +20,25 @@ func NewSlice(nComp int, size [3]int) *data.Slice {
 //	return newSlice(nComp, m, cu.MemAllocHost, data.UnifiedMemory)
 //}
 
+// newSlice allocates all components as a single block so that elementwise
+// kernels can cover them in one launch instead of one per component. See
+// data.SliceFromContiguousPtrs.
 func newSlice(nComp int, size [3]int, alloc func(int64) unsafe.Pointer, memType int8) *data.Slice {
 	data.EnableGPU(memFree, cu.MemFreeHost, MemCpy, MemCpyDtoH, MemCpyHtoD)
 	length := prod(size)
-	bytes := int64(length) * cu.SIZEOF_FLOAT32
+	base := alloc(int64(length) * cu.SIZEOF_FLOAT32 * int64(nComp))
+	cu.MemsetD32(cu.DevicePtr(uintptr(base)), 0, int64(length)*int64(nComp))
+	return data.SliceFromContiguousPtrs(size, memType, componentPtrs(base, length, nComp))
+}
+
+// componentPtrs splits a block of nComp*length floats into component pointers.
+func componentPtrs(base unsafe.Pointer, length, nComp int) []unsafe.Pointer {
+	stride := uintptr(length) * cu.SIZEOF_FLOAT32
 	ptrs := make([]unsafe.Pointer, nComp)
 	for c := range ptrs {
-		ptrs[c] = unsafe.Pointer(alloc(bytes))
-		cu.MemsetD32(cu.DevicePtr(uintptr(ptrs[c])), 0, int64(length))
+		ptrs[c] = unsafe.Pointer(uintptr(base) + uintptr(c)*stride)
 	}
-	return data.SliceFromPtrs(size, memType, ptrs)
+	return ptrs
 }
 
 // wrappers for data.EnableGPU arguments

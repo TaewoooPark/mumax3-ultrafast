@@ -14,9 +14,10 @@ import (
 
 // Slice is like a [][]float32, but may be stored in GPU or host memory.
 type Slice struct {
-	ptrs    []unsafe.Pointer
-	size    [3]int
-	memType int8
+	ptrs     []unsafe.Pointer
+	size     [3]int
+	memType  int8
+	oneAlloc bool // components are one allocation, ptrs[c] == ptrs[0] + c*Len()
 }
 
 // this package must not depend on CUDA. If CUDA is
@@ -81,6 +82,28 @@ func SliceFromPtrs(size [3]int, memType int8, ptrs []unsafe.Pointer) *Slice {
 	return s
 }
 
+// SliceFromContiguousPtrs is SliceFromPtrs for components that live in a
+// single allocation based at ptrs[0], laid out back to back. Such a Slice can
+// be processed by one kernel launch over all components at once, and only its
+// first pointer is a valid argument to free.
+//
+// The layout is asserted rather than assumed, because getting it wrong would
+// make Free release the wrong thing.
+func SliceFromContiguousPtrs(size [3]int, memType int8, ptrs []unsafe.Pointer) *Slice {
+	s := SliceFromPtrs(size, memType, ptrs)
+	stride := uintptr(prod(size)) * SIZEOF_FLOAT32
+	for c := range ptrs {
+		util.Argument(uintptr(ptrs[c]) == uintptr(ptrs[0])+uintptr(c)*stride)
+	}
+	s.oneAlloc = true
+	return s
+}
+
+// Contiguous reports whether the components are one allocation, laid out back
+// to back, so that a kernel may address them as a single array of
+// NComp()*Len() elements.
+func (s *Slice) Contiguous() bool { return s.oneAlloc }
+
 // Frees the underlying storage and zeros the Slice header to avoid accidental use.
 // Slices sharing storage will be invalid after Free. Double free is OK.
 func (s *Slice) Free() {
@@ -92,6 +115,13 @@ func (s *Slice) Free() {
 	case 0:
 		return // already freed
 	case GPUMemory:
+		if s.oneAlloc {
+			// One allocation based at ptrs[0]; the rest are interior pointers.
+			if len(s.ptrs) > 0 {
+				memFree(s.ptrs[0])
+			}
+			break
+		}
 		for _, ptr := range s.ptrs {
 			memFree(ptr)
 		}
@@ -113,6 +143,7 @@ func (s *Slice) Disable() {
 	s.ptrs = s.ptrs[:0]
 	s.size = [3]int{0, 0, 0}
 	s.memType = 0
+	s.oneAlloc = false
 }
 
 // value for Slice.memType
