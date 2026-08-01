@@ -67,6 +67,62 @@ func TestRejectedAttemptDoesNotCommitPendingHistory(t *testing.T) {
 	d.resetHistory()
 }
 
+func TestContinuationTimeGuardPreservesAcceptedAndRejectedLifecycles(t *testing.T) {
+	oldTime := Time
+	oldRejected := DemagRejectedAttempts
+	defer func() {
+		Time = oldTime
+		DemagRejectedAttempts = oldRejected
+	}()
+
+	t.Run("accepted continuation", func(t *testing.T) {
+		d := demagExtrapolator{
+			active:  true,
+			pending: &demagHistorySample{time: 1},
+		}
+		Time = 2
+		d.endStep(true)
+
+		if !d.continuationValid || d.continuationTime != 2 {
+			t.Fatalf("accepted continuation = (%v, %g), want (true, 2)", d.continuationValid, d.continuationTime)
+		}
+		if d.resetOnTimeDiscontinuity(2) {
+			t.Fatal("normal accepted-step continuation reset history")
+		}
+		if len(d.history) != 1 || d.history[0].time != 1 {
+			t.Fatalf("accepted history changed at continuation: %#v", d.history)
+		}
+
+		if !d.resetOnTimeDiscontinuity(12) {
+			t.Fatal("external forward time jump did not reset history")
+		}
+		if len(d.history) != 0 || d.pending != nil || d.continuationValid {
+			t.Fatalf("time-jump reset left stale state: %#v", d)
+		}
+	})
+
+	t.Run("rejected retry", func(t *testing.T) {
+		d := demagExtrapolator{
+			active:  true,
+			history: []demagHistorySample{{time: 0}},
+			pending: &demagHistorySample{time: 1},
+		}
+		Time = 1
+		d.endStep(false)
+
+		if !d.continuationValid || d.continuationTime != 1 {
+			t.Fatalf("rejected continuation = (%v, %g), want (true, 1)", d.continuationValid, d.continuationTime)
+		}
+		if d.resetOnTimeDiscontinuity(1) {
+			t.Fatal("normal rejected-attempt retry reset history")
+		}
+		if len(d.history) != 1 || d.pending == nil || d.pending.time != 1 {
+			t.Fatalf("rejected retry lost retained state: %#v", d)
+		}
+		d.resetHistory()
+	})
+}
+
 func TestDemagExtrapolationOrderMatchesSupportedSolvers(t *testing.T) {
 	old := solvertype
 	defer func() { solvertype = old }()

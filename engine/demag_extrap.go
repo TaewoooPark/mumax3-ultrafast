@@ -7,8 +7,8 @@ package engine
 // Exact demagnetizing fields at accepted-step start times are stored with the
 // local (zero-displacement) demagnetizing contribution removed. At Runge--Kutta
 // substages that non-local field is extrapolated in time with a polynomial of
-// the same order as the solver, and the local contribution of the current
-// magnetization is added back exactly.
+// sufficient order to preserve the solver accuracy, and the local contribution
+// of the current magnetization is added back exactly.
 
 import (
 	"math"
@@ -77,6 +77,12 @@ type demagExtrapolator struct {
 	active       bool
 	sawStepExact bool
 
+	// continuationTime is the solver time left by the previous accepted or
+	// rejected attempt. It distinguishes normal adaptive-step progression from
+	// an external assignment to t between attempts.
+	continuationTime  float64
+	continuationValid bool
+
 	config      demagExtrapConfig
 	configValid bool
 	lastLog     string
@@ -142,6 +148,8 @@ func (d *demagExtrapolator) resetHistory() {
 	d.stepTime = 0
 	d.active = false
 	d.sawStepExact = false
+	d.continuationTime = 0
+	d.continuationValid = false
 	d.configValid = false
 }
 
@@ -153,9 +161,13 @@ func demagExtrapolationOrder() int {
 		return 3
 	case RUNGEKUTTA:
 		return 4
-	case DORMANDPRINCE, FEHLBERG:
-		// The accepted members of both embedded pairs are fifth order for
-		// purposes of the field approximation used in the reference method.
+	case DORMANDPRINCE:
+		return 5
+	case FEHLBERG:
+		// RK56 advances with the embedded pair's sixth-order member. A quintic
+		// extrapolant has O(h^6) field error, which enters the RK update
+		// multiplied by h, so its induced local step error is O(h^7) and the
+		// sixth-order solution is preserved with six history samples.
 		return 5
 	default:
 		return 0
@@ -252,6 +264,11 @@ func (d *demagExtrapolator) beginStep() {
 		d.configValid = true
 		d.order = order
 	}
+	if d.resetOnTimeDiscontinuity(Time) {
+		d.config = cfg
+		d.configValid = true
+		d.order = order
+	}
 
 	// A pending sample is retained only across a rejected attempt at exactly
 	// the same accepted state. Any other time discontinuity is an explicit
@@ -282,6 +299,18 @@ func (d *demagExtrapolator) beginStep() {
 	}
 	d.logOnce("enabled experimental approximation for solver order >=4; validate trajectory and energy against DemagExtrapolation=false")
 	Refer("lepadatu2022")
+}
+
+// resetOnTimeDiscontinuity rejects an external assignment to Time between
+// solver attempts. Normal acceptance records the accepted end time, while a
+// rejected adaptive attempt records the restored step-start time, so both
+// ordinary continuations compare equal here without relying on dt prediction.
+func (d *demagExtrapolator) resetOnTimeDiscontinuity(t float64) bool {
+	if !d.continuationValid || t == d.continuationTime {
+		return false
+	}
+	d.resetHistory()
+	return true
 }
 
 func btoi(v bool) int {
@@ -377,6 +406,10 @@ func (d *demagExtrapolator) endStep(accepted bool) {
 		d.pending = nil
 	} else if d.active && !accepted {
 		DemagRejectedAttempts++
+	}
+	if d.active {
+		d.continuationTime = Time
+		d.continuationValid = true
 	}
 	d.active = false
 	d.sawStepExact = false
