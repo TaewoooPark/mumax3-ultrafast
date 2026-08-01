@@ -52,6 +52,73 @@ func TestExternalCommitAndContinueHandoff(t *testing.T) {
 	}
 }
 
+func TestCompletionSurvivesMPSRootAdoption(t *testing.T) {
+	if err := metal.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	const bytes = int64(4096)
+	buffer := mustMetalAlloc(t, bytes)
+	defer mustMetalFree(t, buffer)
+	if err := metal.Sync(); err != nil {
+		t.Fatal(err)
+	}
+	if err := metal.ResetRuntimeStats(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := metal.Fill(buffer, 3, bytes); err != nil {
+		t.Fatal(err)
+	}
+	completion, err := metal.RecordCompletion()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !completion.Valid() {
+		t.Fatal("recording the pre-MPS fill returned no completion")
+	}
+	defer completion.Close()
+	if err := forceCommitAndContinueForTest(); err != nil {
+		t.Fatal(err)
+	}
+	if err := completion.Wait(); err != nil {
+		t.Fatal(err)
+	}
+
+	stats, err := metal.GetRuntimeStats()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.ExternalRootAdoptions != 1 {
+		t.Fatalf("root adoptions = %d, want 1", stats.ExternalRootAdoptions)
+	}
+	if stats.CompletionWaitSubmissions != 0 {
+		t.Fatalf(
+			"waiting an adopted old root submitted %d command buffers, want 0",
+			stats.CompletionWaitSubmissions,
+		)
+	}
+	if stats.FullDrains != 0 {
+		t.Fatalf("completion wait performed %d full drains", stats.FullDrains)
+	}
+
+	if err := metal.Fill(buffer, 4, bytes); err != nil {
+		t.Fatal(err)
+	}
+	host := make([]byte, bytes)
+	if err := metal.CopyToHost(
+		unsafe.Pointer(unsafe.SliceData(host)),
+		buffer,
+		bytes,
+	); err != nil {
+		t.Fatal(err)
+	}
+	for index, value := range host {
+		if value != 4 {
+			t.Fatalf("result[%d] = %d, want 4", index, value)
+		}
+	}
+}
+
 func TestMetalFFT3DRoundTripEvenAndOdd(t *testing.T) {
 	if err := metal.Initialize(); err != nil {
 		t.Fatal(err)

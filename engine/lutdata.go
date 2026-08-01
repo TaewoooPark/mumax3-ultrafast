@@ -15,8 +15,14 @@ type lut struct {
 	gpu_ok  bool               // gpu cache up-to date with cpu source?
 	cpu_buf [][NREGION]float32 // table data on cpu
 	source  updater            // updates cpu data
-	ring    []cuda.LUTPtrs     // upload slots, see rotate
+	ring    []lutSlot          // upload slots, see rotate
 	ringPos int
+
+	retiring  [lutRetireGroup]int
+	retiringN int
+	// Retirement state is fixed per slot group. Keeping it inline avoids a Go
+	// allocation on every group rollover in time-dependent runs.
+	retirements [lutRing / lutRetireGroup]lutRetirement
 
 	// Queries such as isZero and IsUniform sit in the torque hot path. The
 	// table only changes through its source updater, so compute these summaries
@@ -28,14 +34,32 @@ type lut struct {
 	uniformRegions bool
 }
 
+type lutSlot struct {
+	base    unsafe.Pointer
+	ptrs    cuda.LUTPtrs
+	retired *lutRetirement
+}
+
+type lutRetirement struct {
+	completion cuda.Completion
+	refs       int
+	complete   bool
+}
+
 type updater interface {
 	update() // updates cpu lookup table
 }
 
 func (p *lut) init(nComp int, source updater) {
+	p.free()
 	p.gpu_buf = make(cuda.LUTPtrs, nComp)
+	p.gpu_ok = false
 	p.cpu_buf = make([][NREGION]float32, nComp)
 	p.source = source
+	p.summaryOK = false
+	p.allZero = false
+	p.hasZeroValue = false
+	p.uniformRegions = false
 }
 
 // invalidateCPU marks every value derived from cpu_buf stale. Sources call
@@ -56,46 +80,147 @@ func (p *lut) cpuLUT() [][NREGION]float32 {
 // only ever allocates the first one.
 const lutRing = 64
 
+// Grouping retirement points avoids a cgo call and an Objective-C retain on
+// every solver stage. The token is recorded after every reader in the group,
+// so it safely covers all of them. Sixteen divides the 64-slot ring and still
+// leaves at least 48 later uploads for the GPU to complete before reuse.
+const lutRetireGroup = 16
+
 // get an up-to-date version of the lookup-table on GPU
 func (p *lut) gpuLUT() cuda.LUTPtrs {
 	p.source.update()
 	if !p.gpu_ok {
-		// Upload to GPU. rotate hands back a table no encoded kernel can still
-		// be reading, which is what used to require draining the pipeline
-		// before and after the 1 KB write. A parameter that is a function of
-		// time is re-uploaded on every solver stage, so those two drains were
-		// the dominant cost of the whole step on Metal.
+		// rotate hands back a table no encoded kernel can still be reading.
+		// Completion-aware retirement removes the full pipeline drain that the
+		// previous ring needed on every 64th upload.
 		p.rotate()
-		for c := range p.gpu_buf {
-			cuda.MemCpyHtoDUnordered(p.gpu_buf[c], unsafe.Pointer(&p.cpu_buf[c][0]), cu.SIZEOF_FLOAT32*NREGION)
-		}
+		// [][NREGION]float32 stores its fixed-size component arrays back to
+		// back, matching the one-allocation GPU slot. One host copy therefore
+		// updates every vector component and avoids three runtime crossings.
+		cuda.MemCpyHtoDUnordered(
+			p.ring[p.ringPos].base,
+			unsafe.Pointer(&p.cpu_buf[0][0]),
+			int64(len(p.cpu_buf))*NREGION*cu.SIZEOF_FLOAT32,
+		)
 		p.gpu_ok = true
 	}
 	return p.gpu_buf
 }
 
-// rotate points gpu_buf at a slot that no in-flight kernel reads.
+// rotate points gpu_buf at a slot that no in-flight kernel reads. When a slot
+// group closes, its completion only retains the current ordered-queue tail; it
+// neither submits nor waits. Every reader of that group has already been
+// encoded by then, so the tail safely retires all of its slots.
 //
-// Slots are allocated on demand, so a static table keeps a single one. Once
-// the ring is full it is reused from the start, and only that wrap needs a
-// synchronization: every slot handed out after it was last written before the
-// wrap. That turns two drains per upload into one drain per lutRing uploads.
+// Slots are allocated on demand, so a static table keeps one small allocation.
+// At wrap, a completed candidate is reused immediately. Otherwise Wait targets
+// only the command buffer captured for that slot. This remains safe across an
+// MPS commitAndContinue: the token retains the already-committed old root while
+// the runtime owns the replacement, so no stale command buffer is recommitted.
 func (p *lut) rotate() {
+	if len(p.ring) != 0 {
+		p.retireCurrent()
+	}
+
 	switch {
 	case len(p.ring) < lutRing:
-		slot := make(cuda.LUTPtrs, len(p.cpu_buf))
-		for c := range slot {
-			slot[c] = cuda.MemAlloc(NREGION * cu.SIZEOF_FLOAT32)
-		}
-		p.ring = append(p.ring, slot)
+		p.ring = append(p.ring, newLUTSlot(len(p.cpu_buf)))
 		p.ringPos = len(p.ring) - 1
 	case p.ringPos+1 < lutRing:
 		p.ringPos++
 	default:
-		cuda.Sync() // the ring wrapped: retire every reader of every slot
 		p.ringPos = 0
 	}
-	p.gpu_buf = p.ring[p.ringPos]
+
+	candidate := &p.ring[p.ringPos]
+	p.reuse(candidate)
+	p.gpu_buf = candidate.ptrs
+}
+
+func (p *lut) retireCurrent() {
+	current := &p.ring[p.ringPos]
+	util.Assert(current.retired == nil)
+	p.retiring[p.retiringN] = p.ringPos
+	p.retiringN++
+	if p.retiringN != lutRetireGroup {
+		return
+	}
+
+	completion := cuda.RecordCompletion()
+	if completion.Valid() {
+		groupStart := p.retiring[0]
+		util.Assert(groupStart%lutRetireGroup == 0)
+		retirement := &p.retirements[groupStart/lutRetireGroup]
+		util.Assert(retirement.refs == 0)
+		*retirement = lutRetirement{
+			completion: completion,
+			refs:       p.retiringN,
+		}
+		for i := 0; i < p.retiringN; i++ {
+			slot := &p.ring[p.retiring[i]]
+			util.Assert(p.retiring[i] == groupStart+i)
+			util.Assert(slot.retired == nil)
+			slot.retired = retirement
+		}
+	}
+	p.retiringN = 0
+}
+
+func (p *lut) reuse(slot *lutSlot) {
+	retirement := slot.retired
+	if retirement == nil {
+		return
+	}
+	if !retirement.complete {
+		if !retirement.completion.Ready() {
+			retirement.completion.Wait()
+		}
+		retirement.completion.Free()
+		retirement.complete = true
+	}
+	p.releaseRetirement(slot)
+}
+
+func (p *lut) releaseRetirement(slot *lutSlot) {
+	retirement := slot.retired
+	if retirement == nil {
+		return
+	}
+	slot.retired = nil
+	retirement.refs--
+	util.Assert(retirement.refs >= 0)
+	if retirement.refs == 0 {
+		retirement.completion.Free()
+		*retirement = lutRetirement{}
+	}
+}
+
+func newLUTSlot(nComp int) lutSlot {
+	componentBytes := uintptr(NREGION * cu.SIZEOF_FLOAT32)
+	base := cuda.MemAlloc(int64(componentBytes) * int64(nComp))
+	ptrs := make(cuda.LUTPtrs, nComp)
+	for c := range ptrs {
+		ptrs[c] = unsafe.Add(base, uintptr(c)*componentBytes)
+	}
+	return lutSlot{base: base, ptrs: ptrs}
+}
+
+// free releases a LUT ring deterministically. Parameters normally live for
+// the process lifetime; the method also makes reinitialization and focused
+// tests leak-free. MemFree supplies the final GPU-use synchronization.
+func (p *lut) free() {
+	for i := range p.ring {
+		p.releaseRetirement(&p.ring[i])
+		cuda.MemFree(p.ring[i].base)
+		p.ring[i] = lutSlot{}
+	}
+	p.ring = nil
+	p.ringPos = 0
+	p.retiring = [lutRetireGroup]int{}
+	p.retiringN = 0
+	p.retirements = [lutRing / lutRetireGroup]lutRetirement{}
+	p.gpu_buf = nil
+	p.gpu_ok = false
 }
 
 // utility for LUT of single-component data

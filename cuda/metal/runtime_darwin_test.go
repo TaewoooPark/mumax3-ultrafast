@@ -284,6 +284,163 @@ func TestBatchedLaunchOrdering(t *testing.T) {
 	}
 }
 
+func TestCommandBufferCompletionTargetedWait(t *testing.T) {
+	const bytes = int64(4096)
+	buffer := MustAlloc(bytes)
+	defer func() {
+		if err := Free(buffer); err != nil {
+			t.Errorf("free buffer: %v", err)
+		}
+	}()
+	if err := Sync(); err != nil {
+		t.Fatal(err)
+	}
+	if err := ResetRuntimeStats(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := Fill(buffer, 1, bytes); err != nil {
+		t.Fatal(err)
+	}
+	completion, err := RecordCompletion()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !completion.Valid() {
+		t.Fatal("recording an encoded fill returned no completion")
+	}
+	defer completion.Close()
+
+	// Work encoded after the record may share its command buffer. Waiting the
+	// retained buffer is conservative but remains targeted and ordered.
+	if err := Fill(buffer, 2, bytes); err != nil {
+		t.Fatal(err)
+	}
+	ready, err := completion.Ready()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ready {
+		t.Fatal("unsubmitted command buffer unexpectedly reported complete")
+	}
+	if err := completion.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	ready, err = completion.Ready()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ready {
+		t.Fatal("waited command buffer did not report complete")
+	}
+
+	stats, err := GetRuntimeStats()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.FullDrains != 0 {
+		t.Fatalf("targeted wait performed %d full drains", stats.FullDrains)
+	}
+	if stats.CommandBufferSubmissions != 1 ||
+		stats.CompletionWaitSubmissions != 1 {
+		t.Fatalf(
+			"submission counters = (%d total, %d completion), want (1, 1)",
+			stats.CommandBufferSubmissions,
+			stats.CompletionWaitSubmissions,
+		)
+	}
+	if stats.CompletionRecords != 1 || stats.CompletionWaits != 1 {
+		t.Fatalf(
+			"completion counters = (%d records, %d waits), want (1, 1)",
+			stats.CompletionRecords,
+			stats.CompletionWaits,
+		)
+	}
+
+	host := make([]byte, bytes)
+	if err := CopyToHost(
+		unsafe.Pointer(unsafe.SliceData(host)),
+		buffer,
+		bytes,
+	); err != nil {
+		t.Fatal(err)
+	}
+	for index, value := range host {
+		if value != 2 {
+			t.Fatalf("result[%d] = %d, want 2", index, value)
+		}
+	}
+}
+
+func TestCompletionWaitLeavesLaterRootUnsubmitted(t *testing.T) {
+	const bytes = int64(4096)
+	buffer := MustAlloc(bytes)
+	defer func() {
+		if err := Free(buffer); err != nil {
+			t.Errorf("free buffer: %v", err)
+		}
+	}()
+	if err := Sync(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := Fill(buffer, 1, bytes); err != nil {
+		t.Fatal(err)
+	}
+	completion, err := RecordCompletion()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !completion.Valid() {
+		t.Fatal("recording an encoded fill returned no completion")
+	}
+	defer completion.Close()
+	if err := Flush(); err != nil {
+		t.Fatal(err)
+	}
+	if err := ResetRuntimeStats(); err != nil {
+		t.Fatal(err)
+	}
+
+	// This fill belongs to the next live root. Waiting the older completion
+	// must neither submit nor wait this later work.
+	if err := Fill(buffer, 2, bytes); err != nil {
+		t.Fatal(err)
+	}
+	if err := completion.Wait(); err != nil {
+		t.Fatal(err)
+	}
+	stats, err := GetRuntimeStats()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if stats.CommandBufferSubmissions != 0 ||
+		stats.CompletionWaitSubmissions != 0 {
+		t.Fatalf(
+			"targeted wait submitted later root: %d total, %d by wait",
+			stats.CommandBufferSubmissions,
+			stats.CompletionWaitSubmissions,
+		)
+	}
+	if stats.FullDrains != 0 {
+		t.Fatalf("targeted wait performed %d full drains", stats.FullDrains)
+	}
+
+	host := make([]byte, bytes)
+	if err := CopyToHost(
+		unsafe.Pointer(unsafe.SliceData(host)),
+		buffer,
+		bytes,
+	); err != nil {
+		t.Fatal(err)
+	}
+	for index, value := range host {
+		if value != 2 {
+			t.Fatalf("result[%d] = %d, want 2", index, value)
+		}
+	}
+}
+
 func BenchmarkBatchedLaunchAndSync(b *testing.B) {
 	requireTestLibrary(b)
 

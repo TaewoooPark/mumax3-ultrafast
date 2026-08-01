@@ -22,6 +22,15 @@ func MemAlloc(bytes int64) unsafe.Pointer {
 	return unsafe.Pointer(uintptr(cu.MemAlloc(bytes)))
 }
 
+// MemFree releases a base pointer returned by MemAlloc. Interior pointers are
+// not valid. Most simulation storage is owned by data.Slice; this entry point
+// is for small backend-neutral allocations such as region LUT rings.
+func MemFree(pointer unsafe.Pointer) {
+	if pointer != nil {
+		cu.MemFree(cu.DevicePtr(uintptr(pointer)))
+	}
+}
+
 // Returns a copy of in, allocated on GPU.
 func GPUCopy(in *data.Slice) *data.Slice {
 	s := NewSlice(in.NComp(), in.Size())

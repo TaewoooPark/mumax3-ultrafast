@@ -327,6 +327,82 @@ func Sync() error {
 	return runtimeStatus(C.mr_synchronize(&message), message)
 }
 
+// Completion retains the exact Metal command buffer that was the ordered
+// queue tail when RecordCompletion was called. It does not submit work merely
+// by being recorded.
+type Completion struct {
+	handle unsafe.Pointer
+}
+
+func RecordCompletion() (Completion, error) {
+	var handle unsafe.Pointer
+	var message *C.char
+	status := C.mr_record_completion(&handle, &message)
+	if err := runtimeStatus(status, message); err != nil {
+		return Completion{}, err
+	}
+	return Completion{handle: handle}, nil
+}
+
+func (completion Completion) Valid() bool { return completion.handle != nil }
+
+// Ready reports completion without submitting or waiting for any work.
+func (completion Completion) Ready() (bool, error) {
+	if completion.handle == nil {
+		return true, nil
+	}
+	var ready C.int
+	var message *C.char
+	status := C.mr_query_completion(completion.handle, &ready, &message)
+	return ready != 0, runtimeStatus(status, message)
+}
+
+// Wait waits only the retained command buffer. If that buffer is still the
+// runtime's live root, Wait submits it first; an MPS-adopted stale root is
+// already committed and is never committed again.
+func (completion Completion) Wait() error {
+	if completion.handle == nil {
+		return nil
+	}
+	var message *C.char
+	return runtimeStatus(
+		C.mr_wait_completion(completion.handle, &message),
+		message,
+	)
+}
+
+func (completion *Completion) Close() {
+	if completion == nil || completion.handle == nil {
+		return
+	}
+	C.mr_release_completion(completion.handle)
+	completion.handle = nil
+}
+
+func GetRuntimeStats() (RuntimeStats, error) {
+	var stats C.mr_runtime_stats
+	var message *C.char
+	status := C.mr_get_runtime_stats(&stats, &message)
+	if err := runtimeStatus(status, message); err != nil {
+		return RuntimeStats{}, err
+	}
+	return RuntimeStats{
+		CommandBufferSubmissions:  uint64(stats.command_buffer_submissions),
+		ExternalRootAdoptions:     uint64(stats.external_root_adoptions),
+		FullDrains:                uint64(stats.full_drains),
+		CompletionRecords:         uint64(stats.completion_records),
+		CompletionQueries:         uint64(stats.completion_queries),
+		CompletionQueryHits:       uint64(stats.completion_query_hits),
+		CompletionWaits:           uint64(stats.completion_waits),
+		CompletionWaitSubmissions: uint64(stats.completion_wait_submissions),
+	}, nil
+}
+
+func ResetRuntimeStats() error {
+	var message *C.char
+	return runtimeStatus(C.mr_reset_runtime_stats(&message), message)
+}
+
 func validCopy(dst, src unsafe.Pointer, bytes int64) error {
 	if dst == nil || src == nil || bytes < 0 {
 		return errors.New("mumax3/metal: invalid copy range")

@@ -98,6 +98,19 @@ typedef struct mr_buffer_view {
     size_t length;
 } mr_buffer_view;
 
+typedef void mr_completion;
+
+typedef struct mr_runtime_stats {
+    uint64_t command_buffer_submissions;
+    uint64_t external_root_adoptions;
+    uint64_t full_drains;
+    uint64_t completion_records;
+    uint64_t completion_queries;
+    uint64_t completion_query_hits;
+    uint64_t completion_waits;
+    uint64_t completion_wait_submissions;
+} mr_runtime_stats;
+
 int mr_initialize(char **error_message);
 int mr_shutdown(char **error_message);
 int mr_get_device_info(mr_device_info *info, char **error_message);
@@ -147,6 +160,23 @@ int mr_launch_handle(uint32_t handle,
                      char **error_message);
 int mr_flush(char **error_message);
 int mr_synchronize(char **error_message);
+
+/*
+ * Capture the current ordered-queue tail without submitting it. The returned
+ * token strongly retains the exact command buffer that contains all work
+ * encoded before this call. Query is nonblocking. Wait commits the token only
+ * when it is still the runtime's live current buffer, then waits just that
+ * command buffer; a stale/adopted MPS root is never recommitted.
+ */
+int mr_record_completion(mr_completion **completion, char **error_message);
+int mr_query_completion(mr_completion *completion,
+                        int *complete,
+                        char **error_message);
+int mr_wait_completion(mr_completion *completion, char **error_message);
+void mr_release_completion(mr_completion *completion);
+
+int mr_get_runtime_stats(mr_runtime_stats *stats, char **error_message);
+int mr_reset_runtime_stats(char **error_message);
 
 int mr_begin_external(mr_external_context *context, char **error_message);
 int mr_resolve_buffer_locked(const void *pointer,

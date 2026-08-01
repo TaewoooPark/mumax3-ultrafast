@@ -99,3 +99,29 @@ func Flush() error {
 func Sync() error {
 	return ErrUnsupported
 }
+
+type Completion struct{}
+
+func RecordCompletion() (Completion, error) {
+	return Completion{}, ErrUnsupported
+}
+
+func (Completion) Valid() bool { return false }
+
+func (Completion) Ready() (bool, error) {
+	return false, ErrUnsupported
+}
+
+func (Completion) Wait() error {
+	return ErrUnsupported
+}
+
+func (*Completion) Close() {}
+
+func GetRuntimeStats() (RuntimeStats, error) {
+	return RuntimeStats{}, ErrUnsupported
+}
+
+func ResetRuntimeStats() error {
+	return ErrUnsupported
+}

@@ -187,6 +187,20 @@ type DeviceInfo struct {
 	TrackedPeakAllocationSize    uint64
 }
 
+// RuntimeStats exposes queue-boundary counters used to verify that hot paths
+// remain asynchronous. The counters are process-wide and monotonically
+// increase until ResetRuntimeStats or Close.
+type RuntimeStats struct {
+	CommandBufferSubmissions  uint64
+	ExternalRootAdoptions     uint64
+	FullDrains                uint64
+	CompletionRecords         uint64
+	CompletionQueries         uint64
+	CompletionQueryHits       uint64
+	CompletionWaits           uint64
+	CompletionWaitSubmissions uint64
+}
+
 // RuntimeError carries the stable C ABI error code as well as its diagnostic.
 type RuntimeError struct {
 	Code    int

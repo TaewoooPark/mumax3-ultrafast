@@ -47,6 +47,7 @@ uint64_t command_buffer_sequence = 0;
 uint32_t encoded_operation_count = 0;
 uint64_t external_sequence = 0;
 uint64_t active_external_token = 0;
+mr_runtime_stats runtime_stats = {};
 
 constexpr size_t zero_buffer_bytes = 4096;
 constexpr size_t max_buffer_arguments = 31;
@@ -225,15 +226,57 @@ int retireSubmittedUnlocked(bool wait, std::string &error) {
     return first_status;
 }
 
-int submitUnlocked(bool wait, std::string &error) {
-    if (current_command_buffer != nil) {
-        id<MTLCommandBuffer> submitting = current_command_buffer;
-        current_command_buffer = nil;
-        encoded_operation_count = 0;
-        [submitting commit];
-        [submitted_command_buffers addObject:submitting];
+id<MTLCommandBuffer> commitCurrentUnlocked() {
+    if (current_command_buffer == nil) {
+        return nil;
     }
+    id<MTLCommandBuffer> submitting = current_command_buffer;
+    current_command_buffer = nil;
+    encoded_operation_count = 0;
+    [submitting commit];
+    [submitted_command_buffers addObject:submitting];
+    ++runtime_stats.command_buffer_submissions;
+    return submitting;
+}
+
+int submitUnlocked(bool wait, std::string &error) {
+    if (wait) {
+        ++runtime_stats.full_drains;
+    }
+    commitCurrentUnlocked();
     return retireSubmittedUnlocked(wait, error);
+}
+
+/*
+ * Waiting a later command buffer on our single serial queue implies every
+ * submitted predecessor has also stopped using its resources. Remove that
+ * completed prefix without issuing waits for the individual predecessors.
+ */
+int retireThroughUnlocked(id<MTLCommandBuffer> command_buffer,
+                          std::string &error) {
+    NSUInteger index =
+        [submitted_command_buffers indexOfObjectIdenticalTo:command_buffer];
+    if (index == NSNotFound) {
+        return checkSubmittedCommandUnlocked(command_buffer, error);
+    }
+
+    int first_status = MR_SUCCESS;
+    std::string first_error;
+    for (NSUInteger i = 0; i <= index; ++i) {
+        std::string submitted_error;
+        int status = checkSubmittedCommandUnlocked(
+            submitted_command_buffers[i], submitted_error);
+        if (status != MR_SUCCESS && first_status == MR_SUCCESS) {
+            first_status = status;
+            first_error = submitted_error;
+        }
+    }
+    [submitted_command_buffers removeObjectsInRange:
+        NSMakeRange(0, index + 1)];
+    if (first_status != MR_SUCCESS) {
+        error = first_error;
+    }
+    return first_status;
 }
 
 int operationEncodedUnlocked(std::string &error) {
@@ -567,6 +610,7 @@ int mr_shutdown(char **error_message) {
         queue = nil;
         device = nil;
         active_external_token = 0;
+        runtime_stats = {};
         return MR_SUCCESS;
     }
 }
@@ -1240,6 +1284,133 @@ int mr_synchronize(char **error_message) {
     }
 }
 
+int mr_record_completion(mr_completion **completion,
+                         char **error_message) {
+    @autoreleasepool {
+        if (completion == nullptr) {
+            return fail(MR_ERROR_INVALID_ARGUMENT,
+                        error_message,
+                        "completion output is null");
+        }
+        *completion = nullptr;
+        std::lock_guard<std::mutex> lock(runtime_mutex);
+        int status = checkInitialized(error_message);
+        if (status != MR_SUCCESS) {
+            return status;
+        }
+
+        id<MTLCommandBuffer> tail = current_command_buffer;
+        if (tail == nil) {
+            tail = submitted_command_buffers.lastObject;
+        }
+        ++runtime_stats.completion_records;
+        if (tail == nil) {
+            return MR_SUCCESS;
+        }
+
+        *completion = (__bridge_retained mr_completion *)tail;
+        return MR_SUCCESS;
+    }
+}
+
+int mr_query_completion(mr_completion *completion,
+                        int *complete,
+                        char **error_message) {
+    @autoreleasepool {
+        if (completion == nullptr || complete == nullptr) {
+            return fail(MR_ERROR_INVALID_ARGUMENT,
+                        error_message,
+                        "completion token or query output is null");
+        }
+        std::lock_guard<std::mutex> lock(runtime_mutex);
+        ++runtime_stats.completion_queries;
+        id<MTLCommandBuffer> command_buffer =
+            (__bridge id<MTLCommandBuffer>)completion;
+        MTLCommandBufferStatus command_status = command_buffer.status;
+        *complete = command_status == MTLCommandBufferStatusCompleted ||
+                    command_status == MTLCommandBufferStatusError;
+        if (*complete != 0) {
+            ++runtime_stats.completion_query_hits;
+        }
+        if (command_status == MTLCommandBufferStatusError) {
+            std::string error;
+            checkSubmittedCommandUnlocked(command_buffer, error);
+            return fail(MR_ERROR_COMMAND, error_message, error);
+        }
+        return MR_SUCCESS;
+    }
+}
+
+int mr_wait_completion(mr_completion *completion,
+                       char **error_message) {
+    @autoreleasepool {
+        if (completion == nullptr) {
+            return fail(MR_ERROR_INVALID_ARGUMENT,
+                        error_message,
+                        "completion token is null");
+        }
+        std::lock_guard<std::mutex> lock(runtime_mutex);
+        id<MTLCommandBuffer> command_buffer =
+            (__bridge id<MTLCommandBuffer>)completion;
+        MTLCommandBufferStatus command_status = command_buffer.status;
+        if (command_status != MTLCommandBufferStatusCompleted &&
+            command_status != MTLCommandBufferStatusError) {
+            ++runtime_stats.completion_waits;
+            if (command_buffer == current_command_buffer) {
+                commitCurrentUnlocked();
+                ++runtime_stats.completion_wait_submissions;
+            } else if (command_status == MTLCommandBufferStatusNotEnqueued ||
+                       command_status == MTLCommandBufferStatusEnqueued) {
+                return fail(
+                    MR_ERROR_COMMAND,
+                    error_message,
+                    "completion token refers to an unsubmitted stale "
+                    "Metal command buffer");
+            }
+            [command_buffer waitUntilCompleted];
+        }
+
+        std::string error;
+        int status = retireThroughUnlocked(command_buffer, error);
+        return status == MR_SUCCESS
+                   ? MR_SUCCESS
+                   : fail(status, error_message, error);
+    }
+}
+
+void mr_release_completion(mr_completion *completion) {
+    if (completion == nullptr) {
+        return;
+    }
+    @autoreleasepool {
+        id released = CFBridgingRelease(completion);
+        (void)released;
+    }
+}
+
+int mr_get_runtime_stats(mr_runtime_stats *stats,
+                         char **error_message) {
+    @autoreleasepool {
+        if (stats == nullptr) {
+            return fail(MR_ERROR_INVALID_ARGUMENT,
+                        error_message,
+                        "runtime stats output is null");
+        }
+        std::lock_guard<std::mutex> lock(runtime_mutex);
+        *stats = runtime_stats;
+        return MR_SUCCESS;
+    }
+}
+
+int mr_reset_runtime_stats(char **error_message) {
+    (void)error_message;
+    @autoreleasepool {
+        std::lock_guard<std::mutex> lock(runtime_mutex);
+        runtime_stats = {};
+        return MR_SUCCESS;
+    }
+}
+
 int mr_begin_external(mr_external_context *context,
                       char **error_message) {
     if (context == nullptr) {
@@ -1334,6 +1505,7 @@ int mr_end_external(mr_external_context *context,
          */
         const bool root_changed = final_buffer != borrowed;
         if (root_changed) {
+            ++runtime_stats.external_root_adoptions;
             if (borrowed != nil) {
                 [submitted_command_buffers addObject:borrowed];
             }
