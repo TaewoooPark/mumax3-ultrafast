@@ -28,6 +28,7 @@ type geom struct {
 	shape      Shape
 	nCell      float64
 	nCellValid bool
+	revision   uint64
 }
 
 func (g *geom) init() {
@@ -163,6 +164,7 @@ func InitGeomFromOVF(fname string) {
 	//copy data into geometry array
 	data.Copy(geometry.buffer, geomSlice)
 	geometry.invalidateNCell()
+	geometry.revision++
 
 	//make a makeshift function to represent imported geometry
 	isInterpd := false
@@ -189,6 +191,7 @@ func (geometry *geom) setGeom(s Shape) {
 
 	geometry.shape = s
 	geometry.invalidateNCell()
+	geometry.revision++
 	if geometry.Gpu().IsNil() {
 		geometry.buffer = cuda.NewSlice(1, geometry.Mesh().Size())
 	}
@@ -298,6 +301,7 @@ func (g *geom) shift(dx int) {
 	if g == nil || g.buffer.IsNil() {
 		return
 	}
+	g.revision++
 
 	// allocated mask: shift
 	s := g.buffer
@@ -329,6 +333,7 @@ func (g *geom) shiftY(dy int) {
 	if g == nil || g.buffer.IsNil() {
 		return
 	}
+	g.revision++
 
 	// allocated mask: shift
 	s := g.buffer

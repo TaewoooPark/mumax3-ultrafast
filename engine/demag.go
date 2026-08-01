@@ -34,6 +34,16 @@ func init() {
 
 // Sets dst to the current demag field
 func SetDemagField(dst *data.Slice) {
+	// Polynomial extrapolation is scoped strictly to an active solver step.
+	// Output, energy and user queries therefore always take the exact path.
+	if tryDemagExtrapolation(dst) {
+		return
+	}
+	setDemagFieldExact(dst)
+	observeExactDemag(dst)
+}
+
+func setDemagFieldExact(dst *data.Slice) {
 	if EnableDemag {
 		msat := Msat.MSlice()
 		defer msat.Recycle()
@@ -103,6 +113,7 @@ func demagConv() *cuda.DemagConvolution {
 		SetBusy(true)
 		defer SetBusy(false)
 		kernel := mag.DemagKernel(Mesh().Size(), Mesh().PBC(), Mesh().CellSize(), DemagAccuracy, *Flag_cachedir)
+		setDemagSelfCoeff(kernel)
 		conv_ = cuda.NewDemag(Mesh().Size(), Mesh().PBC(), kernel, *Flag_selftest)
 	}
 	return conv_

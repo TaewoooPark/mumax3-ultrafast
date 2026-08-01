@@ -23,12 +23,14 @@ func init() {
 type Regions struct {
 	gpuCache *cuda.Bytes                 // TODO: rename: buffer
 	hist     []func(x, y, z float64) int // history of region set operations
+	revision uint64
 	info
 }
 
 func (r *Regions) alloc() {
 	mesh := r.Mesh()
 	r.gpuCache = cuda.NewBytes(mesh.NCell())
+	r.revision++
 	DefRegion(0, universe)
 }
 
@@ -36,6 +38,7 @@ func (r *Regions) resize() {
 	newSize := Mesh().Size()
 	r.gpuCache.Free()
 	r.gpuCache = cuda.NewBytes(prod(newSize))
+	r.revision++
 	for _, f := range r.hist {
 		r.render(f)
 	}
@@ -102,6 +105,7 @@ func (r *Regions) render(f func(x, y, z float64) int) {
 	}
 	//log.Print("regions.upload")
 	r.gpuCache.Upload(l)
+	r.revision++
 }
 
 func (r *Regions) redefine(startId, endId int) {
@@ -120,6 +124,7 @@ func (r *Regions) redefine(startId, endId int) {
 		}
 	}
 	r.gpuCache.Upload(l)
+	r.revision++
 }
 
 // get the region for position R based on the history
@@ -149,6 +154,7 @@ func DefRegionCell(id int, x, y, z int) {
 	defRegionId(id)
 	index := data.Index(Mesh().Size(), x, y, z)
 	regions.gpuCache.Set(index, byte(id))
+	regions.revision++
 }
 
 // Load regions from ovf file, use first component.
@@ -173,6 +179,7 @@ func (r *Regions) LoadFile(fname string) {
 		}
 	}
 	r.gpuCache.Upload(l)
+	r.revision++
 }
 
 func (r *Regions) average() []float64 {
@@ -190,6 +197,7 @@ func (r *Regions) SetCell(ix, iy, iz int, region int) {
 	size := Mesh().Size()
 	i := data.Index(size, ix, iy, iz)
 	r.gpuCache.Set(i, byte(region))
+	r.revision++
 }
 
 func (r *Regions) GetCell(ix, iy, iz int) int {
@@ -269,6 +277,7 @@ func (b *Regions) shift(dx int) {
 	newreg := byte(0) // new region at edge
 	cuda.ShiftBytes(r2, r1, b.Mesh(), dx, newreg)
 	r1.Copy(r2)
+	b.revision++
 
 	n := Mesh().Size()
 	x1, x2 := shiftDirtyRange(dx, X)
@@ -294,6 +303,7 @@ func (b *Regions) shiftY(dy int) {
 	newreg := byte(0) // new region at edge
 	cuda.ShiftBytesY(r2, r1, b.Mesh(), dy, newreg)
 	r1.Copy(r2)
+	b.revision++
 
 	n := Mesh().Size()
 	y1, y2 := shiftDirtyRange(dy, Y)

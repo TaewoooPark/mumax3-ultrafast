@@ -25,13 +25,22 @@ func (rk *RK45DP) Step() {
 	}
 
 	// first step ever: one-time k1 init and eval
+	initializedK1 := false
 	if rk.k1 == nil {
 		rk.k1 = cuda.NewSlice(3, size)
 		torqueFn(rk.k1)
+		initializedK1 = true
 	}
 
-	// FSAL cannot be used with finite temperature
-	if !Temp.isZero() {
+	// An exact demag evaluation at the accepted step-start state anchors the
+	// extrapolation polynomial. The previous k7 used an extrapolated substage
+	// field, so recompute k1 while this experimental path is active. Default
+	// FSAL behavior is untouched when extrapolation is disabled.
+	if demagExtrapolationStepActive() {
+		if !initializedK1 {
+			torqueFn(rk.k1)
+		}
+	} else if !Temp.isZero() { // FSAL cannot be used with finite temperature
 		torqueFn(rk.k1)
 	}
 

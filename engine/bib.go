@@ -231,4 +231,22 @@ func buildLibrary() {
     url     = {https://link.aps.org/doi/10.1103/PhysRevB.111.134408},
 }`}
 
+	library["lepadatu2022"] = &bibEntry{
+		reason:   "Used polynomial extrapolation of the demagnetizing field at explicit solver substages",
+		shortref: "Lepadatu, IEEE Trans. Magn. 58, 1-15 (2022).",
+		bibtex: `
+@article{Lepadatu2022,
+    author  = {Lepadatu, Serban},
+    title   = {{Speeding Up Explicit Numerical Evaluation Methods for
+                Micromagnetic Simulations Using Demagnetizing Field
+                Polynomial Extrapolation}},
+    journal = {IEEE Transactions on Magnetics},
+    number  = {5},
+    pages   = {1-15},
+    volume  = {58},
+    year    = {2022},
+    doi     = {10.1109/TMAG.2022.3159849},
+    url     = {https://doi.org/10.1109/TMAG.2022.3159849},
+}`}
+
 }

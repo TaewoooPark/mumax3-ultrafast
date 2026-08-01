@@ -39,6 +39,7 @@ func (m *magnetization) alloc() {
 }
 
 func (b *magnetization) SetArray(src *data.Slice) {
+	invalidateDemagExtrapolation()
 	if src.Size() != b.Mesh().Size() {
 		src = data.Resample(src, b.Mesh().Size())
 	}
@@ -69,6 +70,7 @@ func (m *magnetization) String() string { return util.Sprint(m.Buffer().HostCopy
 
 // Set the value of one cell.
 func (m *magnetization) SetCell(ix, iy, iz int, v data.Vector) {
+	invalidateDemagExtrapolation()
 	r := Index2Coord(ix, iy, iz)
 	if geometry.shape != nil && !geometry.shape(r[X], r[Y], r[Z]) {
 		return
@@ -144,6 +146,7 @@ func (m *magnetization) SetRegion(region int, conf Config) {
 }
 
 func (m *magnetization) resize() {
+	invalidateDemagExtrapolation()
 	backup := m.Buffer().HostCopy()
 	s2 := Mesh().Size()
 	resized := data.Resample(backup, s2)

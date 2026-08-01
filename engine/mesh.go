@@ -35,6 +35,8 @@ func arg(msg string, test bool) {
 func SetMesh(Nx, Ny, Nz int, cellSizeX, cellSizeY, cellSizeZ float64, pbcx, pbcy, pbcz int) {
 	SetBusy(true)
 	defer SetBusy(false)
+	invalidateDemagExtrapolation()
+	clearDemagSelfCoeff()
 
 	arg("GridSize", Nx > 0 && Ny > 0 && Nz > 0)
 	arg("CellSize", cellSizeX > 0 && cellSizeY > 0 && cellSizeZ > 0)

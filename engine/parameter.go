@@ -22,6 +22,7 @@ type regionwise struct {
 	lut
 	upd_reg    [NREGION]*regionUpdater // time-dependent values
 	timestamp  float64                 // used not to double-evaluate f(t)
+	revision   uint64                  // explicit definition changes (not stage-time updates)
 	children   []derived               // derived parameters
 	name, unit string
 }
@@ -128,6 +129,7 @@ func (p *regionwise) setRegions(r1, r2 int, v []float64) {
 		p.upd_reg[r] = nil
 		p.bufset_(r, v)
 	}
+	p.revision++
 	p.invalidate()
 }
 
@@ -157,7 +159,17 @@ func (p *regionwise) setFunc(r1, r2 int, f func() []float64) {
 	// A function may be replaced at the current simulation time. Force the
 	// CPU table to evaluate the new function on its very next read.
 	p.timestamp = math.Inf(-1)
+	p.revision++
 	p.invalidate()
+}
+
+func (p *regionwise) hasTimeDependence() bool {
+	for r := 0; r < NREGION; r++ {
+		if p.upd_reg[r] != nil {
+			return true
+		}
+	}
+	return false
 }
 
 // mark my GPU copy and my children as invalid (need update)

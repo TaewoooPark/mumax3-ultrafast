@@ -68,6 +68,7 @@ const (
 )
 
 func SetSolver(typ int) {
+	invalidateDemagExtrapolation()
 	// free previous solver, if any
 	if stepper != nil {
 		stepper.Free()
@@ -256,6 +257,9 @@ func RunWhile(condition func() bool) {
 	pause = false // may be set by <-Inject
 	const output = true
 	stepper.Free() // start from a clean state
+	// Solver buffers and FSAL state were reset, so extrapolation history must
+	// start from the same clean boundary.
+	invalidateDemagExtrapolation()
 	runWhile(condition, output)
 	resolveReductions() // hand the script up-to-date LastErr/PeakErr/LastTorque
 	pause = true
@@ -285,7 +289,10 @@ func RunInteractive() {
 
 // take one time step
 func step(output bool) {
+	nStepsBefore := NSteps
+	demagExtrap.beginStep()
 	stepper.Step()
+	demagExtrap.endStep(NSteps > nStepsBefore)
 	for _, f := range postStep {
 		f()
 	}
