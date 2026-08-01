@@ -17,7 +17,7 @@ import sys
 from pathlib import Path
 from typing import Iterable
 
-EXPECTED_KERNEL_COUNT = 65
+EXPECTED_KERNEL_COUNT = 66
 
 KERNEL_SIGNATURE_RE = re.compile(
     r'extern\s+"C"\s+__global__\s+void\s+'

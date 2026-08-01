@@ -184,13 +184,6 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 
 	output := c.fftCBuf[0]
 	input := c.fftRBuf[0]
-	fftKern := data.NewSlice(1, physKSize)
-	kfull := data.NewSlice(1, output.Size()) // not yet exploiting symmetry
-	kfulls := kfull.Scalars()
-	kCSize := physKSize
-	kCSize[X] *= 2                     // size of kernel after removing Y,Z redundant parts, but still complex
-	kCmplx := data.NewSlice(1, kCSize) // not yet exploiting X symmetry
-	kc := kCmplx.Scalars()
 
 	for i := 0; i < 3; i++ {
 		for j := i; j < 3; j++ { // upper triangular part
@@ -198,20 +191,7 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 				// FW FFT
 				data.Copy(input, realKern[i][j])
 				kernPlan.ExecAsync(input, output)
-				data.Copy(kfull, output)
-
-				// extract non-redundant part (Y,Z symmetry)
-				for iz := 0; iz < kCSize[Z]; iz++ {
-					for iy := 0; iy < kCSize[Y]; iy++ {
-						for ix := 0; ix < kCSize[X]; ix++ {
-							kc[iz][iy][ix] = kfulls[iz][iy][ix]
-						}
-					}
-				}
-
-				// extract real parts (X symmetry)
-				scaleRealParts(fftKern, kCmplx, 1/float32(kernPlan.InputLen()))
-				c.kern[i][j] = GPUCopy(fftKern)
+				c.kern[i][j] = compressFFTKernel(output, physKSize, 1/float32(kernPlan.InputLen()))
 			}
 		}
 	}

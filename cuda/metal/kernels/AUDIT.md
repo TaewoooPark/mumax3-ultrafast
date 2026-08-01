@@ -1,7 +1,7 @@
 # CUDA-to-Metal kernel audit
 
 This directory contains the deterministic Metal translation of every
-production kernel in `cuda/*.cu`. The inventory is intentionally pinned at 65
+production kernel in `cuda/*.cu`. The inventory is intentionally pinned at 66
 kernels. Adding or removing a `.cu` file makes generation fail until the
 translator and this audit are reviewed.
 
@@ -21,7 +21,7 @@ The generator writes:
 - `cuda/*_wrapper_metal.go`: typed Darwin/arm64 launch wrappers.
 - `mumax3_kernels.metal`: one self-contained MSL library.
 - `manifest.json`: the source hash, kernel name, ordered ABI, nullability, and
-  binding index for all 65 kernels.
+  binding index for all 66 kernels.
 
 `source.go` embeds the combined library as `kernels.Source`; the Darwin runtime
 must register that value before the first launch.
@@ -83,7 +83,7 @@ floating-point reduction-order tolerance, not bitwise deterministic.
 The Hopf summand source constructs `cuDoubleComplex` values from float arrays
 and writes a float output. Apple GPUs do not expose native FP64, so that
 intermediate complex algebra is translated to native `float2`. This is the only
-identified precision-width divergence in the 65-kernel corpus and needs a
+identified precision-width divergence in the 66-kernel corpus and needs a
 CUDA/CPU tolerance test on the Hopf observable.
 
 ## Coverage
@@ -97,7 +97,7 @@ CUDA/CPU tolerance test on the Hopf observable.
 - Exchange, DMI, topology: `addexchange`, `adddmi`, `adddmibulk`,
   `exchangedecode`, `setmaxangle`, all emergent-field and topological-charge
   kernels, `setvectorpotential`.
-- FFT support kernels: `copypadmul2`, `copyunpad`, `kernmulC`,
+- FFT support kernels: `compresskernel`, `copypadmul2`, `copyunpad`, `kernmulC`,
   `kernmulRSymm2Dxy`, `kernmulRSymm2Dz`, `kernmulRSymm3D`,
   `solidanglefourierfield`, `scaleemergentfield`,
   `solidanglefouriersummand`.

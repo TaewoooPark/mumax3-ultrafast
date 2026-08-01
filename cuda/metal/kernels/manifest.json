@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "kernel_count": 65,
+  "kernel_count": 66,
   "kernels": [
     {
       "source": "cellindices.cu",
@@ -58,6 +58,91 @@
       ],
       "pointer_mask_buffer_index": null,
       "source_sha256": "392a283b17928b2db7e94f904abcb75c0a8ca31a427dfa307d292518f0d30230"
+    },
+    {
+      "source": "compresskernel.cu",
+      "name": "compresskernel",
+      "arguments": [
+        {
+          "name": "dst",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 0,
+          "nullable": false
+        },
+        {
+          "name": "imag",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 1,
+          "nullable": false
+        },
+        {
+          "name": "Dx",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 2,
+          "nullable": false
+        },
+        {
+          "name": "Dy",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 3,
+          "nullable": false
+        },
+        {
+          "name": "Dz",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 4,
+          "nullable": false
+        },
+        {
+          "name": "src",
+          "c_type": "float*",
+          "kind": "buffer_float32",
+          "buffer_index": 5,
+          "nullable": false
+        },
+        {
+          "name": "Sx",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 6,
+          "nullable": false
+        },
+        {
+          "name": "Sy",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 7,
+          "nullable": false
+        },
+        {
+          "name": "Sz",
+          "c_type": "int",
+          "kind": "int32",
+          "buffer_index": 8,
+          "nullable": false
+        },
+        {
+          "name": "realScale",
+          "c_type": "float",
+          "kind": "float32",
+          "buffer_index": 9,
+          "nullable": false
+        },
+        {
+          "name": "imagScale",
+          "c_type": "float",
+          "kind": "float32",
+          "buffer_index": 10,
+          "nullable": false
+        }
+      ],
+      "pointer_mask_buffer_index": null,
+      "source_sha256": "66e0cf2a08bee7019ce415ec3ecaac616e5a1f4abf391c3d7697d76219af4f37"
     },
     {
       "source": "copypadmul2.cu",

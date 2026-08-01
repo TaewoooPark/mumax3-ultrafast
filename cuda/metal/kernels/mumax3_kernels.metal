@@ -245,6 +245,41 @@ kernel void cellindices(
 }
 
 // -----------------------------------------------------------------------------
+// Source: cuda/compresskernel.cu
+// -----------------------------------------------------------------------------
+#line 1 "compresskernel.cu"
+
+// Extract the non-redundant real half of a Hermitian demag-kernel spectrum.
+// src is complex data stored as interleaved floats. The Y and Z dimensions of
+// dst cover only the leading mirror-symmetric half. imag receives the
+// normalized imaginary magnitude used by the initialization sanity check.
+kernel void compresskernel(
+    device float* dst [[buffer(0)]],
+    device float* imag [[buffer(1)]],
+    constant int& Dx [[buffer(2)]],
+    constant int& Dy [[buffer(3)]],
+    constant int& Dz [[buffer(4)]],
+    device float* src [[buffer(5)]],
+    constant int& Sx [[buffer(6)]],
+    constant int& Sy [[buffer(7)]],
+    constant int& Sz [[buffer(8)]],
+    constant float& realScale [[buffer(9)]],
+    constant float& imagScale [[buffer(10)]],
+    uint3 mumaxGid [[thread_position_in_grid]]) {
+
+    int ix = int(mumaxGid.x);
+    int iy = int(mumaxGid.y);
+    int iz = int(mumaxGid.z);
+
+    if (ix < Dx && iy < Dy && iz < Dz) {
+        int d = index(ix, iy, iz, Dx, Dy, Dz);
+        int s = index(2 * ix, iy, iz, Sx, Sy, Sz);
+        dst[d] = src[s] * realScale;
+        imag[d] = src[s + 1] * imagScale;
+    }
+}
+
+// -----------------------------------------------------------------------------
 // Source: cuda/copypadmul2.cu
 // -----------------------------------------------------------------------------
 #line 1 "copypadmul2.cu"
