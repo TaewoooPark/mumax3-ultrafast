@@ -181,7 +181,7 @@ func TestMetalFFT3DRoundTripEvenAndOdd(t *testing.T) {
 			for i := range input {
 				want := scale * input[i]
 				tolerance := 8e-4 * math.Max(1, math.Abs(float64(want)))
-				if difference := math.Abs(float64(output[i] - want)); difference > tolerance {
+				if difference := math.Abs(float64(output[i] - want)); nonFinite(difference) || difference > tolerance {
 					t.Fatalf("dims=%v output[%d]=%g, want %g ± %g", dimensions, i, output[i], want, tolerance)
 				}
 			}
@@ -255,7 +255,7 @@ func TestMetalFFT3DBatchedRoundTrip(t *testing.T) {
 	for i := range input {
 		want := scale * input[i]
 		tolerance := 8e-4 * math.Max(1, math.Abs(float64(want)))
-		if difference := math.Abs(float64(output[i] - want)); difference > tolerance {
+		if difference := math.Abs(float64(output[i] - want)); nonFinite(difference) || difference > tolerance {
 			t.Fatalf("output[%d]=%g, want %g ± %g", i, output[i], want, tolerance)
 		}
 	}
@@ -343,7 +343,7 @@ func TestMetalFFTR2CImpulsePacking(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, value := range spectrum {
-		if difference := cmplxAbs(value - 1); difference > 2e-5 {
+		if difference := cmplxAbs(value - 1); nonFinite(difference) || difference > 2e-5 {
 			t.Fatalf("packed spectrum[%d]=%v, want 1+0i", i, value)
 		}
 	}
@@ -394,9 +394,156 @@ func TestMetalFFTR2CMatchesReferenceSpectrum(t *testing.T) {
 	}
 	for i := range want {
 		tolerance := 5e-4 * math.Max(1, cmplxAbs(want[i]))
-		if difference := cmplxAbs(got[i] - want[i]); difference > tolerance {
+		if difference := cmplxAbs(got[i] - want[i]); nonFinite(difference) || difference > tolerance {
 			t.Fatalf("packed spectrum[%d]=%v, want %v ± %g", i, got[i], want[i], tolerance)
 		}
+	}
+}
+
+func TestVkFFTInPlacePaddedRoundTrip(t *testing.T) {
+	t.Setenv("MUMAX3_METAL_FFT_BACKEND", "vkfft")
+	if err := metal.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	const (
+		nx      = 8
+		ny      = 4
+		activeX = 3
+		activeY = 2
+		stride  = nx + 2
+	)
+	layout, err := NewLayout([]int{1, ny, nx}, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	layout = layout.WithActivePrefix(activeX, activeY)
+	buffer := mustMetalAlloc(t, int64((nx+2)*ny*4))
+	defer mustMetalFree(t, buffer)
+
+	input := make([]float32, stride*ny)
+	logicalInput := make([]float32, nx*ny)
+	for y := 0; y < activeY; y++ {
+		for x := 0; x < activeX; x++ {
+			value := float32(math.Sin(float64(3*x+5*y)*0.31) + 0.07*float64(x-y))
+			input[y*stride+x] = value
+			logicalInput[y*nx+x] = value
+		}
+	}
+	if err := metal.CopyToDevice(buffer, unsafe.Pointer(unsafe.SliceData(input)), int64(len(input)*4)); err != nil {
+		t.Fatal(err)
+	}
+
+	forward, err := CreatePlan(layout, RealToComplex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := DestroyPlan(forward); err != nil {
+			t.Error(err)
+		}
+	}()
+	inverse, err := CreatePlan(layout, ComplexToReal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := DestroyPlan(inverse); err != nil {
+			t.Error(err)
+		}
+	}()
+	if !PlanIsInPlace(forward) || !PlanIsInPlace(inverse) {
+		t.Fatal("forced eligible VkFFT plans did not select the in-place backend")
+	}
+
+	for iteration := 0; iteration < 32; iteration++ {
+		if err := Execute(forward, uintptr(buffer), uintptr(buffer), -1); err != nil {
+			t.Fatalf("forward %d: %v", iteration, err)
+		}
+		if iteration == 0 {
+			spectrum := make([]complex64, (nx/2+1)*ny)
+			if err := metal.CopyToHost(unsafe.Pointer(unsafe.SliceData(spectrum)), buffer, int64(len(spectrum)*8)); err != nil {
+				t.Fatal(err)
+			}
+			wantSpectrum, err := ReferenceR2C(logicalInput, []int{1, ny, nx})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for index := range wantSpectrum {
+				tolerance := 5e-4 * math.Max(1, cmplxAbs(wantSpectrum[index]))
+				if difference := cmplxAbs(spectrum[index] - wantSpectrum[index]); nonFinite(difference) || difference > tolerance {
+					t.Fatalf("forward spectrum[%d]=%v, want %v ± %g", index, spectrum[index], wantSpectrum[index], tolerance)
+				}
+			}
+		}
+		if err := Execute(inverse, uintptr(buffer), uintptr(buffer), 1); err != nil {
+			t.Fatalf("inverse %d: %v", iteration, err)
+		}
+		if iteration != 31 {
+			// An unnormalized round trip scales by nx*ny, so restore the known
+			// input between repetitions while retaining the encoder stress.
+			if err := metal.CopyToDevice(buffer, unsafe.Pointer(unsafe.SliceData(input)), int64(len(input)*4)); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	output := make([]float32, len(input))
+	if err := metal.CopyToHost(unsafe.Pointer(unsafe.SliceData(output)), buffer, int64(len(output)*4)); err != nil {
+		t.Fatal(err)
+	}
+	scale := float32(nx * ny)
+	for y := 0; y < activeY; y++ {
+		for x := 0; x < activeX; x++ {
+			index := y*stride + x
+			want := scale * input[index]
+			tolerance := 8e-4 * math.Max(1, math.Abs(float64(want)))
+			if difference := math.Abs(float64(output[index] - want)); nonFinite(difference) || difference > tolerance {
+				t.Fatalf("output[%d,%d]=%g, want %g ± %g", x, y, output[index], want, tolerance)
+			}
+		}
+	}
+}
+
+func TestVkFFTEligibilityGate(t *testing.T) {
+	t.Setenv("MUMAX3_METAL_FFT_BACKEND", "auto")
+	makeLayout := func(dimensions []int, activeX, activeY int) Layout {
+		t.Helper()
+		layout, err := NewLayout(dimensions, 1)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return layout.WithActivePrefix(activeX, activeY)
+	}
+	tests := []struct {
+		name      string
+		layout    Layout
+		transform Transform
+		want      bool
+	}{
+		{"automatic-window", makeLayout([]int{1, 512, 512}, 256, 256), RealToComplex, true},
+		{"padded-1024-is-opt-in", makeLayout([]int{1, 1024, 1024}, 512, 512), RealToComplex, false},
+		{"real-1024-pads-to-2048", makeLayout([]int{1, 2048, 2048}, 1024, 1024), RealToComplex, false},
+		{"odd-logical-fast-axis", makeLayout([]int{1, 512, 999}, 499, 256), RealToComplex, false},
+		{"non-power-of-two-fast-axis", makeLayout([]int{1, 512, 1006}, 503, 256), RealToComplex, false},
+		{"non-power-of-two-outer-axis", makeLayout([]int{1, 768, 512}, 256, 384), RealToComplex, false},
+		{"no-strict-inner-padding", makeLayout([]int{1, 512, 512}, 512, 256), RealToComplex, false},
+		{"complex-transform", makeLayout([]int{1, 512, 512}, 256, 256), ComplexToComplex, false},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := vkFFTEligible(test.layout, test.transform); got != test.want {
+				t.Fatalf("vkFFTEligible(%v, %d) = %v, want %v", test.layout, test.transform, got, test.want)
+			}
+		})
+	}
+
+	t.Setenv("MUMAX3_METAL_FFT_BACKEND", "mps")
+	if vkFFTEligible(makeLayout([]int{1, 512, 512}, 256, 256), RealToComplex) {
+		t.Fatal("MPS override must disable VkFFT")
+	}
+
+	t.Setenv("MUMAX3_METAL_FFT_BACKEND", "vkfft")
+	if !vkFFTEligible(makeLayout([]int{1, 1024, 1024}, 512, 512), RealToComplex) {
+		t.Fatal("forced VkFFT must permit the measured padded-1024 tier")
 	}
 }
 
@@ -494,6 +641,10 @@ func mustMetalFree(t *testing.T, pointer unsafe.Pointer) {
 	if err := metal.Free(pointer); err != nil {
 		t.Error(err)
 	}
+}
+
+func nonFinite(value float64) bool {
+	return math.IsNaN(value) || math.IsInf(value, 0)
 }
 
 func shapeName(dimensions []int) string {

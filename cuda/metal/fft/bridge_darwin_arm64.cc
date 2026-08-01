@@ -293,9 +293,11 @@ extern "C" void *mf_plan_create(const int64_t *dimensions,
                                   size_t rank,
                                   int64_t batch,
                                   int32_t transform,
+                                  int64_t active_inner,
                                   int64_t active_outer,
                                   char **error_message) {
     @autoreleasepool {
+        (void)active_inner;
         if (dimensions == nullptr || rank == 0 || rank > 3 || batch < 1) {
             mf_set_error(error_message, @"rank must be 1...3 and batch must be positive");
             return nullptr;

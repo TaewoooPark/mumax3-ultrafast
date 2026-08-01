@@ -10,6 +10,11 @@ type Layout struct {
 	Dimensions []int
 	Batch      int
 
+	// ActiveInner is the number of entries along the fastest transform axis
+	// that hold real input data before MuMax3's spatial zero padding. It is
+	// consumed by the optional in-place VkFFT path; MPSGraph ignores it.
+	ActiveInner int
+
 	// ActiveOuter is the number of entries along the second-to-last transform
 	// axis that can hold non-zero data, or 0 when every entry can. MuMax3
 	// zero-pads the magnetisation, so the trailing rows of a padded array are
@@ -45,6 +50,7 @@ func NewLayout(dimensions []int, batch int) (Layout, error) {
 // WithActiveOuter records how many entries of the second-to-last transform axis
 // can be non-zero. Values outside (0, size) disable the optimisation.
 func (l Layout) WithActiveOuter(active int) Layout {
+	l.ActiveOuter = 0
 	if len(l.Dimensions) >= 2 {
 		outer := l.Dimensions[len(l.Dimensions)-2]
 		if active > 0 && active < outer {
@@ -52,6 +58,21 @@ func (l Layout) WithActiveOuter(active int) Layout {
 		}
 	}
 	return l
+}
+
+// WithActivePrefix records the meaningful rectangular prefix of a 2D real
+// input. Invalid/full-extent values disable the corresponding hint. Keeping
+// WithActiveOuter separate preserves the MPSGraph zero-row optimization for
+// callers that do not use an in-place layout.
+func (l Layout) WithActivePrefix(inner, outer int) Layout {
+	l.ActiveInner = 0
+	if len(l.Dimensions) >= 1 {
+		fastest := l.Dimensions[len(l.Dimensions)-1]
+		if inner > 0 && inner < fastest {
+			l.ActiveInner = inner
+		}
+	}
+	return l.WithActiveOuter(outer)
 }
 
 // RealShape returns the MPSGraph tensor shape for real data. A leading batch

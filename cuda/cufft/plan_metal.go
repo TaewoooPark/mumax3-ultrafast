@@ -14,23 +14,22 @@ import (
 type Handle uintptr
 
 func Plan1d(nx int, typ Type, batch int) Handle {
-	return newMetalPlan([]int{nx}, typ, batch, 0)
+	return newMetalPlan([]int{nx}, typ, batch, 0, 0)
 }
 
 func Plan2d(nx, ny int, typ Type) Handle {
-	return newMetalPlan([]int{nx, ny}, typ, 1, 0)
+	return newMetalPlan([]int{nx, ny}, typ, 1, 0, 0)
 }
 
 func Plan3d(nx, ny, nz int, typ Type) Handle {
-	return newMetalPlan([]int{nx, ny, nz}, typ, 1, 0)
+	return newMetalPlan([]int{nx, ny, nz}, typ, 1, 0, 0)
 }
 
-// Plan3dPadded is Plan3d for an array whose trailing rows along the
-// second-to-last axis are known to be zero. activeOuter is how many entries of
-// that axis can be non-zero; the transform along the fastest axis maps zero rows
-// to zero rows, so it can skip the rest exactly. Pass 0 to disable.
-func Plan3dPadded(nx, ny, nz int, typ Type, activeOuter int) Handle {
-	return newMetalPlan([]int{nx, ny, nz}, typ, 1, activeOuter)
+// Plan3dPadded is Plan3d with the strict non-zero prefix of the fastest two
+// axes recorded for Metal backends that can exploit spatial zero padding.
+// Pass zero for either hint to retain the regular layout.
+func Plan3dPadded(nx, ny, nz int, typ Type, activeInner, activeOuter int) Handle {
+	return newMetalPlan([]int{nx, ny, nz}, typ, 1, activeInner, activeOuter)
 }
 
 // PlanMany supports the contiguous subset used by mumax3. Non-unit strides or
@@ -46,10 +45,10 @@ func PlanMany(n []int, inembed []int, istride int, oembed []int, ostride int, ty
 	if !sameOrNil(inembed, n) || !sameOrNil(oembed, n) {
 		panic("metal cufft: PlanMany explicit embedding is not supported")
 	}
-	return newMetalPlan(n, typ, batch, 0)
+	return newMetalPlan(n, typ, batch, 0, 0)
 }
 
-func newMetalPlan(dimensions []int, typ Type, batch, activeOuter int) Handle {
+func newMetalPlan(dimensions []int, typ Type, batch, activeInner, activeOuter int) Handle {
 	transform := metalfft.Transform(typ)
 	switch typ {
 	case R2C, C2R, C2C:
@@ -60,12 +59,18 @@ func newMetalPlan(dimensions []int, typ Type, batch, activeOuter int) Handle {
 	if err != nil {
 		panic(err)
 	}
-	layout = layout.WithActiveOuter(activeOuter)
+	layout = layout.WithActivePrefix(activeInner, activeOuter)
 	handle, err := metalfft.CreatePlan(layout, transform)
 	if err != nil {
 		panic(err)
 	}
 	return Handle(handle)
+}
+
+// InPlace reports whether the Metal bridge selected VkFFT's physical in-place
+// R2C/C2R layout for this plan.
+func (plan Handle) InPlace() bool {
+	return plan != 0 && metalfft.PlanIsInPlace(uintptr(plan))
 }
 
 func (plan Handle) ExecC2C(idata, odata cu.DevicePtr, direction int) {

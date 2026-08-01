@@ -21,6 +21,10 @@ func Plan3d(nx, ny, nz int, typ Type) Handle {
 	panic(metalCgoRequired)
 }
 
+func Plan3dPadded(nx, ny, nz int, typ Type, activeInner, activeOuter int) Handle {
+	panic(metalCgoRequired)
+}
+
 func PlanMany(n []int, inembed []int, istride int, oembed []int, ostride int, typ Type, batch int) Handle {
 	panic(metalCgoRequired)
 }
@@ -56,3 +60,5 @@ func (plan *Handle) Destroy() {
 func (plan Handle) SetStream(stream cu.Stream) {
 	panic(metalCgoRequired)
 }
+
+func (plan Handle) InPlace() bool { return false }

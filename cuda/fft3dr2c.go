@@ -13,17 +13,17 @@ import (
 // 3D single-precision real-to-complex FFT plan.
 type fft3DR2CPlan struct {
 	fftplan
-	size [3]int
+	size    [3]int
+	inPlace bool
 }
 
 // 3D single-precision real-to-complex FFT plan.
-// activeY is how many rows along Y can be non-zero, or 0 when all can.
-// MuMax3 zero-pads the magnetisation, so the transform along X maps the
-// padded rows to zero rows and can skip them exactly.
-func newFFT3DR2C(Nx, Ny, Nz, activeY int) fft3DR2CPlan {
-	handle := cufft.Plan3dPadded(Nz, Ny, Nx, cufft.R2C, activeY) // new xyz swap
+// activeX/activeY describe the strict non-zero prefix used by the optional
+// Metal in-place backend. Pass zero to retain the regular out-of-place plan.
+func newFFT3DR2C(Nx, Ny, Nz, activeX, activeY int) fft3DR2CPlan {
+	handle := cufft.Plan3dPadded(Nz, Ny, Nx, cufft.R2C, activeX, activeY) // new xyz swap
 	handle.SetStream(stream0)
-	return fft3DR2CPlan{fftplan{handle}, [3]int{Nx, Ny, Nz}}
+	return fft3DR2CPlan{fftplan{handle}, [3]int{Nx, Ny, Nz}, handle.InPlace()}
 }
 
 // Execute the FFT plan, asynchronous.
@@ -35,6 +35,9 @@ func (p *fft3DR2CPlan) ExecAsync(src, dst *data.Slice) {
 	}
 	util.Argument(src.NComp() == 1 && dst.NComp() == 1)
 	oksrclen := p.InputLen()
+	if p.inPlace {
+		oksrclen = p.OutputLen()
+	}
 	if src.Len() != oksrclen {
 		log.Panicf("fft size mismatch: expecting src len %v, got %v", oksrclen, src.Len())
 	}

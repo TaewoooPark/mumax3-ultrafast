@@ -13,10 +13,14 @@ import "C"
 
 import (
 	"fmt"
+	"os"
 	"runtime"
+	"strings"
+	"sync"
 	"unsafe"
 
 	"github.com/mumax/3/cuda/metal"
+	"github.com/mumax/3/cuda/metal/vkfft"
 )
 
 // Transform uses cuFFT's public numeric values so the compatibility package
@@ -29,11 +33,57 @@ const (
 	ComplexToReal    Transform = C.MF_C2R
 )
 
-// CreatePlan creates a cached MPSGraph FFT plan.
+type planRecord struct {
+	mps     uintptr
+	vk      uintptr
+	inPlace bool
+	inverse bool
+}
+
+var planRegistry = struct {
+	sync.RWMutex
+	next uintptr
+	plan map[uintptr]planRecord
+}{next: 1, plan: make(map[uintptr]planRecord)}
+
+func registerPlan(plan planRecord) uintptr {
+	planRegistry.Lock()
+	defer planRegistry.Unlock()
+	handle := planRegistry.next
+	planRegistry.next++
+	if planRegistry.next == 0 {
+		planRegistry.next = 1
+	}
+	planRegistry.plan[handle] = plan
+	return handle
+}
+
+// CreatePlan creates a cached FFT plan. Eligible 2D demagnetization plans use
+// the separately compiled, non-ARC VkFFT bridge; every other shape keeps the
+// established MPSGraph path.
 func CreatePlan(layout Layout, transform Transform) (uintptr, error) {
 	if err := metal.Initialize(); err != nil {
 		return 0, fmt.Errorf("metal fft: initialize runtime: %w", err)
 	}
+	if vkFFTEligible(layout, transform) {
+		inverse := transform == ComplexToReal
+		handle, err := vkfft.CreatePlan(
+			layout.Dimensions[2],
+			layout.Dimensions[1],
+			layout.ActiveInner,
+			layout.ActiveOuter,
+			inverse,
+		)
+		if err == nil {
+			return registerPlan(planRecord{vk: handle, inPlace: true, inverse: inverse}), nil
+		}
+		if vkFFTForced() {
+			return 0, fmt.Errorf("metal fft: forced VkFFT plan: %w", err)
+		}
+		// Auto mode is fail-closed: initialization errors retain the proven
+		// MPSGraph implementation for this plan.
+	}
+
 	dimensions := make([]C.int64_t, len(layout.Dimensions))
 	for i, dimension := range layout.Dimensions {
 		dimensions[i] = C.int64_t(dimension)
@@ -44,6 +94,7 @@ func CreatePlan(layout Layout, transform Transform) (uintptr, error) {
 		C.size_t(len(dimensions)),
 		C.int64_t(layout.Batch),
 		C.int32_t(transform),
+		C.int64_t(layout.ActiveInner),
 		C.int64_t(layout.ActiveOuter),
 		&message,
 	)
@@ -54,7 +105,14 @@ func CreatePlan(layout Layout, transform Transform) (uintptr, error) {
 	if message != nil {
 		C.mf_free_error(message)
 	}
-	return uintptr(handle), nil
+	return registerPlan(planRecord{mps: uintptr(handle)}), nil
+}
+
+// PlanIsInPlace reports whether a plan selected VkFFT's in-place R2C layout.
+func PlanIsInPlace(handle uintptr) bool {
+	planRegistry.RLock()
+	defer planRegistry.RUnlock()
+	return planRegistry.plan[handle].inPlace
 }
 
 // Execute appends a transform to the Metal runtime's current command buffer.
@@ -65,9 +123,21 @@ func Execute(handle, input, output uintptr, direction int) error {
 	if handle == 0 || input == 0 || output == 0 {
 		return fmt.Errorf("metal fft: invalid nil plan or buffer")
 	}
+	planRegistry.RLock()
+	defer planRegistry.RUnlock()
+	plan, ok := planRegistry.plan[handle]
+	if !ok {
+		return fmt.Errorf("metal fft: unknown or destroyed plan %d", handle)
+	}
+	if plan.inPlace {
+		if input != output {
+			return fmt.Errorf("metal fft: VkFFT R2C/C2R plan requires one in-place buffer")
+		}
+		return vkfft.Execute(plan.vk, input, plan.inverse)
+	}
 	var message *C.char
 	status := C.mf_plan_execute(
-		unsafe.Pointer(handle),
+		unsafe.Pointer(plan.mps),
 		unsafe.Pointer(input),
 		unsafe.Pointer(output),
 		C.int32_t(direction),
@@ -99,13 +169,27 @@ func DestroyPlan(handle uintptr) error {
 	if handle == 0 {
 		return nil
 	}
+	planRegistry.Lock()
+	defer planRegistry.Unlock()
+	plan, ok := planRegistry.plan[handle]
+	if !ok {
+		return nil
+	}
+	delete(planRegistry.plan, handle)
+
 	// MPSGraph command buffers may retain references into the graph until GPU
-	// completion. cuFFT plan destruction is rare, so synchronize here before
-	// releasing the retained graph rather than risking an asynchronous
-	// use-after-free.
+	// completion, and VkFFT pipelines have the same asynchronous lifetime. Plan
+	// destruction is rare, so synchronize before releasing either backend.
 	syncErr := metal.Sync()
+	if plan.inPlace {
+		vkfft.DestroyPlan(plan.vk)
+		if syncErr != nil {
+			return fmt.Errorf("metal fft: synchronize before destroying plan: %w", syncErr)
+		}
+		return nil
+	}
 	var message *C.char
-	status := C.mf_plan_destroy(unsafe.Pointer(handle), &message)
+	status := C.mf_plan_destroy(unsafe.Pointer(plan.mps), &message)
 	if status != C.MF_SUCCESS {
 		return bridgeError("destroy plan", message)
 	}
@@ -116,6 +200,38 @@ func DestroyPlan(handle uintptr) error {
 		return fmt.Errorf("metal fft: synchronize before destroying plan: %w", syncErr)
 	}
 	return nil
+}
+
+func vkFFTEligible(layout Layout, transform Transform) bool {
+	mode := strings.ToLower(strings.TrimSpace(os.Getenv("MUMAX3_METAL_FFT_BACKEND")))
+	if mode == "mps" || mode == "mpsgraph" {
+		return false
+	}
+	if len(layout.Dimensions) != 3 || layout.Batch != 1 ||
+		layout.Dimensions[0] != 1 ||
+		(transform != RealToComplex && transform != ComplexToReal) {
+		return false
+	}
+	ny, nx := layout.Dimensions[1], layout.Dimensions[2]
+	// The end-to-end crossover is size-dependent: padded extents through 512
+	// showed a material win, while 1024 was only about 1.6% faster and carried
+	// a larger first-plan compilation cost. Keep that marginal tier opt-in.
+	maximum := 512
+	if mode == "vkfft" {
+		maximum = 1024
+	}
+	return nx > 1 && nx <= maximum && ny > 1 && ny <= maximum &&
+		isPowerOfTwo(nx) && isPowerOfTwo(ny) &&
+		layout.ActiveInner > 0 && layout.ActiveInner < nx &&
+		layout.ActiveOuter > 0 && layout.ActiveOuter < ny
+}
+
+func isPowerOfTwo(value int) bool {
+	return value > 0 && value&(value-1) == 0
+}
+
+func vkFFTForced() bool {
+	return strings.EqualFold(strings.TrimSpace(os.Getenv("MUMAX3_METAL_FFT_BACKEND")), "vkfft")
 }
 
 func bridgeError(operation string, message *C.char) error {

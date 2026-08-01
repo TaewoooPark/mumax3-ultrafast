@@ -49,8 +49,8 @@ func (c *MFMConvolution) init() {
 	// between its real and complex buffers and reclears the padding on every
 	// call, so the padded rows are not a stable zero prefix. MFM images are not
 	// on the hot path.
-	c.fwPlan = newFFT3DR2C(padded[X], padded[Y], padded[Z], 0)
-	c.bwPlan = newFFT3DC2R(padded[X], padded[Y], padded[Z], 0)
+	c.fwPlan = newFFT3DR2C(padded[X], padded[Y], padded[Z], 0, 0)
+	c.bwPlan = newFFT3DC2R(padded[X], padded[Y], padded[Z], 0, 0)
 
 	// init device buffers
 	nc := fftR2COutputSizeFloats(c.kernSize)

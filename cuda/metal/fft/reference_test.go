@@ -29,6 +29,38 @@ func TestLayoutMatchesCuFFTRowMajorPacking(t *testing.T) {
 	assertInts(t, batched.TransformAxes(), []int{1})
 }
 
+func TestLayoutActivePrefixValidation(t *testing.T) {
+	layout, err := NewLayout([]int{1, 128, 256}, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	hinted := layout.WithActivePrefix(129, 65)
+	if hinted.ActiveInner != 129 || hinted.ActiveOuter != 65 {
+		t.Fatalf("active prefix = (%d,%d), want (129,65)", hinted.ActiveInner, hinted.ActiveOuter)
+	}
+	cleared := hinted.WithActivePrefix(256, 128)
+	if cleared.ActiveInner != 0 || cleared.ActiveOuter != 0 {
+		t.Fatalf("invalid reused prefix retained (%d,%d), want both disabled", cleared.ActiveInner, cleared.ActiveOuter)
+	}
+	outerCleared := hinted.WithActiveOuter(128)
+	if outerCleared.ActiveInner != 129 || outerCleared.ActiveOuter != 0 {
+		t.Fatalf("invalid reused outer hint produced (%d,%d), want (129,0)", outerCleared.ActiveInner, outerCleared.ActiveOuter)
+	}
+	for _, invalid := range [][2]int{{0, 65}, {256, 65}, {129, 0}, {129, 128}} {
+		got := layout.WithActivePrefix(invalid[0], invalid[1])
+		if invalid[0] <= 0 || invalid[0] >= 256 {
+			if got.ActiveInner != 0 {
+				t.Fatalf("invalid inner %d enabled hint %d", invalid[0], got.ActiveInner)
+			}
+		}
+		if invalid[1] <= 0 || invalid[1] >= 128 {
+			if got.ActiveOuter != 0 {
+				t.Fatalf("invalid outer %d enabled hint %d", invalid[1], got.ActiveOuter)
+			}
+		}
+	}
+}
+
 func TestReferenceImpulse3D(t *testing.T) {
 	dimensions := []int{2, 3, 4}
 	input := make([]float32, 24)

@@ -15,6 +15,8 @@ type DemagConvolution struct {
 	fftRBuf          [3]*data.Slice    // FFT input buf; 2D: Z shares storage with X.
 	fftCBuf          [3]*data.Slice    // FFT output buf; 2D: Z shares storage with X.
 	fftBwBuf         *data.Slice       // inverse FFT output, see bwFFT
+	fftRealBufSize   [3]int            // physical real-buffer row stride (Nx or Nx+2)
+	fftInPlace       bool              // VkFFT's cuFFT-compatible in-place R2C/C2R path
 	kern             [3][3]*data.Slice // FFT kernel on device
 	fwPlan           fft3DR2CPlan      // Forward FFT (1 component)
 	bwPlan           fft3DC2RPlan      // Backward FFT (1 component)
@@ -95,74 +97,101 @@ func zero1_async(dst *data.Slice) {
 
 // forward FFT component i
 //
-// copyPadMul writes exactly the inputSize corner of the padded buffer and
-// leaves the rest untouched, so the zero padding only has to be written once.
-// The inverse transform is what used to destroy it, by writing the whole padded
-// buffer; it now targets fftBwBuf instead. That removes one full padded-buffer
-// clear plus one dispatch per component per field evaluation, which is 18
-// dispatches per RK45DP step.
+// copyPadMul writes exactly the inputSize corner and leaves the padded region
+// untouched. The out-of-place MPSGraph path preserves its once-zeroed input by
+// writing inverse results to fftBwBuf. VkFFT aliases real and complex storage,
+// so its inverse overwrites that padding; native axis-0 padding and the narrow
+// trailing-row clear below restore it before the next forward transform.
 func (c *DemagConvolution) fwFFT(i int, inp, vol *data.Slice, Msat MSlice) {
 	in := inp.Comp(i)
-	copyPadMul(c.fftRBuf[i], in, vol, c.realKernSize, c.inputSize, Msat)
+	if c.fftInPlace {
+		// VkFFT 1.3.4's Metal code generator is incorrect for native padding
+		// along axis 1. Axis-0 padding still skips the stale X tail, while this
+		// contiguous fill restores only the trailing Y rows overwritten by the
+		// previous in-place inverse transform.
+		rowStride := c.fftRealBufSize[X]
+		start := c.inputSize[Y] * rowStride
+		count := (c.realKernSize[Y] - c.inputSize[Y]) * rowStride
+		if count > 0 {
+			base := uintptr(c.fftRBuf[i].DevPtr(0)) + uintptr(start)*cu.SIZEOF_FLOAT32
+			cu.MemsetD32Async(cu.DevicePtr(base), 0, int64(count), stream0)
+		}
+	}
+	copyPadMul(c.fftRBuf[i], in, vol, c.fftRealBufSize, c.inputSize, Msat)
 	c.fwPlan.ExecAsync(c.fftRBuf[i], c.fftCBuf[i])
 }
 
 // backward FFT component i
 //
-// All components share one output buffer: each inverse transform is fully
-// consumed by its copyUnPad before the next one is encoded on the same ordered
-// queue.
+// MPSGraph components share one output buffer: each inverse is consumed by its
+// copyUnPad before the next one on the ordered queue. VkFFT instead writes each
+// component back into its own in-place real/complex allocation.
 func (c *DemagConvolution) bwFFT(i int, outp *data.Slice) {
-	c.bwPlan.ExecAsync(c.fftCBuf[i], c.fftBwBuf)
+	inverseOutput := c.fftBwBuf
+	if c.fftInPlace {
+		inverseOutput = c.fftCBuf[i]
+	}
+	c.bwPlan.ExecAsync(c.fftCBuf[i], inverseOutput)
 	out := outp.Comp(i)
-	copyUnPad(out, c.fftBwBuf, c.inputSize, c.realKernSize)
+	copyUnPad(out, inverseOutput, c.inputSize, c.fftRealBufSize)
 }
 
 func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
+	// Build the regular demag plans first: the Metal bridge may choose VkFFT's
+	// in-place physical R2C layout for eligible 2D sizes. Both directions must
+	// agree; if one ever falls back during plan creation, recreate a matched
+	// MPSGraph pair while retaining its exact zero-row hint.
+	activeX, activeY := 0, 0
+	if c.realKernSize[Z] == 1 {
+		activeX = c.inputSize[X]
+		activeY = c.inputSize[Y]
+	}
+	c.fwPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeX, activeY)
+	c.bwPlan = newFFT3DC2R(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeX, activeY)
+	if c.fwPlan.inPlace != c.bwPlan.inPlace {
+		c.fwPlan.Free()
+		c.bwPlan.Free()
+		c.fwPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], 0, activeY)
+		c.bwPlan = newFFT3DC2R(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], 0, activeY)
+	}
+	c.fftInPlace = c.fwPlan.inPlace && c.bwPlan.inPlace
+
 	// init device buffers
 	// 2D re-uses fftBuf[X] as fftBuf[Z], 3D needs all 3 fftBufs.
 	nc := fftR2COutputSizeFloats(c.realKernSize)
-	c.fftCBuf[X] = NewSlice(1, nc)
-	c.fftCBuf[Y] = NewSlice(1, nc)
-	if c.is2D() {
+	c.fftRealBufSize = c.realKernSize
+	if c.fftInPlace {
+		// VkFFT's in-place R2C layout is exactly cuFFT's compact complex
+		// layout: each real row occupies Nx+2 floats for even Nx. The same
+		// allocation is reinterpreted as complex after the forward transform.
+		c.fftRealBufSize = nc
+		c.fftRBuf[X] = NewSlice(1, nc)
+		c.fftRBuf[Y] = NewSlice(1, nc)
+		c.fftCBuf[X] = c.fftRBuf[X]
+		c.fftCBuf[Y] = c.fftRBuf[Y]
+		c.fftRBuf[Z] = c.fftRBuf[X]
 		c.fftCBuf[Z] = c.fftCBuf[X]
 	} else {
-		c.fftCBuf[Z] = NewSlice(1, nc)
-	}
+		c.fftCBuf[X] = NewSlice(1, nc)
+		c.fftCBuf[Y] = NewSlice(1, nc)
+		if c.is2D() {
+			c.fftCBuf[Z] = c.fftCBuf[X]
+		} else {
+			c.fftCBuf[Z] = NewSlice(1, nc)
+		}
 
-	c.fftRBuf[X] = NewSlice(1, c.realKernSize)
-	c.fftRBuf[Y] = NewSlice(1, c.realKernSize)
-	if c.is2D() {
-		c.fftRBuf[Z] = c.fftRBuf[X]
-	} else {
-		c.fftRBuf[Z] = NewSlice(1, c.realKernSize)
-	}
+		c.fftRBuf[X] = NewSlice(1, c.realKernSize)
+		c.fftRBuf[Y] = NewSlice(1, c.realKernSize)
+		if c.is2D() {
+			c.fftRBuf[Z] = c.fftRBuf[X]
+		} else {
+			c.fftRBuf[Z] = NewSlice(1, c.realKernSize)
+		}
 
-	// Dedicated inverse-FFT output, so the forward buffers keep their zero
-	// padding for the whole run. See fwFFT.
-	c.fftBwBuf = NewSlice(1, c.realKernSize)
-
-	// init FFT plans
-	//
-	// The padded buffer only holds data in its inputSize corner; everything
-	// else is zero and stays zero (see fwFFT), and copyUnPad only reads that
-	// corner back. The transform along X therefore maps the padded Y rows to
-	// zero rows on the way in, and only the data rows are needed on the way
-	// out, so both X passes can skip them. That is exact, not an
-	// approximation: the FFT of a zero row is a zero row.
-	//
-	// The Y and Z passes must still see every row, because those zeros are the
-	// zero-padding that turns the cyclic convolution into a linear one.
-	//
-	// Only claim it when the data rows are a contiguous prefix of the buffer,
-	// which needs a single Z plane. The bridge re-checks this and ignores the
-	// hint otherwise.
-	activeY := 0
-	if c.realKernSize[Z] == 1 {
-		activeY = c.inputSize[Y]
+		// Dedicated inverse-FFT output, so the forward buffers keep their zero
+		// padding for the whole run. See fwFFT.
+		c.fftBwBuf = NewSlice(1, c.realKernSize)
 	}
-	c.fwPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeY)
-	c.bwPlan = newFFT3DC2R(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeY)
 
 	// init FFT kernel
 
@@ -179,11 +208,20 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 	// array rather than only the inputSize corner, so they must not use the
 	// zero-row hint that c.fwPlan carries. Use a full-extent plan for them and
 	// release it once the kernel is in Fourier space.
-	kernPlan := newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], 0)
+	kernPlan := newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], 0, 0)
 	defer kernPlan.Free()
 
 	output := c.fftCBuf[0]
 	input := c.fftRBuf[0]
+	if c.fftInPlace {
+		// Kernel data fills the entire logical array and must use the exact
+		// out-of-place MPSGraph plan above. Keep it separate from the regular
+		// in-place buffers, whose physical row stride is Nx+2.
+		input = NewSlice(1, c.realKernSize)
+		output = NewSlice(1, nc)
+		defer input.Free()
+		defer output.Free()
+	}
 
 	for i := 0; i < 3; i++ {
 		for j := i; j < 3; j++ { // upper triangular part
@@ -199,10 +237,12 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 	// The kernel transforms above copied full-size kernels through
 	// fftRBuf[0], so restore the zero padding that fwFFT now relies on.
 	// NewSlice already zeroes, so only the buffers used here need clearing.
-	zero1_async(c.fftRBuf[X])
-	zero1_async(c.fftRBuf[Y])
-	if !c.is2D() {
-		zero1_async(c.fftRBuf[Z])
+	if !c.fftInPlace {
+		zero1_async(c.fftRBuf[X])
+		zero1_async(c.fftRBuf[Y])
+		if !c.is2D() {
+			zero1_async(c.fftRBuf[Z])
+		}
 	}
 }
 
@@ -212,6 +252,8 @@ func (c *DemagConvolution) Free() {
 	}
 	c.inputSize = [3]int{}
 	c.realKernSize = [3]int{}
+	c.fftRealBufSize = [3]int{}
+	c.fftInPlace = false
 	c.fftBwBuf.Free()
 	c.fftBwBuf = nil
 	for i := 0; i < 3; i++ {

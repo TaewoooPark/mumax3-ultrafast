@@ -34,6 +34,7 @@ void *mf_plan_create(const int64_t *dimensions,
                      size_t rank,
                      int64_t batch,
                      int32_t transform,
+                     int64_t active_inner,
                      int64_t active_outer,
                      char **error_message);
 

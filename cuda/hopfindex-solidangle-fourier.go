@@ -25,7 +25,7 @@ func GetHopfIndex_SolidAngleFourier(m *data.Slice, mesh *data.Mesh) float64 {
 		N[X], N[Y], N[X], cfg)
 
 	// Initialise FFT plan
-	fftPlan := newFFT3DR2C(N[X], N[Y], N[Z], 0)
+	fftPlan := newFFT3DR2C(N[X], N[Y], N[Z], 0, 0)
 
 	// Declare buffers to store FFT
 	Nc := fftR2COutputSizeFloats(N)
