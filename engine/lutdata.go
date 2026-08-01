@@ -17,6 +17,15 @@ type lut struct {
 	source  updater            // updates cpu data
 	ring    []cuda.LUTPtrs     // upload slots, see rotate
 	ringPos int
+
+	// Queries such as isZero and IsUniform sit in the torque hot path. The
+	// table only changes through its source updater, so compute these summaries
+	// once per CPU-table version instead of rescanning all 256 regions for every
+	// torque evaluation.
+	summaryOK      bool
+	allZero        bool
+	hasZeroValue   bool
+	uniformRegions bool
 }
 
 type updater interface {
@@ -27,6 +36,14 @@ func (p *lut) init(nComp int, source updater) {
 	p.gpu_buf = make(cuda.LUTPtrs, nComp)
 	p.cpu_buf = make([][NREGION]float32, nComp)
 	p.source = source
+}
+
+// invalidateCPU marks every value derived from cpu_buf stale. Sources call
+// this after changing the table; read-only GPU slot rotation does not affect
+// the summaries.
+func (p *lut) invalidateCPU() {
+	p.gpu_ok = false
+	p.summaryOK = false
 }
 
 // get an up-to-date version of the lookup-table on CPU
@@ -89,30 +106,47 @@ func (p *lut) gpuLUT1() cuda.LUTPtr {
 
 // all data is 0?
 func (p *lut) isZero() bool {
-	v := p.cpuLUT()
-	for c := range v {
-		for i := 0; i < NREGION; i++ {
-			if v[c][i] != 0 {
-				return false
-			}
-		}
-	}
-	return true
+	p.updateSummary()
+	return p.allZero
 }
 
 func (p *lut) nonZero() bool { return !p.isZero() }
 
 // some data is 0?
 func (p *lut) hasZero() bool {
+	p.updateSummary()
+	return p.hasZeroValue
+}
+
+func (p *lut) isUniform() bool {
+	p.updateSummary()
+	return p.uniformRegions
+}
+
+func (p *lut) updateSummary() {
 	v := p.cpuLUT()
+	if p.summaryOK {
+		return
+	}
+	p.allZero = true
+	p.hasZeroValue = false
+	p.uniformRegions = true
 	for c := range v {
 		for i := 0; i < NREGION; i++ {
-			if v[c][i] == 0 {
-				return true
+			value := v[c][i]
+			if value == 0 {
+				p.hasZeroValue = true
+			} else {
+				p.allZero = false
+			}
+			// Preserve the old NaN semantics: NaN != NaN makes a table
+			// containing NaNs non-uniform, even if every region is NaN.
+			if i != 0 && value != v[c][0] {
+				p.uniformRegions = false
 			}
 		}
 	}
-	return false
+	p.summaryOK = true
 }
 
 func (b *lut) NComp() int { return len(b.cpu_buf) }

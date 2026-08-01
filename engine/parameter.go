@@ -20,10 +20,32 @@ import (
 // input parameter, settable by user
 type regionwise struct {
 	lut
-	upd_reg    [NREGION]func() []float64 // time-dependent values
-	timestamp  float64                   // used not to double-evaluate f(t)
-	children   []derived                 // derived parameters
+	upd_reg    [NREGION]*regionUpdater // time-dependent values
+	timestamp  float64                 // used not to double-evaluate f(t)
+	children   []derived               // derived parameters
 	name, unit string
+}
+
+// regionUpdater is shared by every region covered by one SetRegion call. A
+// uniform f(t) used to install the same closure in 256 slots and invoke it 256
+// times at each solver stage. Sharing the cached value keeps per-region
+// assignment semantics while evaluating each distinct function only once.
+type regionUpdater struct {
+	eval      func() []float64
+	timestamp float64
+	value     []float64
+}
+
+func newRegionUpdater(eval func() []float64) *regionUpdater {
+	return &regionUpdater{eval: eval, timestamp: math.Inf(-1)}
+}
+
+func (u *regionUpdater) valueAt(t float64) []float64 {
+	if u.timestamp != t {
+		u.value = u.eval()
+		u.timestamp = t
+	}
+	return u.value
 }
 
 func (p *regionwise) init(nComp int, name, unit string, children []derived) {
@@ -72,10 +94,9 @@ func (p *regionwise) update() {
 		changed := false
 		// update functions of time
 		for r := 0; r < NREGION; r++ {
-			updFunc := p.upd_reg[r]
-			if updFunc != nil {
-				p.bufset_(r, updFunc())
-				changed = true
+			upd := p.upd_reg[r]
+			if upd != nil {
+				changed = p.bufsetChanged_(r, upd.valueAt(Time)) || changed
 			}
 		}
 		p.timestamp = Time
@@ -111,22 +132,37 @@ func (p *regionwise) setRegions(r1, r2 int, v []float64) {
 }
 
 func (p *regionwise) bufset_(region int, v []float64) {
+	p.bufsetChanged_(region, v)
+}
+
+func (p *regionwise) bufsetChanged_(region int, v []float64) bool {
+	util.Argument(len(v) == len(p.cpu_buf))
+	changed := false
 	for c := range p.cpu_buf {
-		p.cpu_buf[c][region] = float32(v[c])
+		value := float32(v[c])
+		if p.cpu_buf[c][region] != value {
+			p.cpu_buf[c][region] = value
+			changed = true
+		}
 	}
+	return changed
 }
 
 func (p *regionwise) setFunc(r1, r2 int, f func() []float64) {
 	util.Argument(r1 < r2) // exclusive upper bound
+	upd := newRegionUpdater(f)
 	for r := r1; r < r2; r++ {
-		p.upd_reg[r] = f
+		p.upd_reg[r] = upd
 	}
+	// A function may be replaced at the current simulation time. Force the
+	// CPU table to evaluate the new function on its very next read.
+	p.timestamp = math.Inf(-1)
 	p.invalidate()
 }
 
 // mark my GPU copy and my children as invalid (need update)
 func (p *regionwise) invalidate() {
-	p.gpu_ok = false
+	p.lut.invalidateCPU()
 	for _, c := range p.children {
 		c.invalidate()
 	}
@@ -142,16 +178,7 @@ func (p *regionwise) getRegion(region int) []float64 {
 }
 
 func (p *regionwise) IsUniform() bool {
-	cpu := p.cpuLUT()
-	v1 := p.getRegion(0)
-	for r := 1; r < NREGION; r++ {
-		for c := range v1 {
-			if cpu[c][r] != float32(v1[c]) {
-				return false
-			}
-		}
-	}
-	return true
+	return p.lut.isUniform()
 }
 
 func (p *regionwise) average() []float64 { return qAverageUniverse(p) }
@@ -203,7 +230,7 @@ func (p *DerivedParam) update() {
 	}
 	if !p.uptodate {
 		p.updater(p)
-		p.gpu_ok = false
+		p.lut.invalidateCPU()
 		p.uptodate = true
 	}
 }
