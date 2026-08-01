@@ -24,11 +24,18 @@ func NewSlice(nComp int, size [3]int) *data.Slice {
 // kernels can cover them in one launch instead of one per component. See
 // data.SliceFromContiguousPtrs.
 func newSlice(nComp int, size [3]int, alloc func(int64) unsafe.Pointer, memType int8) *data.Slice {
-	data.EnableGPU(memFree, cu.MemFreeHost, MemCpy, MemCpyDtoH, MemCpyHtoD)
+	enableGPUSlices()
 	length := prod(size)
 	base := alloc(int64(length) * cu.SIZEOF_FLOAT32 * int64(nComp))
 	cu.MemsetD32(cu.DevicePtr(uintptr(base)), 0, int64(length)*int64(nComp))
 	return data.SliceFromContiguousPtrs(size, memType, componentPtrs(base, length, nComp))
+}
+
+// enableGPUSlices installs the backend callbacks needed by data.Slice.Free and
+// data.Copy. Buffer and NewSlice are both public allocation entry points, so
+// neither may rely on the other having been called first.
+func enableGPUSlices() {
+	data.EnableGPU(memFree, cu.MemFreeHost, MemCpy, MemCpyDtoH, MemCpyHtoD)
 }
 
 // componentPtrs splits a block of nComp*length floats into component pointers.

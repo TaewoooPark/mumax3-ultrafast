@@ -36,6 +36,7 @@ func Buffer(nComp int, size [3]int) *data.Slice {
 	if Synchronous {
 		Sync()
 	}
+	enableGPUSlices()
 
 	N := prod(size)
 	shape := bufShape{N, nComp}
@@ -61,12 +62,17 @@ func Buffer(nComp int, size [3]int) *data.Slice {
 
 // Returns a buffer obtained from GetBuffer to the pool.
 func Recycle(s *data.Slice) {
-	if Synchronous {
-		Sync()
+	if s == nil {
+		return
 	}
-
 	if s.NComp() == 0 {
 		return
+	}
+	if !s.OwnsStorage() {
+		log.Panic("recycle: cannot recycle a non-owning slice view; recycle its parent")
+	}
+	if Synchronous {
+		Sync()
 	}
 	shape := bufShape{s.Len(), s.NComp()}
 	base := s.DevPtr(0)

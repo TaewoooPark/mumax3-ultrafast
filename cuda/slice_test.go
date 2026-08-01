@@ -26,6 +26,12 @@ func TestSlice(t *testing.T) {
 	}
 
 	b := a.Comp(1)
+	if !a.OwnsStorage() {
+		t.Error("owning slice does not report storage ownership")
+	}
+	if b.OwnsStorage() {
+		t.Error("component view unexpectedly reports storage ownership")
+	}
 	if b.GPUAccess() == false {
 		t.Error("b.GPUAccess", b.GPUAccess())
 	}
@@ -37,6 +43,27 @@ func TestSlice(t *testing.T) {
 	}
 	if b.Size() != a.Size() {
 		t.Fail()
+	}
+
+	Memset(b, 9)
+	b.Free()
+	b.Free()
+	if b.NComp() != 0 {
+		t.Error("freed component view is still enabled")
+	}
+	if a.NComp() != 3 || !a.OwnsStorage() {
+		t.Fatal("freeing component view disabled the owning GPU slice")
+	}
+	host := a.HostCopy()
+	defer host.Free()
+	if got := host.Host()[0][0]; got != 1 {
+		t.Errorf("component 0 changed after view free: got %v", got)
+	}
+	if got := host.Host()[1][0]; got != 9 {
+		t.Errorf("component view write was lost: got %v", got)
+	}
+	if got := host.Host()[2][0]; got != 3 {
+		t.Errorf("component 2 changed after view free: got %v", got)
 	}
 }
 

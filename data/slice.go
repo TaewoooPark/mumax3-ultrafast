@@ -14,10 +14,11 @@ import (
 
 // Slice is like a [][]float32, but may be stored in GPU or host memory.
 type Slice struct {
-	ptrs     []unsafe.Pointer
-	size     [3]int
-	memType  int8
-	oneAlloc bool // components are one allocation, ptrs[c] == ptrs[0] + c*Len()
+	ptrs        []unsafe.Pointer
+	size        [3]int
+	memType     int8
+	oneAlloc    bool // components are one allocation, ptrs[c] == ptrs[0] + c*Len()
+	ownsStorage bool // Free may release ptrs; false for non-owning views such as Comp
 }
 
 // this package must not depend on CUDA. If CUDA is
@@ -67,7 +68,9 @@ func NilSlice(nComp int, size [3]int) *Slice {
 	return SliceFromPtrs(size, GPUMemory, make([]unsafe.Pointer, nComp))
 }
 
-// Internal: construct a Slice using bare memory pointers.
+// Internal: construct an owning Slice using bare memory pointers. For GPU
+// memory, Free releases every component pointer. Use Comp to create a
+// non-owning view.
 func SliceFromPtrs(size [3]int, memType int8, ptrs []unsafe.Pointer) *Slice {
 	length := prod(size)
 	nComp := len(ptrs)
@@ -79,6 +82,7 @@ func SliceFromPtrs(size [3]int, memType int8, ptrs []unsafe.Pointer) *Slice {
 		s.ptrs[c] = ptrs[c]
 	}
 	s.memType = memType
+	s.ownsStorage = true
 	return s
 }
 
@@ -104,10 +108,27 @@ func SliceFromContiguousPtrs(size [3]int, memType int8, ptrs []unsafe.Pointer) *
 // NComp()*Len() elements.
 func (s *Slice) Contiguous() bool { return s.oneAlloc }
 
-// Frees the underlying storage and zeros the Slice header to avoid accidental use.
-// Slices sharing storage will be invalid after Free. Double free is OK.
+// OwnsStorage reports whether the Slice owns the storage addressed by its
+// component pointers. Views such as those returned by Comp do not own storage:
+// freeing a view only disables that view, and the parent remains responsible
+// for freeing or recycling the allocation.
+func (s *Slice) OwnsStorage() bool {
+	return s != nil && s.ownsStorage
+}
+
+// Free releases storage owned by the Slice and zeros its header to avoid
+// accidental use. On a non-owning view, Free only zeros the view header. Views
+// into an owner become invalid when the owner is freed. Double free is OK.
 func (s *Slice) Free() {
 	if s == nil {
+		return
+	}
+	// A component view may point at the middle of a contiguous allocation. It
+	// must never pass that interior pointer to the allocator. Disabling just the
+	// view preserves Free's useful double-free/no-op behavior without affecting
+	// the owning Slice.
+	if !s.ownsStorage {
+		s.Disable()
 		return
 	}
 	// free storage
@@ -144,6 +165,7 @@ func (s *Slice) Disable() {
 	s.size = [3]int{0, 0, 0}
 	s.memType = 0
 	s.oneAlloc = false
+	s.ownsStorage = false
 }
 
 // value for Slice.memType
@@ -188,14 +210,19 @@ func (s *Slice) Size() [3]int {
 	return s.size
 }
 
-// Comp returns a single component of the Slice.
+// Comp returns a non-owning single-component view of the Slice. Free may be
+// called on the view, but only disables the view; the parent Slice remains
+// responsible for freeing or recycling the underlying storage.
 func (s *Slice) Comp(i int) *Slice {
-	sl := new(Slice)
-	sl.ptrs = make([]unsafe.Pointer, 1)
-	sl.ptrs[0] = s.ptrs[i]
-	sl.size = s.size
-	sl.memType = s.memType
-	return sl
+	// Re-use the parent's pointer table instead of allocating a one-element
+	// backing array on every Comp call. A one-component view is contiguous by
+	// definition, independently of whether the parent components are adjacent.
+	return &Slice{
+		ptrs:     s.ptrs[i : i+1 : i+1],
+		size:     s.size,
+		memType:  s.memType,
+		oneAlloc: true,
+	}
 }
 
 // DevPtr returns a CUDA device pointer to a component.

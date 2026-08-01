@@ -29,22 +29,18 @@ func GetHopfIndex_SolidAngleFourier(m *data.Slice, mesh *data.Mesh) float64 {
 
 	// Declare buffers to store FFT
 	Nc := fftR2COutputSizeFloats(N)
-	fftRBufX := NewSlice(1, N)
+	// The real inputs are non-owning component views into F. Do not allocate
+	// standalone real buffers and then overwrite their headers: that leaked the
+	// three original allocations and obscured which Slice owned the storage.
+	fftRBufX := F.Comp(X)
 	fftCBufX := NewSlice(1, Nc)
-	fftRBufY := NewSlice(1, N)
+	fftRBufY := F.Comp(Y)
 	fftCBufY := NewSlice(1, Nc)
-	fftRBufZ := NewSlice(1, N)
+	fftRBufZ := F.Comp(Z)
 	fftCBufZ := NewSlice(1, Nc)
-	defer fftRBufX.Free()
 	defer fftCBufX.Free()
-	defer fftRBufY.Free()
 	defer fftCBufY.Free()
-	defer fftRBufZ.Free()
 	defer fftCBufZ.Free()
-
-	fftRBufX = F.Comp(X)
-	fftRBufY = F.Comp(Y)
-	fftRBufZ = F.Comp(Z)
 
 	// Perform FFT on each component
 	fftPlan.ExecAsync(fftRBufX, fftCBufX)
