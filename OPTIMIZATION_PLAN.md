@@ -1380,5 +1380,35 @@ minimizer는 호스트 계산을 유지하므로 CUDA 빌드는 영향받지 않
   *줄이는* 유일한 남은 레버다. `mr_launch_handle`에 배치 API가 필요하다.
 - **투기 실행을 다른 적응 solver로**: 지금은 solver 5(기본값)만이다. Heun·RK23·RK56은
   같은 구조이고 특히 RK23은 `relax()`가 쓴다.
-- **NCG minimizer**: [Exl et al. 2018](https://arxiv.org/abs/1801.03690)이 BB steepest
-  descent 대비 soft 3×·hard 7×를 보고한다. 현재 minimizer는 Exl 2014(BB)다.
+- **디스패치 배치 API**: 위 항목의 전제.
+
+### 13.10 NCG minimizer: A/B로 기각
+
+[Exl et al. 2018](https://arxiv.org/abs/1801.03690)이 BB steepest descent 대비
+soft 3×·hard 7×를 보고하므로(현재 minimizer는 Exl 2014의 BB다) 프로토타입을
+만들어 A/B했다. **결과는 명확한 기각이다.**
+
+구현: LLNoPrecess 토크를 residual로 쓰고 Polak-Ribière+로 방향을 결합
+(`β < 0`이면 steepest descent로 재시작), 회전은 기존 `minimize` 커널에 방향 벡터를
+넘겨 그대로 사용, 스텝 크기는 기존 BB 공식 유지.
+
+128² vortex 한 평형점, `MinimizerStop = 1e-7`, 20 s 벽시계 상한:
+
+| | 토크 평가 | 최종 maxDm | 최종 `m` |
+|---|---:|---:|---|
+| steepest descent (BB) | 2271 | 8.94e-08 (수렴) | (0.9971, 4.8e-9, ~0) |
+| conjugate direction | 43038 (상한 도달) | **2.083** | (-0.003, -0.0004, -0.0007) |
+
+**느린 게 아니라 아예 수렴하지 않는다.** maxDm ≈ 2는 스텝마다 자화가 단위 벡터
+규모로 튀고 있다는 뜻이고, 평균 `m` ≈ 0은 상태가 사실상 무작위화됐다는 뜻이다.
+40점 히스테리시스로 돌리면 BB가 18.2 s에 끝내는 동안 9분을 넘겨도 못 끝냈다.
+
+원인은 분명하다. BB 스텝 크기는 **steepest-descent 차분(dm, dk)**에서 유도한
+값인데 그걸 크기가 무관한 **conjugate 방향**에 적용했다. 논문의 방법은
+sparse preconditioner **와** line search의 스텝 길이 제어를 함께 갖는데, 내가
+생략한 부분이 바로 그것이다. 즉 이 실험은 "conjugate 방향만으로는 안 된다"를
+보여주며, 논문 결과를 반박하지 않는다.
+
+깨진 노브를 출하하는 것이 안 넣는 것보다 나쁘므로 **코드는 되돌렸다.** 다시
+시도한다면 순서는 (1) local field 항만 쓰는 preconditioner, (2) 방향에 맞는
+line search 스텝 제어, (3) 그 다음에 conjugate 결합이다.
