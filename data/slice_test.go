@@ -84,6 +84,87 @@ func TestCPUComponentViewIsNonOwning(t *testing.T) {
 	}
 }
 
+func TestCPUVectorSliceIsContiguous(t *testing.T) {
+	size := [3]int{3, 2, 1}
+	s := NewSlice(3, size)
+	defer s.Free()
+	if !s.Contiguous() {
+		t.Fatal("NewSlice should use one contiguous host allocation")
+	}
+	stride := uintptr(s.Len()) * SIZEOF_FLOAT32
+	if uintptr(s.ptrs[1])-uintptr(s.ptrs[0]) != stride ||
+		uintptr(s.ptrs[2])-uintptr(s.ptrs[1]) != stride {
+		t.Fatal("host component pointers do not have the expected stride")
+	}
+	for c := range s.Host() {
+		for i := range s.Host()[c] {
+			s.Host()[c][i] = float32(100*c + i)
+		}
+	}
+	copySlice := NewSlice(3, size)
+	defer copySlice.Free()
+	Copy(copySlice, s)
+	for c := range s.Host() {
+		for i, want := range s.Host()[c] {
+			if got := copySlice.Host()[c][i]; got != want {
+				t.Fatalf("copy component %d element %d = %v, want %v", c, i, got, want)
+			}
+		}
+	}
+}
+
+func TestContiguousGPUCopyUsesOneTransfer(t *testing.T) {
+	oldFree, oldFreeHost := memFree, memFreeHost
+	oldCopy, oldDtoH, oldHtoD := memCpy, memCpyDtoH, memCpyHtoD
+	defer func() {
+		memFree, memFreeHost = oldFree, oldFreeHost
+		memCpy, memCpyDtoH, memCpyHtoD = oldCopy, oldDtoH, oldHtoD
+	}()
+
+	copyBytes := func(dst, src unsafe.Pointer, bytes int64) {
+		copy(unsafe.Slice((*byte)(dst), int(bytes)), unsafe.Slice((*byte)(src), int(bytes)))
+	}
+	dtoHCalls := 0
+	EnableGPU(
+		func(unsafe.Pointer) {},
+		func(unsafe.Pointer) {},
+		copyBytes,
+		func(dst, src unsafe.Pointer, bytes int64) {
+			dtoHCalls++
+			copyBytes(dst, src, bytes)
+		},
+		copyBytes,
+	)
+
+	size := [3]int{4, 2, 1}
+	length := prod(size)
+	backing := make([]float32, 3*length)
+	for i := range backing {
+		backing[i] = float32(i + 1)
+	}
+	base := unsafe.Pointer(unsafe.SliceData(backing))
+	stride := uintptr(length) * SIZEOF_FLOAT32
+	src := SliceFromContiguousPtrs(size, GPUMemory, []unsafe.Pointer{
+		base,
+		unsafe.Pointer(uintptr(base) + stride),
+		unsafe.Pointer(uintptr(base) + 2*stride),
+	})
+	dst := NewSlice(3, size)
+	Copy(dst, src)
+	if dtoHCalls != 1 {
+		t.Fatalf("contiguous vector DtoH used %d transfers, want 1", dtoHCalls)
+	}
+	for c := range dst.Host() {
+		for i, got := range dst.Host()[c] {
+			want := backing[c*length+i]
+			if got != want {
+				t.Fatalf("component %d element %d = %v, want %v", c, i, got, want)
+			}
+		}
+	}
+	src.Disable() // fake GPU backing is owned by this test, not the callback
+}
+
 func TestGPUComponentViewsNeverFreePointers(t *testing.T) {
 	oldFree, oldFreeHost := memFree, memFreeHost
 	oldCopy, oldDtoH, oldHtoD := memCpy, memCpyDtoH, memCpyHtoD

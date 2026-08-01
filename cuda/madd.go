@@ -11,9 +11,10 @@ func Mul(dst, a, b *data.Slice) {
 	N := dst.Len()
 	nComp := dst.NComp()
 	util.Assert(a.Len() == N && a.NComp() == nComp && b.Len() == N && b.NComp() == nComp)
-	cfg := make1DConf(N)
-	for c := 0; c < nComp; c++ {
-		k_mul_async(dst.DevPtr(c), a.DevPtr(c), b.DevPtr(c), N, cfg)
+	passes, n := elementwisePasses(dst, a, b)
+	cfg := make1DConf(n)
+	for c := 0; c < passes; c++ {
+		k_mul_async(dst.DevPtr(c), a.DevPtr(c), b.DevPtr(c), n, cfg)
 	}
 }
 
@@ -23,9 +24,10 @@ func Div(dst, a, b *data.Slice) {
 	N := dst.Len()
 	nComp := dst.NComp()
 	util.Assert(a.Len() == N && a.NComp() == nComp && b.Len() == N && b.NComp() == nComp)
-	cfg := make1DConf(N)
-	for c := 0; c < nComp; c++ {
-		k_pointwise_div_async(dst.DevPtr(c), a.DevPtr(c), b.DevPtr(c), N, cfg)
+	passes, n := elementwisePasses(dst, a, b)
+	cfg := make1DConf(n)
+	for c := 0; c < passes; c++ {
+		k_pointwise_div_async(dst.DevPtr(c), a.DevPtr(c), b.DevPtr(c), n, cfg)
 	}
 }
 
@@ -34,14 +36,14 @@ func Add(dst, src1, src2 *data.Slice) {
 	Madd2(dst, src1, src2, 1, 1)
 }
 
-// maddPasses says how an elementwise multiply-add should be launched.
+// elementwisePasses says how an elementwise kernel should be launched.
 //
 // When every operand keeps its components in one allocation, laid out back to
 // back, the vector is just a longer array and one launch covers all of it
 // instead of one launch per component. Each element is computed by the same
 // expression either way, so results are bit-identical; only the number of
 // dispatches changes, which is what a latency-bound backend pays for.
-func maddPasses(dst *data.Slice, src ...*data.Slice) (passes, n int) {
+func elementwisePasses(dst *data.Slice, src ...*data.Slice) (passes, n int) {
 	n = dst.Len()
 	if !dst.Contiguous() {
 		return dst.NComp(), n
@@ -60,7 +62,7 @@ func Madd2(dst, src1, src2 *data.Slice, factor1, factor2 float32) {
 	nComp := dst.NComp()
 	util.Assert(src1.Len() == N && src2.Len() == N)
 	util.Assert(src1.NComp() == nComp && src2.NComp() == nComp)
-	passes, n := maddPasses(dst, src1, src2)
+	passes, n := elementwisePasses(dst, src1, src2)
 	cfg := make1DConf(n)
 	for c := 0; c < passes; c++ {
 		k_madd2_async(dst.DevPtr(c), src1.DevPtr(c), factor1,
@@ -74,7 +76,7 @@ func Madd3(dst, src1, src2, src3 *data.Slice, factor1, factor2, factor3 float32)
 	nComp := dst.NComp()
 	util.Assert(src1.Len() == N && src2.Len() == N && src3.Len() == N)
 	util.Assert(src1.NComp() == nComp && src2.NComp() == nComp && src3.NComp() == nComp)
-	passes, n := maddPasses(dst, src1, src2, src3)
+	passes, n := elementwisePasses(dst, src1, src2, src3)
 	cfg := make1DConf(n)
 	for c := 0; c < passes; c++ {
 		k_madd3_async(dst.DevPtr(c), src1.DevPtr(c), factor1,
@@ -88,7 +90,7 @@ func Madd4(dst, src1, src2, src3, src4 *data.Slice, factor1, factor2, factor3, f
 	nComp := dst.NComp()
 	util.Assert(src1.Len() == N && src2.Len() == N && src3.Len() == N && src4.Len() == N)
 	util.Assert(src1.NComp() == nComp && src2.NComp() == nComp && src3.NComp() == nComp && src4.NComp() == nComp)
-	passes, n := maddPasses(dst, src1, src2, src3, src4)
+	passes, n := elementwisePasses(dst, src1, src2, src3, src4)
 	cfg := make1DConf(n)
 	for c := 0; c < passes; c++ {
 		k_madd4_async(dst.DevPtr(c),
@@ -105,7 +107,7 @@ func Madd5(dst, src1, src2, src3, src4, src5 *data.Slice, factor1, factor2, fact
 	nComp := dst.NComp()
 	util.Assert(src1.Len() == N && src2.Len() == N && src3.Len() == N && src4.Len() == N && src5.Len() == N)
 	util.Assert(src1.NComp() == nComp && src2.NComp() == nComp && src3.NComp() == nComp && src4.NComp() == nComp && src5.NComp() == nComp)
-	passes, n := maddPasses(dst, src1, src2, src3, src4, src5)
+	passes, n := elementwisePasses(dst, src1, src2, src3, src4, src5)
 	cfg := make1DConf(n)
 	for c := 0; c < passes; c++ {
 		k_madd5_async(dst.DevPtr(c),
@@ -123,7 +125,7 @@ func Madd6(dst, src1, src2, src3, src4, src5, src6 *data.Slice, factor1, factor2
 	nComp := dst.NComp()
 	util.Assert(src1.Len() == N && src2.Len() == N && src3.Len() == N && src4.Len() == N && src5.Len() == N && src6.Len() == N)
 	util.Assert(src1.NComp() == nComp && src2.NComp() == nComp && src3.NComp() == nComp && src4.NComp() == nComp && src5.NComp() == nComp && src6.NComp() == nComp)
-	passes, n := maddPasses(dst, src1, src2, src3, src4, src5, src6)
+	passes, n := elementwisePasses(dst, src1, src2, src3, src4, src5, src6)
 	cfg := make1DConf(n)
 	for c := 0; c < passes; c++ {
 		k_madd6_async(dst.DevPtr(c),
@@ -142,7 +144,7 @@ func Madd7(dst, src1, src2, src3, src4, src5, src6, src7 *data.Slice, factor1, f
 	nComp := dst.NComp()
 	util.Assert(src1.Len() == N && src2.Len() == N && src3.Len() == N && src4.Len() == N && src5.Len() == N && src6.Len() == N && src7.Len() == N)
 	util.Assert(src1.NComp() == nComp && src2.NComp() == nComp && src3.NComp() == nComp && src4.NComp() == nComp && src5.NComp() == nComp && src6.NComp() == nComp && src7.NComp() == nComp)
-	passes, n := maddPasses(dst, src1, src2, src3, src4, src5, src6, src7)
+	passes, n := elementwisePasses(dst, src1, src2, src3, src4, src5, src6, src7)
 	cfg := make1DConf(n)
 	for c := 0; c < passes; c++ {
 		k_madd7_async(dst.DevPtr(c),

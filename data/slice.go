@@ -43,11 +43,18 @@ func EnableGPU(free, freeHost func(unsafe.Pointer),
 // Make a CPU Slice with nComp components of size length.
 func NewSlice(nComp int, size [3]int) *Slice {
 	length := prod(size)
+	util.Argument(nComp > 0 && length > 0)
+	// Keep host components in the same layout as GPU slices. Besides one
+	// allocation instead of nComp allocations, this lets HostCopy transfer a
+	// complete vector field with one DtoH call.
+	backing := make([]float32, nComp*length)
 	ptrs := make([]unsafe.Pointer, nComp)
-	for i := range ptrs {
-		ptrs[i] = unsafe.Pointer(&(make([]float32, length)[0]))
+	base := unsafe.Pointer(unsafe.SliceData(backing))
+	stride := uintptr(length) * SIZEOF_FLOAT32
+	for c := range ptrs {
+		ptrs[c] = unsafe.Pointer(uintptr(base) + uintptr(c)*stride)
 	}
-	return SliceFromPtrs(size, CPUMemory, ptrs)
+	return SliceFromContiguousPtrs(size, CPUMemory, ptrs)
 }
 
 func SliceFromArray(data [][]float32, size [3]int) *Slice {
@@ -269,6 +276,24 @@ func Copy(dst, src *Slice) {
 	}
 	d, s := dst.GPUAccess(), src.GPUAccess()
 	bytes := SIZEOF_FLOAT32 * int64(dst.Len())
+	if dst.Contiguous() && src.Contiguous() {
+		bytes *= int64(dst.NComp())
+		switch {
+		default:
+			panic("bug")
+		case d && s:
+			memCpy(dst.DevPtr(0), src.DevPtr(0), bytes)
+		case s && !d:
+			memCpyDtoH(dst.ptrs[0], src.DevPtr(0), bytes)
+		case !s && d:
+			memCpyHtoD(dst.DevPtr(0), src.ptrs[0], bytes)
+		case !d && !s:
+			dstFlat := unsafe.Slice((*float32)(dst.ptrs[0]), dst.Len()*dst.NComp())
+			srcFlat := unsafe.Slice((*float32)(src.ptrs[0]), src.Len()*src.NComp())
+			copy(dstFlat, srcFlat)
+		}
+		return
+	}
 	switch {
 	default:
 		panic("bug")

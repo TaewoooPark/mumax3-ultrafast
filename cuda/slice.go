@@ -2,6 +2,7 @@ package cuda
 
 import (
 	"math"
+	"sync"
 	"unsafe"
 
 	"github.com/mumax/3/cuda/cu"
@@ -35,8 +36,12 @@ func newSlice(nComp int, size [3]int, alloc func(int64) unsafe.Pointer, memType 
 // data.Copy. Buffer and NewSlice are both public allocation entry points, so
 // neither may rely on the other having been called first.
 func enableGPUSlices() {
-	data.EnableGPU(memFree, cu.MemFreeHost, MemCpy, MemCpyDtoH, MemCpyHtoD)
+	enableGPUSlicesOnce.Do(func() {
+		data.EnableGPU(memFree, cu.MemFreeHost, MemCpy, MemCpyDtoH, MemCpyHtoD)
+	})
 }
+
+var enableGPUSlicesOnce sync.Once
 
 // componentPtrs splits a block of nComp*length floats into component pointers.
 func componentPtrs(base unsafe.Pointer, length, nComp int) []unsafe.Pointer {
@@ -91,6 +96,15 @@ func Memset(s *data.Slice, val ...float32) {
 		timer.Start("memset")
 	}
 	util.Argument(len(val) == s.NComp())
+	if s.Contiguous() && equalFloats(val) {
+		cu.MemsetD32Async(cu.DevicePtr(uintptr(s.DevPtr(0))), math.Float32bits(val[0]),
+			int64(s.Len()*s.NComp()), stream0)
+		if Synchronous {
+			Sync()
+			timer.Stop("memset")
+		}
+		return
+	}
 	for c, v := range val {
 		cu.MemsetD32Async(cu.DevicePtr(uintptr(s.DevPtr(c))), math.Float32bits(v), int64(s.Len()), stream0)
 	}
@@ -100,9 +114,34 @@ func Memset(s *data.Slice, val ...float32) {
 	}
 }
 
+func equalFloats(values []float32) bool {
+	for _, value := range values[1:] {
+		if value != values[0] {
+			return false
+		}
+	}
+	return true
+}
+
 // Set all elements of all components to zero.
 func Zero(s *data.Slice) {
-	Memset(s, make([]float32, s.NComp())...)
+	if Synchronous {
+		Sync()
+		timer.Start("memset")
+	}
+	if s.Contiguous() {
+		cu.MemsetD32Async(cu.DevicePtr(uintptr(s.DevPtr(0))), 0,
+			int64(s.Len()*s.NComp()), stream0)
+	} else {
+		for c := 0; c < s.NComp(); c++ {
+			cu.MemsetD32Async(cu.DevicePtr(uintptr(s.DevPtr(c))), 0,
+				int64(s.Len()), stream0)
+		}
+	}
+	if Synchronous {
+		Sync()
+		timer.Stop("memset")
+	}
 }
 
 func SetCell(s *data.Slice, comp int, ix, iy, iz int, value float32) {

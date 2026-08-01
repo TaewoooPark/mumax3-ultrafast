@@ -92,8 +92,7 @@ func (rk *RK45DP) Step() {
 	torqueFn(k7) // next torque if OK
 
 	// error estimate
-	Err := cuda.Buffer(3, size) //k3 // re-use k3 as error estimate
-	defer cuda.Recycle(Err)
+	Err := k3 // k3 is dead after the final solution; reuse it for the error
 	cuda.Madd6(Err, rk.k1, k3, k4, k5, k6, k7, (35./384.)-(5179./57600.), (500./1113.)-(7571./16695.), (125./192.)-(393./640.), (-2187./6784.)-(-92097./339200.), (11./84.)-(187./2100.), (0.)-(1./40.))
 
 	// determine error

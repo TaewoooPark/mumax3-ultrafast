@@ -91,8 +91,7 @@ func (rk *RK56) Step() {
 	// No need for torqueFn(k9) as k9 wouldn't be used (except in setMaxTorque, which is irrelevant)
 
 	// error estimate
-	Err := cuda.Buffer(3, size)
-	defer cuda.Recycle(Err)
+	Err := k2 // k2 is dead after stage 8; reuse it for the error
 	cuda.Madd4(Err, k1, k6, k7, k8, (-5. / 66.), (-5. / 66.), (5. / 66.), (5. / 66.))
 
 	// determine error

@@ -126,3 +126,48 @@ func TestSliceHost(t *testing.T) {
 		t.Error("slice memset")
 	}
 }
+
+func TestContiguousZeroMulAndDiv(t *testing.T) {
+	size := [3]int{1, 1, 37}
+	a := NewSlice(3, size)
+	b := NewSlice(3, size)
+	dst := NewSlice(3, size)
+	defer a.Free()
+	defer b.Free()
+	defer dst.Free()
+
+	Memset(a, 2, 4, 6)
+	Memset(b, 3, 5, 7)
+	Mul(dst, a, b)
+	host := dst.HostCopy()
+	for c, want := range []float32{6, 20, 42} {
+		for i, got := range host.Host()[c] {
+			if got != want {
+				t.Fatalf("Mul component %d element %d = %v, want %v", c, i, got, want)
+			}
+		}
+	}
+	host.Free()
+
+	Div(dst, b, a)
+	host = dst.HostCopy()
+	for c, want := range []float32{1.5, 1.25, 7.0 / 6.0} {
+		for i, got := range host.Host()[c] {
+			if got != want {
+				t.Fatalf("Div component %d element %d = %v, want %v", c, i, got, want)
+			}
+		}
+	}
+	host.Free()
+
+	Zero(dst)
+	host = dst.HostCopy()
+	defer host.Free()
+	for c := range host.Host() {
+		for i, got := range host.Host()[c] {
+			if got != 0 {
+				t.Fatalf("Zero component %d element %d = %v", c, i, got)
+			}
+		}
+	}
+}
