@@ -27,6 +27,13 @@ func (s *BackwardEuler) Step() {
 	defer cuda.Recycle(dy0)
 	if s.dy1 == nil {
 		s.dy1 = cuda.Buffer(VECTOR, y.Size())
+		// The predictor below reads this as "the previous torque", but on the
+		// first step there is none and Buffer hands out whatever the pool last
+		// held. That made the first step, and therefore the whole trajectory,
+		// depend on unrelated allocation history: the same script produced
+		// different answers depending on which solvers ran before it. Zero
+		// means "no predictor", which is what the Temp != 0 path already does.
+		cuda.Zero(s.dy1)
 	}
 	dy1 := s.dy1
 
