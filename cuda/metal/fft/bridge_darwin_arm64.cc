@@ -10,6 +10,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * One cached MPSGraphTensorData view of a caller buffer. The buffer is retained
+ * so its address cannot be recycled underneath a cached view, which is what
+ * makes comparing addresses a sound identity test. Shapes are plan-owned and
+ * therefore compared by pointer as well.
+ */
+@interface MFTensorSlot : NSObject {
+@public
+    id<MTLBuffer> buffer;
+    size_t offset;
+    NSArray<NSNumber *> *shape;
+    MPSDataType dataType;
+    MPSGraphTensorData *data;
+}
+@end
+
+@implementation MFTensorSlot
+@end
+
 @interface MFPlan : NSObject {
 @public
     int32_t transform;
@@ -41,6 +60,14 @@
     MPSGraphTensor *stageInput;
     MPSGraphTensor *stageOutput;
     id<MTLBuffer> scratch;
+    /*
+     * mumax3 hands a plan the same demag allocations for the life of a run, so
+     * rebuilding the tensor views on every execute was pure allocation: an
+     * RK45DP step issues 36 of them, and an offset view allocates an MPSNDArray
+     * and its descriptor on top of the MPSGraphTensorData. Views are cached per
+     * (buffer, offset, shape, type).
+     */
+    NSMutableArray<MFTensorSlot *> *tensorSlots;
 }
 @end
 
@@ -289,6 +316,45 @@ static MPSGraphTensorData *mf_tensor_data(id<MTLBuffer> buffer,
     return nil;
 }
 
+/*
+ * Bound on distinct views one plan keeps alive. A 2D demag plan needs at most
+ * the full and active shapes of its input and output plus two scratch views; the
+ * cap only guards against an unexpected caller pattern turning the cache into
+ * unbounded retention, and dropping it costs one rebuild.
+ */
+static const NSUInteger mf_tensor_slot_limit = 8;
+
+static MPSGraphTensorData *mf_tensor_data_cached(MFPlan *plan,
+                                                 id<MTLBuffer> buffer,
+                                                 size_t offset,
+                                                 NSArray<NSNumber *> *shape,
+                                                 MPSDataType dataType) {
+    if (plan->tensorSlots == nil) {
+        plan->tensorSlots = [NSMutableArray array];
+    }
+    for (MFTensorSlot *slot in plan->tensorSlots) {
+        if (slot->buffer == buffer && slot->offset == offset &&
+            slot->shape == shape && slot->dataType == dataType) {
+            return slot->data;
+        }
+    }
+    MPSGraphTensorData *data = mf_tensor_data(buffer, offset, shape, dataType);
+    if (data == nil) {
+        return nil;
+    }
+    if (plan->tensorSlots.count >= mf_tensor_slot_limit) {
+        [plan->tensorSlots removeAllObjects];
+    }
+    MFTensorSlot *slot = [MFTensorSlot new];
+    slot->buffer = buffer;
+    slot->offset = offset;
+    slot->shape = shape;
+    slot->dataType = dataType;
+    slot->data = data;
+    [plan->tensorSlots addObject:slot];
+    return data;
+}
+
 extern "C" void *mf_plan_create(const int64_t *dimensions,
                                   size_t rank,
                                   int64_t batch,
@@ -423,8 +489,8 @@ extern "C" int mf_plan_execute(void *opaquePlan,
 
                 id<MTLBuffer> inputBuffer = (__bridge id<MTLBuffer>)inputView.buffer;
                 id<MTLBuffer> outputBuffer = (__bridge id<MTLBuffer>)outputView.buffer;
-                MPSGraphTensorData *inputData = mf_tensor_data(inputBuffer, inputView.offset, inputShape, dataType);
-                MPSGraphTensorData *outputData = mf_tensor_data(outputBuffer, outputView.offset, outputShape, outputDataType);
+                MPSGraphTensorData *inputData = mf_tensor_data_cached(plan, inputBuffer, inputView.offset, inputShape, dataType);
+                MPSGraphTensorData *outputData = mf_tensor_data_cached(plan, outputBuffer, outputView.offset, outputShape, outputDataType);
                 if (inputData == nil || outputData == nil) {
                     mf_set_error(error_message, @"non-zero FFT buffer offsets require an Xcode 16+/macOS 15 build");
                     result = MF_ERROR_UNAVAILABLE;
@@ -487,15 +553,19 @@ extern "C" int mf_plan_execute(void *opaquePlan,
                          * checks before enabling this.
                          */
                         MPSGraphTensorData *scratchFull =
-                            [[MPSGraphTensorData alloc] initWithMTLBuffer:plan->scratch
-                                                                   shape:plan->HermitianShape
-                                                                dataType:MPSDataTypeComplexFloat32];
+                            mf_tensor_data_cached(plan,
+                                                  plan->scratch,
+                                                  0,
+                                                  plan->HermitianShape,
+                                                  MPSDataTypeComplexFloat32);
                         MPSGraphTensorData *scratchActive = scratchFull;
                         if (plan->skipsPaddedRows) {
                             scratchActive =
-                                [[MPSGraphTensorData alloc] initWithMTLBuffer:plan->scratch
-                                                                       shape:plan->activeHermitianShape
-                                                                    dataType:MPSDataTypeComplexFloat32];
+                                mf_tensor_data_cached(plan,
+                                                      plan->scratch,
+                                                      0,
+                                                      plan->activeHermitianShape,
+                                                      MPSDataTypeComplexFloat32);
                         }
                         if (inverse) {
                             // Inverse over the leading axes needs every row,
@@ -503,10 +573,11 @@ extern "C" int mf_plan_execute(void *opaquePlan,
                             // only has to reconstruct the rows copyUnPad reads.
                             MPSGraphTensorData *realOut = outputData;
                             if (plan->skipsPaddedRows) {
-                                realOut = mf_tensor_data(outputBuffer,
-                                                         outputView.offset,
-                                                         plan->activeRealShape,
-                                                         MPSDataTypeFloat32);
+                                realOut = mf_tensor_data_cached(plan,
+                                                                outputBuffer,
+                                                                outputView.offset,
+                                                                plan->activeRealShape,
+                                                                MPSDataTypeFloat32);
                             }
                             if (realOut == nil) {
                                 mf_set_error(error_message,
@@ -530,10 +601,11 @@ extern "C" int mf_plan_execute(void *opaquePlan,
                             // holds it. Only the active rows are transformed.
                             MPSGraphTensorData *realIn = inputData;
                             if (plan->skipsPaddedRows) {
-                                realIn = mf_tensor_data(inputBuffer,
-                                                        inputView.offset,
-                                                        plan->activeRealShape,
-                                                        MPSDataTypeFloat32);
+                                realIn = mf_tensor_data_cached(plan,
+                                                               inputBuffer,
+                                                               inputView.offset,
+                                                               plan->activeRealShape,
+                                                               MPSDataTypeFloat32);
                             }
                             if (realIn == nil) {
                                 mf_set_error(error_message,
