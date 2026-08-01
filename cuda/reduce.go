@@ -29,14 +29,37 @@ const (
 
 // Sum of all elements.
 func Sum(in *data.Slice) float32 {
+	return float32(SumAsync(in).Value())
+}
+
+// SumAsync enqueues Sum without reading its partials back. Several independent
+// reductions can be launched first and then resolved with one queue drain.
+func SumAsync(in *data.Slice) *Pending {
 	util.Argument(in.NComp() == 1)
 	out := reduceBuf(0, 1, reduceSumSlots)
 	k_reducesum_async(in.DevPtr(0), out, 0, in.Len(), reducesumcfg)
-	return copybackSum(out, 1, reduceSumSlots)
+	return &Pending{buf: out, nComp: 1, slots: reduceSumSlots, sum: true}
+}
+
+// SumComponentsAsync enqueues one independent sum per component. Values reads
+// all component partials back in one transfer, preserving the same per-
+// component addition order as separate Sum calls.
+func SumComponentsAsync(in *data.Slice) *PendingComponents {
+	nComp := in.NComp()
+	out := reduceBuf(0, nComp, reduceSumSlots)
+	for c := 0; c < nComp; c++ {
+		k_reducesum_async(in.DevPtr(c), slot(out, c, reduceSumSlots), 0, in.Len(), reducesumcfg)
+	}
+	return &PendingComponents{buf: out, nComp: nComp, slots: reduceSumSlots}
 }
 
 // Dot product.
 func Dot(a, b *data.Slice) float32 {
+	return float32(DotAsync(a, b).Value())
+}
+
+// DotAsync is the deferred-readback counterpart of Dot.
+func DotAsync(a, b *data.Slice) *Pending {
 	nComp := a.NComp()
 	util.Argument(nComp == b.NComp())
 	out := reduceBuf(0, nComp, reduceSumSlots)
@@ -46,7 +69,25 @@ func Dot(a, b *data.Slice) float32 {
 	for c := 0; c < nComp; c++ {
 		k_reducedot_async(a.DevPtr(c), b.DevPtr(c), slot(out, c, reduceSumSlots), 0, a.Len(), reducesumcfg)
 	}
-	return copybackSum(out, nComp, reduceSumSlots)
+	return &Pending{buf: out, nComp: nComp, slots: reduceSumSlots, sum: true}
+}
+
+// DotComponentsAsync enqueues one dot product per component. b may either
+// match a's component count or be scalar, in which case that scalar component
+// is paired with every component of a. Values performs a single readback.
+func DotComponentsAsync(a, b *data.Slice) *PendingComponents {
+	nComp := a.NComp()
+	util.Argument(b.NComp() == nComp || b.NComp() == 1)
+	util.Argument(a.Len() == b.Len())
+	out := reduceBuf(0, nComp, reduceSumSlots)
+	for c := 0; c < nComp; c++ {
+		bc := c
+		if b.NComp() == 1 {
+			bc = 0
+		}
+		k_reducedot_async(a.DevPtr(c), b.DevPtr(bc), slot(out, c, reduceSumSlots), 0, a.Len(), reducesumcfg)
+	}
+	return &PendingComponents{buf: out, nComp: nComp, slots: reduceSumSlots}
 }
 
 // Maximum of absolute values of all elements.
@@ -77,8 +118,34 @@ type Pending struct {
 	nComp  int
 	slots  int
 	sqrt   bool
+	sum    bool
 	value  float64
 	loaded bool
+}
+
+// PendingComponents is a component-wise family of sum reductions sharing one
+// allocation and one host readback.
+type PendingComponents struct {
+	buf    unsafe.Pointer
+	nComp  int
+	slots  int
+	values []float64
+}
+
+// Values resolves every component in one transfer. It is idempotent.
+func (p *PendingComponents) Values() []float64 {
+	if p.values == nil {
+		partial := copybackPartials(p.buf, p.nComp, p.slots)
+		p.values = make([]float64, p.nComp)
+		for c := 0; c < p.nComp; c++ {
+			var sum float32
+			for _, value := range partial[c*p.slots : (c+1)*p.slots] {
+				sum += value
+			}
+			p.values[c] = float64(sum)
+		}
+	}
+	return p.values
 }
 
 // MaxTracker keeps the most recent maximum reduction, and optionally the
@@ -178,7 +245,12 @@ func (t *MaxTracker) Free() {
 // reduction buffer. It is idempotent.
 func (p *Pending) Value() float64 {
 	if !p.loaded {
-		v := float64(copybackMax(p.buf, p.nComp, p.slots))
+		var v float64
+		if p.sum {
+			v = float64(copybackSum(p.buf, p.nComp, p.slots))
+		} else {
+			v = float64(copybackMax(p.buf, p.nComp, p.slots))
+		}
 		if p.sqrt {
 			v = math.Sqrt(v)
 		}

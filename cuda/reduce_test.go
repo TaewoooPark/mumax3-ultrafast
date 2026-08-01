@@ -71,6 +71,48 @@ func TestReduceDot(t *testing.T) {
 	}
 }
 
+func TestAsyncSumAndDot(t *testing.T) {
+	initTest()
+	wantDot := Dot(in1, in1)
+	sum := SumAsync(in1)
+	dot := DotAsync(in1, in1)
+	if got := sum.Value(); got != 499500 {
+		t.Fatalf("async sum = %v, want 499500", got)
+	}
+	if got := float32(dot.Value()); got != wantDot {
+		t.Fatalf("async dot = %v, want %v", got, wantDot)
+	}
+	if got := sum.Value(); got != 499500 {
+		t.Fatalf("second Pending.Value = %v, want cached 499500", got)
+	}
+}
+
+func TestAsyncComponentSumsAndDots(t *testing.T) {
+	initTest()
+	a := NewSlice(3, in1.Size())
+	defer a.Free()
+	for c := 0; c < 3; c++ {
+		data.Copy(a.Comp(c), in1.Comp(0))
+	}
+	sums := SumComponentsAsync(a).Values()
+	dots := DotComponentsAsync(a, in1).Values()
+	wantDot := float64(Dot(in1, in1))
+	for c := 0; c < 3; c++ {
+		if sums[c] != 499500 {
+			t.Fatalf("component sum %d = %v, want 499500", c, sums[c])
+		}
+		if dots[c] != wantDot {
+			t.Fatalf("component dot %d = %v, want %v", c, dots[c], wantDot)
+		}
+	}
+	again := SumComponentsAsync(a)
+	first := again.Values()
+	second := again.Values()
+	if &first[0] != &second[0] {
+		t.Fatal("PendingComponents.Values did not return its cached result")
+	}
+}
+
 func TestReduceMaxAbs(t *testing.T) {
 	result := MaxAbs(in1)
 	if result != 999 {

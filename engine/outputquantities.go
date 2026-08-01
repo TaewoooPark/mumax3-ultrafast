@@ -164,7 +164,5 @@ func (v VectorField) Mesh() *data.Mesh         { return MeshOf(v.Quantity) }
 func (v VectorField) Name() string             { return NameOf(v.Quantity) }
 func (v VectorField) Unit() string             { return UnitOf(v.Quantity) }
 func (v VectorField) HostCopy() *data.Slice {
-	s := ValueOf(v.Quantity)
-	defer cuda.Recycle(s)
-	return s.HostCopy()
+	return HostCopyOf(v.Quantity)
 }

@@ -24,8 +24,10 @@ var (
 
 type geom struct {
 	info
-	buffer *data.Slice
-	shape  Shape
+	buffer     *data.Slice
+	shape      Shape
+	nCell      float64
+	nCellValid bool
 }
 
 func (g *geom) init() {
@@ -38,8 +40,20 @@ func spaceFill() float64 {
 	if geometry.Gpu().IsNil() {
 		return 1
 	} else {
-		return float64(cuda.Sum(geometry.buffer)) / float64(geometry.Mesh().NCell())
+		return geometry.magnetNCell() / float64(geometry.Mesh().NCell())
 	}
+}
+
+func (g *geom) invalidateNCell() {
+	g.nCellValid = false
+}
+
+func (g *geom) magnetNCell() float64 {
+	if !g.nCellValid {
+		g.nCell = float64(cuda.Sum(g.Gpu()))
+		g.nCellValid = true
+	}
+	return g.nCell
 }
 
 func (g *geom) Gpu() *data.Slice {
@@ -148,6 +162,7 @@ func InitGeomFromOVF(fname string) {
 
 	//copy data into geometry array
 	data.Copy(geometry.buffer, geomSlice)
+	geometry.invalidateNCell()
 
 	//make a makeshift function to represent imported geometry
 	isInterpd := false
@@ -173,6 +188,7 @@ func (geometry *geom) setGeom(s Shape) {
 	}
 
 	geometry.shape = s
+	geometry.invalidateNCell()
 	if geometry.Gpu().IsNil() {
 		geometry.buffer = cuda.NewSlice(1, geometry.Mesh().Size())
 	}
@@ -304,6 +320,7 @@ func (g *geom) shift(dx int) {
 			}
 		}
 	}
+	g.invalidateNCell()
 
 }
 
@@ -334,6 +351,7 @@ func (g *geom) shiftY(dy int) {
 			}
 		}
 	}
+	g.invalidateNCell()
 
 }
 

@@ -18,8 +18,9 @@ func qAverageUniverse(q Quantity) []float64 {
 func sAverageUniverse(s *data.Slice) []float64 {
 	nCell := float64(prod(s.Size()))
 	avg := make([]float64, s.NComp())
+	sums := cuda.SumComponentsAsync(s).Values()
 	for i := range avg {
-		avg[i] = float64(cuda.Sum(s.Comp(i))) / nCell
+		avg[i] = sums[i] / nCell
 		checkNaN1(avg[i])
 	}
 	return avg
@@ -31,8 +32,13 @@ func sAverageMagnet(s *data.Slice) []float64 {
 		return sAverageUniverse(s)
 	} else {
 		avg := make([]float64, s.NComp())
+		pending := cuda.DotComponentsAsync(s, geometry.Gpu())
+		// If the geometry denominator is not cached, its reduction is queued
+		// after all component dots and resolving it completes that GPU batch.
+		nCell := magnetNCell()
+		dots := pending.Values()
 		for i := range avg {
-			avg[i] = float64(cuda.Dot(s.Comp(i), geometry.Gpu())) / magnetNCell()
+			avg[i] = dots[i] / nCell
 			checkNaN1(avg[i])
 		}
 		return avg
@@ -45,6 +51,6 @@ func magnetNCell() float64 {
 	if geometry.Gpu().IsNil() {
 		return float64(Mesh().NCell())
 	} else {
-		return float64(cuda.Sum(geometry.Gpu()))
+		return geometry.magnetNCell()
 	}
 }

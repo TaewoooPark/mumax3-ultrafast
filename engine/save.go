@@ -6,7 +6,6 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/mumax/3/cuda"
 	"github.com/mumax/3/data"
 	"github.com/mumax/3/draw"
 	"github.com/mumax/3/dump"
@@ -68,21 +67,17 @@ func SaveAs(q Quantity, fname string) {
 	if path.Ext(fname) == "" {
 		fname += ("." + StringFromOutputFormat[outputFormat])
 	}
-	buffer := ValueOf(q) // TODO: check and optimize for Buffer()
-	defer cuda.Recycle(buffer)
 	info := data.Meta{Time: Time, Name: NameOf(q), Unit: UnitOf(q), CellSize: MeshOf(q).CellSize()}
-	data := buffer.HostCopy() // must be copy (async io)
-	queOutput(func() { saveAs_sync(fname, data, info, outputFormat) })
+	host := HostCopyOf(q) // host snapshot isolates asynchronous I/O
+	queOutput(func() { saveAs_sync(fname, host, info, outputFormat) })
 }
 
 // Save image once, with auto file name
 func Snapshot(q Quantity) {
 	qname := NameOf(q)
 	fname := fmt.Sprintf(OD()+FilenameFormat+"."+SnapshotFormat, qname, autonum[qname])
-	s := ValueOf(q)
-	defer cuda.Recycle(s)
-	data := s.HostCopy() // must be copy (asyncio)
-	queOutput(func() { snapshot_sync(fname, data) })
+	host := HostCopyOf(q)
+	queOutput(func() { snapshot_sync(fname, host) })
 	autonum[qname]++
 }
 
@@ -94,14 +89,13 @@ func SnapshotAs(q Quantity, fname string) {
 	if path.Ext(fname) == "" {
 		fname += ("." + StringFromOutputFormat[outputFormat])
 	}
-	s := ValueOf(q)
-	defer cuda.Recycle(s)
-	data := s.HostCopy() // must be copy (asyncio)
-	queOutput(func() { snapshot_sync(fname, data) })
+	host := HostCopyOf(q)
+	queOutput(func() { snapshot_sync(fname, host) })
 }
 
 // synchronous snapshot
 func snapshot_sync(fname string, output *data.Slice) {
+	defer output.Free()
 	f, err := httpfs.Create(fname)
 	util.FatalErr(err)
 	defer f.Close()
@@ -110,6 +104,7 @@ func snapshot_sync(fname string, output *data.Slice) {
 
 // synchronous save
 func saveAs_sync(fname string, s *data.Slice, info data.Meta, format OutputFormat) {
+	defer s.Free()
 	f, err := httpfs.Create(fname)
 	util.FatalErr(err)
 	defer f.Close()

@@ -20,7 +20,7 @@ const maxOutputQueLen = 16 // number of outputs that can be queued for asynchron
 func init() {
 	DeclFunc("Flush", drainOutput, "Flush all pending output to disk.")
 
-	saveQue = make(chan func())
+	saveQue = make(chan func(), maxOutputQueLen)
 	go runSaver()
 }
 

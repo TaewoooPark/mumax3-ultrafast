@@ -94,20 +94,23 @@ func (mini *Minimizer) Step() {
 	cuda.Madd2(dm, m, m0, 1., -1.)
 	cuda.Madd2(dk, k, k0, -1., 1.) // reversed due to LLNoPrecess sign
 
-	// get maxdiff and add to list
-	max_dm := cuda.MaxVecNorm(dm)
-	mini.lastDm.Add(max_dm)
-	setLastErr(mini.lastDm.Max()) // report maxDm to user as LastErr
-
-	// adjust next time step
-	var nom, div float32
+	// The convergence norm and both BB step-size terms are independent. Queue
+	// all three reductions before reading any result so one GPU drain serves the
+	// complete minimizer step.
+	maxDmPending := cuda.MaxVecNormAsync(dm)
+	var nomPending, divPending *cuda.Pending
 	if NSteps%2 == 0 {
-		nom = cuda.Dot(dm, dm)
-		div = cuda.Dot(dm, dk)
+		nomPending = cuda.DotAsync(dm, dm)
+		divPending = cuda.DotAsync(dm, dk)
 	} else {
-		nom = cuda.Dot(dm, dk)
-		div = cuda.Dot(dk, dk)
+		nomPending = cuda.DotAsync(dm, dk)
+		divPending = cuda.DotAsync(dk, dk)
 	}
+	maxDm := maxDmPending.Value()
+	mini.lastDm.Add(maxDm)
+	setLastErr(mini.lastDm.Max()) // report maxDm to user as LastErr
+	nom := float32(nomPending.Value())
+	div := float32(divPending.Value())
 	if div != 0. {
 		mini.h = nom / div
 	} else { // in case of division by zero

@@ -77,6 +77,50 @@ func ValueOf(q Quantity) *data.Slice {
 	return buf
 }
 
+type sliceProvider interface {
+	Slice() (*data.Slice, bool)
+}
+
+// HostCopyOf snapshots a quantity without an unnecessary GPU-to-GPU staging
+// copy when the quantity already exposes its backing slice. This is especially
+// important for Save(M), where magnetization is stable until HostCopy returns
+// and the host snapshot itself provides the asynchronous-I/O isolation.
+func HostCopyOf(q Quantity) *data.Slice {
+	if s, recycle, ok := quantitySlice(q); ok {
+		host := s.HostCopy()
+		if recycle {
+			cuda.Recycle(s)
+		}
+		return host
+	}
+	buf := ValueOf(q)
+	host := buf.HostCopy()
+	cuda.Recycle(buf)
+	return host
+}
+
+func quantitySlice(q Quantity) (*data.Slice, bool, bool) {
+	if provider, ok := q.(sliceProvider); ok {
+		s, recycle := provider.Slice()
+		return s, recycle, true
+	}
+	// VectorField and ScalarField deliberately expose only Quantity's method
+	// set. Unwrap them so fieldFunc.Slice and other optimized providers remain
+	// visible to the output path.
+	switch field := q.(type) {
+	case VectorField:
+		return quantitySlice(field.Quantity)
+	case *VectorField:
+		return quantitySlice(field.Quantity)
+	case ScalarField:
+		return quantitySlice(field.Quantity)
+	case *ScalarField:
+		return quantitySlice(field.Quantity)
+	default:
+		return nil, false, false
+	}
+}
+
 // Temporary shim to fit Slice into EvalTo
 func EvalTo(q interface {
 	Slice() (*data.Slice, bool)
