@@ -14,24 +14,25 @@ func (*Euler) Step() {
 	defer cuda.Recycle(dy0)
 
 	torqueFn(dy0)
-	setMaxTorque(dy0)
 
 	// Adaptive time stepping: treat MaxErr as the maximum magnetization delta
 	// (proportional to the error, but an overestimation for sure)
 	//
-	// Unlike the other solvers this one steers on the torque, so it is read
-	// back here rather than deferred.
-	maxTorque := GetLastTorque()
 	var dt float32
 	if FixDt != 0 {
 		Dt_si = FixDt
 		dt = float32(Dt_si * GammaLL)
+		setMaxTorque(dy0)
+		setLastErrNormLater(dy0, float64(dt))
 	} else {
+		// Adaptive Euler steers on the torque and therefore must read it now.
+		maxTorque := cuda.MaxVecNorm(dy0)
+		LastTorque = maxTorque
 		dt = float32(MaxErr / maxTorque)
 		Dt_si = float64(dt) / GammaLL
+		setLastErr(float64(dt) * maxTorque)
 	}
 	util.AssertMsg(dt > 0, "Euler solver requires fixed time step > 0")
-	setLastErr(float64(dt) * maxTorque)
 
 	cuda.Madd2(y, y, dy0, 1, dt) // y = y + dt * dy
 	M.normalize()

@@ -82,6 +82,48 @@ func TestReduceMaxAbs(t *testing.T) {
 	}
 }
 
+func TestMaxTrackerLatestAndPeak(t *testing.T) {
+	size := [3]int{1, 1, 257}
+	v := NewSlice(3, size)
+	defer v.Free()
+	tracker := NewMaxTracker()
+	defer tracker.Free()
+
+	Memset(v, 6, 8, 0)
+	tracker.TrackMaxVecNorm(v, true)
+	Memset(v, 3, 4, 0)
+	tracker.TrackMaxVecNorm(v, true)
+	latest, peak := tracker.Values(true)
+	if latest != 5 || peak != 10 {
+		t.Fatalf("latest, peak = %v, %v; want 5, 10", latest, peak)
+	}
+
+	Memset(v, 0, 0, 2)
+	tracker.TrackMaxVecNorm(v, true)
+	latest, peak = tracker.Values(true)
+	if latest != 2 || peak != 2 {
+		t.Fatalf("values after peak reset = %v, %v; want 2, 2", latest, peak)
+	}
+}
+
+func TestMaxTrackerVectorDifference(t *testing.T) {
+	size := [3]int{1, 1, 33}
+	x := NewSlice(3, size)
+	y := NewSlice(3, size)
+	defer x.Free()
+	defer y.Free()
+	tracker := NewMaxTracker()
+	defer tracker.Free()
+
+	Memset(x, 5, 7, 9)
+	Memset(y, 2, 3, 9)
+	tracker.TrackMaxVecDiff(x, y, true)
+	latest, peak := tracker.Values(true)
+	if latest != 5 || peak != 5 {
+		t.Fatalf("difference latest, peak = %v, %v; want 5, 5", latest, peak)
+	}
+}
+
 func sliceFromList(arr [][]float32, size [3]int) *data.Slice {
 	ptrs := make([]unsafe.Pointer, len(arr))
 	for i := range ptrs {

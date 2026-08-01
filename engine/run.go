@@ -112,40 +112,47 @@ func setLastErr(err float64) {
 	}
 }
 
-// Deferred reductions.
-//
-// Copying a reduction back is what drains the GPU pipeline, and the drain
-// costs far more than the reduction. LastTorque and, when dt is pinned,
-// LastErr are only ever reported, never used to steer the solver, so their
-// read-back is postponed until something actually looks at them. One drain
-// then serves every reduction that piled up behind it, and the reported values
-// are exactly the ones the eager code produced.
-const maxDeferredReductions = 32
-
-type deferredReduction struct {
-	pending *cuda.Pending
-	apply   func(float64)
+// Reported reductions stay in persistent GPU slots. The latest torque and
+// fixed-step error overwrite their slots in queue order; a separate error slot
+// accumulates the exact maximum across steps. This removes the former
+// 32-Pending backlog and its mandatory full drain every 16 fixed-dt steps.
+var reportedReductions struct {
+	torque, fixedErr          *cuda.MaxTracker
+	torquePending, errPending bool
+	errScale                  float64
 }
 
-var deferredReductions []deferredReduction
-
-func deferReduction(pending *cuda.Pending, apply func(float64)) {
-	deferredReductions = append(deferredReductions, deferredReduction{pending, apply})
-	// Each Pending holds one slot of the reduction buffer pool, so the backlog
-	// has to stay well inside it.
-	if len(deferredReductions) >= maxDeferredReductions {
-		resolveReductions()
+func torqueReduction() *cuda.MaxTracker {
+	if reportedReductions.torque == nil {
+		reportedReductions.torque = cuda.NewMaxTracker()
 	}
+	return reportedReductions.torque
 }
 
-// resolveReductions reads back every postponed reduction, in the order they
-// were enqueued, so running maxima like PeakErr see the same sequence they
-// would have seen step by step.
+func fixedErrReduction() *cuda.MaxTracker {
+	if reportedReductions.fixedErr == nil {
+		reportedReductions.fixedErr = cuda.NewMaxTracker()
+	}
+	return reportedReductions.fixedErr
+}
+
+// resolveReductions reads the persistent diagnostic slots. The first copy
+// drains all earlier GPU work; the slots are then ready to be overwritten by
+// the next run segment.
 func resolveReductions() {
-	for _, d := range deferredReductions {
-		d.apply(d.pending.Value())
+	if reportedReductions.errPending {
+		last, peak := reportedReductions.fixedErr.Values(true)
+		setLastErr(last * reportedReductions.errScale)
+		peak *= reportedReductions.errScale
+		if peak > PeakErr {
+			PeakErr = peak
+		}
+		reportedReductions.errPending = false
 	}
-	deferredReductions = deferredReductions[:0]
+	if reportedReductions.torquePending {
+		LastTorque, _ = reportedReductions.torque.Values(false)
+		reportedReductions.torquePending = false
+	}
 }
 
 // GetLastErr, GetPeakErr and GetLastTorque are the read side of the deferred
@@ -165,14 +172,29 @@ func GetLastTorque() float64 {
 	return LastTorque
 }
 
-// setLastErrLater reports the embedded error estimate without waiting for it.
-// Only valid where the estimate cannot change the step, i.e. under a pinned dt.
-func setLastErrLater(pending *cuda.Pending, scale float64) {
-	deferReduction(pending, func(err float64) { setLastErr(err * scale) })
+// prepareFixedErr starts or continues a fixed-scale peak segment. A scale
+// change normally happens between Run calls, after resolveReductions; handle a
+// direct Go caller safely as well.
+func prepareFixedErr(scale float64) *cuda.MaxTracker {
+	if reportedReductions.errPending && reportedReductions.errScale != scale {
+		resolveReductions()
+	}
+	reportedReductions.errScale = scale
+	reportedReductions.errPending = true
+	return fixedErrReduction()
+}
+
+func setLastErrNormLater(v *data.Slice, scale float64) {
+	prepareFixedErr(scale).TrackMaxVecNorm(v, true)
+}
+
+func setLastErrDiffLater(x, y *data.Slice, scale float64) {
+	prepareFixedErr(scale).TrackMaxVecDiff(x, y, true)
 }
 
 func setMaxTorque(τ *data.Slice) {
-	deferReduction(cuda.MaxVecNormAsync(τ), func(v float64) { LastTorque = v })
+	torqueReduction().TrackMaxVecNorm(τ, false)
+	reportedReductions.torquePending = true
 }
 
 // adapt time step: dt *= corr, but limited to sensible values.

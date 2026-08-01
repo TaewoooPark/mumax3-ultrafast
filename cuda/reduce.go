@@ -81,6 +81,99 @@ type Pending struct {
 	loaded bool
 }
 
+// MaxTracker keeps the most recent maximum reduction, and optionally the
+// maximum observed across many launches, entirely on the device. It is meant
+// for diagnostic values that are reported later but must not make the CPU
+// drain the command queue every step.
+//
+// The first reduceMaxSlots floats hold the latest launch's partial maxima.
+// The final float accumulates their maximum over time. Queue ordering makes it
+// safe to overwrite/accumulate these locations while earlier kernels are still
+// in flight.
+type MaxTracker struct {
+	buf  unsafe.Pointer
+	peak unsafe.Pointer
+}
+
+// NewMaxTracker allocates a persistent tracker. Call Free when the tracker is
+// not process-long-lived.
+func NewMaxTracker() *MaxTracker {
+	buf := MemAlloc((reduceMaxSlots + 1) * cu.SIZEOF_FLOAT32)
+	cu.MemsetD32Async(cu.DevicePtr(uintptr(buf)), 0, reduceMaxSlots+1, stream0)
+	return &MaxTracker{
+		buf:  buf,
+		peak: unsafe.Pointer(uintptr(buf) + uintptr(reduceMaxSlots)*cu.SIZEOF_FLOAT32),
+	}
+}
+
+// TrackMaxVecNorm replaces the latest value with max_i |v[i]| and, when
+// accumulatePeak is true, folds it into the tracker-wide peak.
+func (t *MaxTracker) TrackMaxVecNorm(v *data.Slice, accumulatePeak bool) {
+	util.Argument(v.NComp() == 3)
+	t.clearLatest()
+	k_reducemaxvecnorm2_async(v.DevPtr(0), v.DevPtr(1), v.DevPtr(2),
+		t.buf, 0, v.Len(), reducemaxcfg)
+	if accumulatePeak {
+		t.accumulatePeak()
+	}
+}
+
+// TrackMaxVecDiff is the difference-vector counterpart of TrackMaxVecNorm.
+func (t *MaxTracker) TrackMaxVecDiff(x, y *data.Slice, accumulatePeak bool) {
+	util.Argument(x.NComp() == 3 && y.NComp() == 3 && x.Len() == y.Len())
+	t.clearLatest()
+	k_reducemaxvecdiff2_async(x.DevPtr(0), x.DevPtr(1), x.DevPtr(2),
+		y.DevPtr(0), y.DevPtr(1), y.DevPtr(2),
+		t.buf, 0, x.Len(), reducemaxcfg)
+	if accumulatePeak {
+		t.accumulatePeak()
+	}
+}
+
+func (t *MaxTracker) clearLatest() {
+	util.Assert(t != nil && t.buf != nil)
+	cu.MemsetD32Async(cu.DevicePtr(uintptr(t.buf)), 0, reduceMaxSlots, stream0)
+}
+
+func (t *MaxTracker) accumulatePeak() {
+	// One 64-thread block reduces the 64 latest partials. The destination is
+	// deliberately not cleared: reducemaxabs uses atomic max, so peak[0]
+	// becomes the exact maximum across every tracked launch.
+	k_reducemaxabs_async(t.buf, t.peak, 0, reduceMaxSlots, reducePeakCfg)
+}
+
+// Values reads the latest maximum and accumulated peak. Both returned values
+// are vector norms (the square root is applied after the max, just like
+// MaxVecNorm). When resetPeak is true, subsequent tracking starts a new peak
+// segment after this read.
+func (t *MaxTracker) Values(resetPeak bool) (latest, peak float64) {
+	util.Assert(t != nil && t.buf != nil)
+	partial := make([]float32, reduceMaxSlots+1)
+	MemCpyDtoH(unsafe.Pointer(&partial[0]), t.buf,
+		int64(len(partial))*cu.SIZEOF_FLOAT32)
+	latest2 := partial[0]
+	for _, value := range partial[1:reduceMaxSlots] {
+		if value > latest2 {
+			latest2 = value
+		}
+	}
+	latest = math.Sqrt(float64(latest2))
+	peak = math.Sqrt(float64(partial[reduceMaxSlots]))
+	if resetPeak {
+		cu.MemsetD32Async(cu.DevicePtr(uintptr(t.peak)), 0, 1, stream0)
+	}
+	return latest, peak
+}
+
+func (t *MaxTracker) Free() {
+	if t == nil || t.buf == nil {
+		return
+	}
+	cu.MemFree(cu.DevicePtr(uintptr(t.buf)))
+	t.buf = nil
+	t.peak = nil
+}
+
 // Value copies the partial results back, combines them and recycles the
 // reduction buffer. It is idempotent.
 func (p *Pending) Value() float64 {
@@ -187,6 +280,7 @@ func initReduceBuf() {
 // count of the matching family: the kernels write one partial per threadgroup
 // at index blockIdx.x.
 var (
-	reducemaxcfg = &config{Grid: cu.Dim3{X: reduceMaxSlots, Y: 1, Z: 1}, Block: cu.Dim3{X: REDUCE_BLOCKSIZE, Y: 1, Z: 1}}
-	reducesumcfg = &config{Grid: cu.Dim3{X: reduceSumSlots, Y: 1, Z: 1}, Block: cu.Dim3{X: REDUCE_BLOCKSIZE, Y: 1, Z: 1}}
+	reducemaxcfg  = &config{Grid: cu.Dim3{X: reduceMaxSlots, Y: 1, Z: 1}, Block: cu.Dim3{X: REDUCE_BLOCKSIZE, Y: 1, Z: 1}}
+	reducesumcfg  = &config{Grid: cu.Dim3{X: reduceSumSlots, Y: 1, Z: 1}, Block: cu.Dim3{X: REDUCE_BLOCKSIZE, Y: 1, Z: 1}}
+	reducePeakCfg = &config{Grid: cu.Dim3{X: 1, Y: 1, Z: 1}, Block: cu.Dim3{X: reduceMaxSlots, Y: 1, Z: 1}}
 )

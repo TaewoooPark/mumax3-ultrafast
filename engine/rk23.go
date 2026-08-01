@@ -88,7 +88,7 @@ func (rk *RK23) Step() {
 	// A pinned dt makes the step unconditional, so the estimate is reported
 	// but never waited for. See RK45DP.Step.
 	if FixDt != 0 {
-		setLastErrLater(cuda.MaxVecNormAsync(Err), float64(h))
+		setLastErrNormLater(Err, float64(h))
 		setMaxTorque(k4)
 		NSteps++
 		Time = t0 + Dt_si

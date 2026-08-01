@@ -65,7 +65,7 @@ func (s *BackwardEuler) Step() {
 	// iterations is reported but never acted on. Reading it back would drain
 	// the GPU pipeline once per step for a number nothing consumes.
 	NSteps++
-	setLastErrLater(cuda.MaxVecDiffAsync(dy0, dy1), float64(dt))
+	setLastErrDiffLater(dy0, dy1, float64(dt))
 	setMaxTorque(dy1)
 }
 

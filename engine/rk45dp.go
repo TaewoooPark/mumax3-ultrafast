@@ -102,7 +102,7 @@ func (rk *RK45DP) Step() {
 	// but never waited for: reading it back would drain the GPU pipeline for a
 	// number nothing acts on.
 	if FixDt != 0 {
-		setLastErrLater(cuda.MaxVecNormAsync(Err), float64(h))
+		setLastErrNormLater(Err, float64(h))
 		setMaxTorque(k7)
 		NSteps++
 		Time = t0 + Dt_si
