@@ -3,6 +3,8 @@
 package cuda
 
 import (
+	"unsafe"
+
 	"github.com/mumax/3/cuda/metal"
 	"github.com/mumax/3/util"
 )
@@ -46,3 +48,25 @@ func (completion *Completion) Free() {
 	completion.token.Close()
 	completion.token = metal.Completion{}
 }
+
+// CloseQueueBatch commits everything encoded so far without waiting for it,
+// which ends the current command buffer. A Completion recorded just before this
+// therefore covers exactly the work encoded up to that point, and anything
+// encoded afterwards lands in a fresh command buffer the token does not include
+// - which is what makes waiting the token overlap with later work instead of
+// waiting for it too.
+func CloseQueueBatch() {
+	util.PanicErr(metal.Flush())
+}
+
+// ReadHostAfter copies from a device allocation without draining the queue,
+// having first waited for the recorded work that writes it. Allocations are
+// shared memory, so once that work is done the bytes are simply there.
+func ReadHostAfter(dst, src unsafe.Pointer, bytes int64, completion *Completion) {
+	completion.Wait()
+	util.PanicErr(metal.CopyToHostUnordered(dst, src, bytes))
+}
+
+// TargetedReadbackSupported reports whether a reduction can be read by waiting
+// only its own command buffer.
+const TargetedReadbackSupported = true

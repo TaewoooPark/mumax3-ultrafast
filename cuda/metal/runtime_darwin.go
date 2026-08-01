@@ -163,6 +163,21 @@ func CopyToHost(dst, src unsafe.Pointer, bytes int64) error {
 	return runtimeStatus(C.mr_copy_to_host(dst, src, C.size_t(bytes), &message), message)
 }
 
+// CopyToHostUnordered reads src without draining the queue first. The caller
+// must have proven separately that every kernel writing the source range has
+// finished, typically by waiting a Completion recorded right after they were
+// encoded. See mr_copy_to_host_unordered.
+func CopyToHostUnordered(dst, src unsafe.Pointer, bytes int64) error {
+	if bytes == 0 {
+		return nil
+	}
+	if err := validCopy(dst, src, bytes); err != nil {
+		return err
+	}
+	var message *C.char
+	return runtimeStatus(C.mr_copy_to_host_unordered(dst, src, C.size_t(bytes), &message), message)
+}
+
 func Fill(dst unsafe.Pointer, value byte, bytes int64) error {
 	if bytes == 0 {
 		return nil

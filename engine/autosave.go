@@ -16,6 +16,13 @@ func init() {
 
 // Periodically called by run loop to save everything that's needed at this time.
 func DoOutput() {
+	// Only settle a speculatively pipelined step when something is actually
+	// about to be written. Whether a save is due depends on Time alone, and a
+	// provisional Time is never ahead by more than one step, so this decides
+	// correctly without forcing a settle on steps that produce no output.
+	if outputDue() {
+		settleStepper()
+	}
 	for q, a := range output {
 		if a.needSave() {
 			a.save(q)
@@ -25,6 +32,16 @@ func DoOutput() {
 	if Table.needSave() {
 		Table.Save()
 	}
+}
+
+// outputDue reports whether DoOutput would write anything at the current Time.
+func outputDue() bool {
+	for _, a := range output {
+		if a.needSave() {
+			return true
+		}
+	}
+	return Table.needSave()
 }
 
 // Register quant to be auto-saved every period.

@@ -121,6 +121,9 @@ type Pending struct {
 	sum    bool
 	value  float64
 	loaded bool
+	// Set by Targeted. Marks this reduction's place in the queue so Value can
+	// wait for just that work instead of everything encoded behind it.
+	boundary Completion
 }
 
 // PendingComponents is a component-wise family of sum reductions sharing one
@@ -241,12 +244,40 @@ func (t *MaxTracker) Free() {
 	t.peak = nil
 }
 
+// Targeted closes the current queue batch and records where this reduction sits
+// in it, so that Value waits only for the work up to this point. Everything
+// encoded afterwards keeps running while the host waits, which is only useful if
+// the caller actually has later work to encode - otherwise the wait is the same
+// length and the extra batch boundary is pure cost. Returns p for chaining.
+func (p *Pending) Targeted() *Pending {
+	if !TargetedReadbackSupported {
+		return p
+	}
+	p.boundary = RecordCompletion()
+	CloseQueueBatch()
+	return p
+}
+
 // Value copies the partial results back, combines them and recycles the
 // reduction buffer. It is idempotent.
 func (p *Pending) Value() float64 {
 	if !p.loaded {
 		var v float64
-		if p.sum {
+		if p.boundary.Valid() {
+			// Wait only this reduction's own batch, then read the shared
+			// allocation directly. The combining order over the fixed slots is
+			// the same either way, so the value is unchanged.
+			partial := make([]float32, p.nComp*p.slots)
+			ReadHostAfter(unsafe.Pointer(&partial[0]), p.buf,
+				int64(len(partial))*cu.SIZEOF_FLOAT32, &p.boundary)
+			p.boundary.Free()
+			reduceBuffers <- p.buf
+			if p.sum {
+				v = float64(combineSum(partial, p.nComp, p.slots))
+			} else {
+				v = float64(combineMax(partial, p.nComp, p.slots))
+			}
+		} else if p.sum {
 			v = float64(copybackSum(p.buf, p.nComp, p.slots))
 		} else {
 			v = float64(copybackMax(p.buf, p.nComp, p.slots))
@@ -308,7 +339,12 @@ func reduceBuf(initVal float32, nComp, slots int) unsafe.Pointer {
 // copybackSum copies the partial results back and adds them in fixed index
 // order, then recycles the buffer.
 func copybackSum(buf unsafe.Pointer, nComp, slots int) float32 {
-	partial := copybackPartials(buf, nComp, slots)
+	return combineSum(copybackPartials(buf, nComp, slots), nComp, slots)
+}
+
+// combineSum adds the partials in fixed index order. Both readback paths call
+// this, so a targeted read cannot change the last bits of a sum.
+func combineSum(partial []float32, nComp, slots int) float32 {
 	var result float32
 	for _, value := range partial {
 		result += value
@@ -320,7 +356,11 @@ func copybackSum(buf unsafe.Pointer, nComp, slots int) float32 {
 // recycles the buffer. Maximum is order independent in floating point, so this
 // matches the CUDA reduction exactly.
 func copybackMax(buf unsafe.Pointer, nComp, slots int) float32 {
-	partial := copybackPartials(buf, nComp, slots)
+	return combineMax(copybackPartials(buf, nComp, slots), nComp, slots)
+}
+
+// combineMax takes the maximum of the partials. Shared by both readback paths.
+func combineMax(partial []float32, nComp, slots int) float32 {
 	result := partial[0]
 	for _, value := range partial[1:] {
 		if value > result {

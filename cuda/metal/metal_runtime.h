@@ -144,6 +144,17 @@ int mr_copy_to_device_unordered(void *dst,
                                 size_t bytes,
                                 char **error_message);
 int mr_copy_to_host(void *dst, const void *src, size_t bytes, char **error_message);
+/*
+ * Reads the source without first draining the queue. Allocations are shared
+ * memory, so no blit is involved and the host sees whatever the GPU has already
+ * written. Only safe when the caller has separately proven that every kernel
+ * writing the source range has completed, for example by waiting a completion
+ * token recorded immediately after those kernels were encoded.
+ */
+int mr_copy_to_host_unordered(void *dst,
+                              const void *src,
+                              size_t bytes,
+                              char **error_message);
 int mr_fill(void *dst, uint8_t value, size_t bytes, char **error_message);
 int mr_fill_u32(void *dst, uint32_t value, size_t count, char **error_message);
 

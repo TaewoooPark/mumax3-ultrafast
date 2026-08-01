@@ -56,6 +56,58 @@ type Stepper interface {
 	Free() // free resources, if any (e.g.: RK23 previous torque)
 }
 
+// A stepper that can leave a step encoded but not yet judged, so that the host
+// keeps encoding while the GPU still works. Its m, Time and NSteps are
+// provisional until Settle runs.
+type settler interface {
+	Settle()
+}
+
+// settleStepper makes the simulation state observable. A speculatively
+// pipelined step has not had its error estimate read yet, so its magnetization
+// and time may still be rolled back; anything that leaves the solver - a saved
+// field, a table row, an injected query - has to see settled state.
+func settleStepper() {
+	if s, ok := stepper.(settler); ok {
+		s.Settle()
+	}
+}
+
+// SpeculativeStep lets an adaptive solver encode the next step before reading
+// the current step's error estimate, so host encoding overlaps GPU execution
+// instead of alternating with it. A step whose error turns out to be too large
+// is still rejected, so the accuracy tolerance is unchanged, but it is rejected
+// one step late and the step sizes therefore follow a different sequence than
+// the exact controller produces. Opt-in for that reason.
+var SpeculativeStep = false
+
+func init() {
+	DeclVar("SpeculativeStep", &SpeculativeStep,
+		"Overlap host encoding with GPU execution by judging an adaptive step one step late (default=false). Error rejection still enforces MaxErr, but the sequence of time steps differs from the exact controller, so validate against SpeculativeStep=false for each workload")
+}
+
+// speculativeStepEligible reports whether the current configuration may leave a
+// step in flight. Everything that reads or rewrites the magnetization between
+// steps, or that carries history a rollback would corrupt, closes it.
+func speculativeStepEligible() bool {
+	if !SpeculativeStep ||
+		FixDt != 0 || // a pinned step never reads the estimate anyway
+		!Temp.isZero() || // stochastic torque also disables FSAL
+		relaxing || // relax() reads the torque out of the solver directly
+		DemagExtrapolation || // extrapolation history cannot be rolled back
+		len(postStep) != 0 { // a post-step hook may read or rewrite m
+		return false
+	}
+	// adaptDt clamps the step that would cross an alarm so a run lands exactly
+	// on its end time. That clamp has to size the step being encoded, not the
+	// one after it, so the approach to an alarm is taken exactly. Two steps of
+	// margin per Run() is not measurable.
+	if alarm > Time && Time+2*Dt_si >= alarm {
+		return false
+	}
+	return true
+}
+
 // Arguments for SetSolver
 const (
 	BACKWARD_EULER  = -1
@@ -267,17 +319,29 @@ func RunWhile(condition func() bool) {
 
 func runWhile(condition func() bool, output bool) {
 	DoOutput() // allow t=0 output
-	for condition() && !pause {
-		select {
-		default:
-			step(output)
-		// accept tasks form Inject channel
-		case f := <-Inject:
-			// Injected code, and the gui refresh that rides along with it,
-			// reads the reported solver values, so settle them here where we
-			// are still on the solver goroutine.
-			resolveReductions()
-			f()
+	for {
+		for condition() && !pause {
+			select {
+			default:
+				step(output)
+			// accept tasks form Inject channel
+			case f := <-Inject:
+				// Injected code, and the gui refresh that rides along with it,
+				// reads the reported solver values, so settle them here where we
+				// are still on the solver goroutine.
+				settleStepper()
+				resolveReductions()
+				f()
+			}
+		}
+		// Whatever runs next - output, a script statement, another solver -
+		// observes the magnetization, so no step may stay unjudged past the
+		// loop. The condition was evaluated against a provisional time and step
+		// count, and settling can reject the last step and put both back, so it
+		// has to be re-tested afterwards or the run ends short.
+		settleStepper()
+		if !condition() || pause {
+			return
 		}
 	}
 }
