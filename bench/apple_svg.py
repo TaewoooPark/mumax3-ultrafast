@@ -7,11 +7,13 @@ Run it from the repository root or from bench/:
 
     python3 bench/apple_svg.py
 
-It writes bench/apple.svg and bench/apple-vs-gpus.svg from bench/apple.txt and
-bench/gpus.txt. Keep the visual conventions of gpus.gplot: plain bars, the y
-axis in millions of cells per second, and the device names rotated upright.
+It writes all four bench/apple*.svg charts and refreshes doc/static/gpus.svg
+from bench/apple.txt, bench/gpus.txt, bench/price_tiers.txt, and
+bench/capacity.txt. Keep the visual conventions of gpus.gplot: plain bars, the
+y axis in millions of cells per second, and the device names rotated upright.
 """
 
+import math
 import os
 import shlex
 
@@ -58,9 +60,13 @@ def read_apple(path):
     return rows
 
 
-def read_gpus(path):
-    """CUDA results from bench/gpus.txt. Apple rows are skipped here so they can
-    come from apple.txt instead, which distinguishes measured from projected."""
+def read_gpus(path, include_apple=False):
+    """Measured results from bench/gpus.txt.
+
+    Apple rows are normally skipped so the Apple comparison can source its
+    measured and projected rows consistently from apple.txt. The measured-only
+    site chart includes the precise Apple row from gpus.txt.
+    """
     rows = []
     with open(path) as handle:
         for line in handle:
@@ -68,31 +74,37 @@ def read_gpus(path):
             if not line or line.startswith("#"):
                 continue
             fields = shlex.split(line)
-            if "Apple" in fields[3]:
+            is_apple = "Apple" in fields[3]
+            if is_apple and not include_apple:
                 continue
             rows.append(
                 {
                     "name": fields[3],
                     "value": float(fields[1]) / 1e6,
-                    "status": "other",
+                    "status": "measured" if is_apple else "other",
                 }
             )
     return rows
 
 
-def nice_ticks(top, count=6):
+def read_oommf(path):
+    """Read the CPU reference using the formula in bench/gpus.gplot."""
+    with open(path) as handle:
+        size, steps, wall = handle.read().split()
+    value = 4 * int(size) ** 2 * int(steps) / float(wall) / 1e6
+    return {"name": "OOMMF (CPU)", "value": value, "status": "other"}
+
+
+def nice_ticks(top, count=7):
     """Round tick values that cover [0, top]."""
     raw = top / count
-    magnitude = 10 ** len(str(int(raw))) // 10 or 1
+    magnitude = 10 ** math.floor(math.log10(raw))
     for factor in (1, 2, 2.5, 5, 10):
         step = factor * magnitude
         if step >= raw:
             break
-    ticks, value = [], 0.0
-    while value <= top + step / 2:
-        ticks.append(value)
-        value += step
-    return ticks
+    axis_max = math.ceil(top / step) * step
+    return [index * step for index in range(round(axis_max / step) + 1)]
 
 
 def wrap(text, width):
@@ -111,10 +123,15 @@ def wrap(text, width):
 
 
 def render(rows, title, subtitle, path, legend,
-           y_label="throughput (M cells/s)"):
+           y_label="throughput (M cell-evals/s)"):
     bar_slot = 26 if len(rows) <= 24 else 15
     left, right = 78, 26
-    plot_w = bar_slot * len(rows)
+    # Short charts still need enough room for their title and full legend. This
+    # also fixes the old capacity chart, whose 260 px canvas clipped both.
+    title_room = 8 * len(title)
+    legend_room = sum(31 + 7 * len(label) for label, _ in legend)
+    plot_w = max(bar_slot * len(rows), title_room, legend_room)
+    bar_slot = plot_w / len(rows)
     plot_h = max(260, int(plot_w * 0.45))
     width = left + plot_w + right
 
@@ -247,7 +264,16 @@ TIER_TITLES = {
 COLOR_NVIDIA_PRICE = "#5f6f7a"
 
 
-def read_tiers(path):
+APPLE_TIER_CHIPS = {
+    "Mac mini M4": "Apple M4",
+    "Mac mini M4 Pro": "Apple M4 Pro",
+    "Mac Studio M4 Max": "Apple M4 Max 40c",
+    "Mac Studio M3 Ultra": "Apple M3 Ultra",
+}
+
+
+def read_tiers(path, apple_rows):
+    apple_by_name = {row["name"]: row["value"] for row in apple_rows}
     tiers = []
     with open(path) as handle:
         for line in handle:
@@ -257,12 +283,22 @@ def read_tiers(path):
             tier, vendor, price, throughput, label = shlex.split(line)
             price = int(price)
             total = price + (HOST_USD if vendor == "nvidia" else 0)
+            value = float(throughput)
+            if vendor == "apple":
+                chip = APPLE_TIER_CHIPS[label]
+                projected = apple_by_name[chip]
+                if abs(value - projected) > 0.051:
+                    raise ValueError(
+                        f"stale Apple tier {label!r}: price_tiers.txt has "
+                        f"{value:.1f}, apple.txt has {projected:.1f}"
+                    )
+                value = projected
             tiers.append(
                 {
                     "tier": tier,
                     "vendor": vendor,
                     "total": total,
-                    "value": float(throughput),
+                    "value": value,
                     "label": label,
                 }
             )
@@ -271,6 +307,16 @@ def read_tiers(path):
         if row["tier"] not in order:
             order.append(row["tier"])
     return tiers, order
+
+
+def tier_speedup_range(tiers, order):
+    ratios = []
+    for tier in order:
+        members = [row for row in tiers if row["tier"] == tier]
+        apple = next(row for row in members if row["vendor"] == "apple")
+        nvidia = next(row for row in members if row["vendor"] == "nvidia")
+        ratios.append(nvidia["value"] / apple["value"])
+    return min(ratios), max(ratios)
 
 
 def render_price_tiers(path, tiers, order):
@@ -342,7 +388,8 @@ def render_price_tiers(path, tiers, order):
     add(
         f'<text x="18" y="{label_y:.1f}" font-family="{FONT}" font-size="11" '
         f'fill="{COLOR_TEXT}" text-anchor="middle" '
-        f'transform="rotate(-90 18 {label_y:.1f})">throughput (M cells/s)</text>'
+        f'transform="rotate(-90 18 {label_y:.1f})">'
+        f'throughput (M cell-evals/s)</text>'
     )
 
     for group, tier in enumerate(order):
@@ -473,8 +520,9 @@ def main():
         ],
     )
 
-    tiers, order = read_tiers(os.path.join(HERE, "price_tiers.txt"))
+    tiers, order = read_tiers(os.path.join(HERE, "price_tiers.txt"), apple)
     render_price_tiers(os.path.join(HERE, "apple-price-tiers.svg"), tiers, order)
+    min_ratio, max_ratio = tier_speedup_range(tiers, order)
 
     capacity = read_capacity(os.path.join(HERE, "capacity.txt"))
     for row in capacity:
@@ -483,11 +531,28 @@ def main():
         capacity,
         "Largest MuMax3 simulation that fits in memory",
         f"At the {BYTES_PER_CELL:.1f} bytes per cell measured on this M4. Below "
-        "roughly 240M cells a same-cost PC is 2.6-3.6x faster; above it the "
+        f"roughly 240M cells a same-cost PC is {min_ratio:.1f}-{max_ratio:.1f}x "
+        "faster; above it the "
         "largest consumer NVIDIA card cannot run the problem at all.",
         os.path.join(HERE, "apple-capacity.svg"),
         [("Apple, unified memory", "measured"), ("NVIDIA, VRAM", "other")],
         y_label="largest simulation (M cells)",
+    )
+
+    measured = read_gpus(os.path.join(HERE, "gpus.txt"), include_apple=True)
+    measured.append(read_oommf(os.path.join(HERE, "oommf4M.txt")))
+    measured.sort(key=lambda row: row["value"])
+    render(
+        measured,
+        "MuMax3 GPU benchmark, 4.19M cells (2048x2048)",
+        "All GPU bars are measured results from bench/gpus.txt. Apple M4 uses "
+        "the Metal backend; the other GPU bars use CUDA. OOMMF is the CPU "
+        "reference used by the original gnuplot chart.",
+        os.path.join(HERE, "..", "doc", "static", "gpus.svg"),
+        [
+            ("Apple M4, Metal", "measured"),
+            ("CUDA GPU / OOMMF CPU", "other"),
+        ],
     )
 
 

@@ -19,10 +19,9 @@ mumax3libs:
 
 .PHONY: gpus
 gpus:
-	# Only attempt move when gnuplot succeeded
-	if (cd ${BENCH} && gnuplot gpus.gplot); then \
-		mv ${BENCH}/gpus.svg ${STATIC}/; \
-	fi
+	# Standard-library renderer works on a stock macOS Python installation.
+	python3 ${BENCH}/apple_project.py
+	python3 ${BENCH}/apple_svg.py
 
 .PHONY: clean
 clean:

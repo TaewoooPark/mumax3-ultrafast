@@ -6,7 +6,7 @@
 # NVIDIA driver overhead, and 0.68 for Apple, which is the
 # recommendedMaxWorkingSetSize/RAM ratio measured here (21845/32768 MB).
 #
-# Below roughly 240M cells a same-cost PC is 2.6x to 3.6x faster. Above it the
+# Below roughly 240M cells a same-cost PC is 2.2x to 3.1x faster. Above it the
 # largest consumer NVIDIA card cannot run the problem at all, and the only
 # alternatives are datacenter parts at 10x to 30x the price.
 #

@@ -55,13 +55,14 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
-# Measured on this machine with bench/bench.mx3 at 2048x2048, solver 2, as the
-# median of three runs interleaved with the pre-optimisation build so both come
-# from the same machine state. That interleaving matters: the same binary
-# measured hours apart differed by 15%, while three runs in one session agree to
-# 0.4%.
+# Re-measured on this machine from final commit 081c74da with the isolated
+# 2048x2048 point of bench/bench.mx3 (solver 2): seven consecutive fresh
+# processes, each with the benchmark's kernel/solver warm-up. The median was
+# 1.0497623298479466e8 cells*evals/s (7.99095925 s for 100 steps); the seven-run
+# range was 1.03604e8..1.05704e8 and CV 0.72%. Session-local repetition matters:
+# the same binary has historically differed by as much as 15% hours apart.
 MEASURED_CHIP = "Apple M4"
-MEASURED_THROUGHPUT = 1.041829e08
+MEASURED_THROUGHPUT = 1.0497623298479466e08
 
 # Fraction of quoted bandwidth a GPU streaming kernel reaches (arXiv:2502.05317).
 MEMORY_EFFICIENCY = 0.85
@@ -156,7 +157,10 @@ def main():
         handle.write("\n".join(lines) + "\n")
 
     print(f"wrote {path}")
-    print(f"{'chip':18s} {'spec':>7s} {'achv':>7s} {'limit':>10s} {'M cells/s':>10s}")
+    print(
+        f"{'chip':18s} {'spec':>7s} {'achv':>7s} {'limit':>10s} "
+        f"{'M cell-evals/s':>14s}"
+    )
     for row in rows:
         print(
             f'{row["name"]:18s} {row["spec"]:7.1f} {row["bandwidth"]:7.1f} '
