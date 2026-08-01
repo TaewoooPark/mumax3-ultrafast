@@ -32,6 +32,15 @@ func NewExcitation(name, unit, desc string) *Excitation {
 }
 
 func (p *Excitation) MSlice() cuda.MSlice {
+	// CUDA kernels represent a uniform multiplier with a nil data pointer.
+	// Avoid decoding a full vector field for the common uniform J and
+	// FixedLayer cases; extra mask terms still require materialization.
+	if len(p.extraTerms) == 0 && p.perRegion.IsUniform() {
+		return cuda.MakeMSlice(
+			data.NilSlice(p.NComp(), p.Mesh().Size()),
+			p.perRegion.getRegion(0),
+		)
+	}
 	buf, r := p.Slice()
 	util.Assert(r == true)
 	return cuda.ToMSlice(buf)

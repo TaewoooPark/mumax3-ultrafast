@@ -69,38 +69,33 @@ func AddSTTorque(dst *data.Slice) {
 		return
 	}
 	util.AssertMsg(!Pol.isZero(), "spin polarization should not be 0")
-	jspin, rec := J.Slice()
-	if rec {
-		defer cuda.Recycle(jspin)
+
+	zhangLi := !DisableZhangLiTorque
+	slonczewski := !DisableSlonczewskiTorque && !FixedLayer.isZero()
+	if !zhangLi && !slonczewski {
+		return
 	}
-	fl, rec := FixedLayer.Slice()
-	if rec {
-		defer cuda.Recycle(fl)
-	}
-	if !DisableZhangLiTorque {
-		msat := Msat.MSlice()
-		defer msat.Recycle()
-		j := J.MSlice()
-		defer j.Recycle()
-		alpha := Alpha.MSlice()
-		defer alpha.Recycle()
+
+	// Both STT models consume these same fields. Decode them once when the two
+	// models are enabled together instead of constructing and discarding a
+	// second full-grid copy.
+	msat := Msat.MSlice()
+	defer msat.Recycle()
+	j := J.MSlice()
+	defer j.Recycle()
+	alpha := Alpha.MSlice()
+	defer alpha.Recycle()
+	pol := Pol.MSlice()
+	defer pol.Recycle()
+
+	if zhangLi {
 		xi := Xi.MSlice()
 		defer xi.Recycle()
-		pol := Pol.MSlice()
-		defer pol.Recycle()
 		cuda.AddZhangLiTorque(dst, M.Buffer(), msat, j, alpha, xi, pol, Mesh())
 	}
-	if !DisableSlonczewskiTorque && !FixedLayer.isZero() {
-		msat := Msat.MSlice()
-		defer msat.Recycle()
-		j := J.MSlice()
-		defer j.Recycle()
+	if slonczewski {
 		fixedP := FixedLayer.MSlice()
 		defer fixedP.Recycle()
-		alpha := Alpha.MSlice()
-		defer alpha.Recycle()
-		pol := Pol.MSlice()
-		defer pol.Recycle()
 		lambda := Lambda.MSlice()
 		defer lambda.Recycle()
 		epsPrime := EpsilonPrime.MSlice()
