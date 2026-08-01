@@ -79,8 +79,11 @@ typedef struct mr_device_info {
  * Opaque Metal objects borrowed from the runtime. They remain valid only
  * between mr_begin_external and mr_end_external. Objective-C++ adapters may
  * bridge-cast these values to id<MTLDevice>, id<MTLCommandQueue>, and
- * id<MTLCommandBuffer>. They must append work without committing the command
- * buffer.
+ * id<MTLCommandBuffer>. Adapters normally append work without committing the
+ * command buffer. Framework wrappers such as MPSCommandBuffer may internally
+ * call commitAndContinue; in that case the adapter must pass the wrapper's
+ * final live root command buffer to mr_end_external so the runtime can adopt
+ * it without recommitting the original buffer.
  */
 typedef struct mr_external_context {
     void *device;
@@ -150,7 +153,16 @@ int mr_resolve_buffer_locked(const void *pointer,
                              size_t minimum_bytes,
                              mr_buffer_view *view,
                              char **error_message);
+/*
+ * final_command_buffer is null when the borrowed command buffer did not
+ * change. If an external framework committed it and continued on another
+ * command buffer, final_command_buffer must be that framework's current live
+ * root buffer on context->queue. The runtime retains the replacement before
+ * returning and records the already-committed original for later error
+ * collection; it never commits the original a second time.
+ */
 int mr_end_external(mr_external_context *context,
+                    void *final_command_buffer,
                     int encoder_failed,
                     char **error_message);
 

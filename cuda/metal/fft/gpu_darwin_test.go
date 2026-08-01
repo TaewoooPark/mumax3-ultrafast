@@ -6,11 +6,51 @@ package fft
 import (
 	"fmt"
 	"math"
+	"os"
 	"testing"
 	"unsafe"
 
 	"github.com/mumax/3/cuda/metal"
 )
+
+func TestExternalCommitAndContinueHandoff(t *testing.T) {
+	if err := metal.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+
+	const bytes = int64(4096)
+	buffer := mustMetalAlloc(t, bytes)
+	defer mustMetalFree(t, buffer)
+
+	// Exceed the runtime's retained-command-buffer bound while repeatedly
+	// replacing the root. The final fill must execute after every committed
+	// predecessor, and Sync must commit only the last live root.
+	for value := byte(1); value <= 12; value++ {
+		if err := metal.Fill(buffer, value, bytes); err != nil {
+			t.Fatalf("fill before handoff %d: %v", value, err)
+		}
+		if err := forceCommitAndContinueForTest(); err != nil {
+			t.Fatalf("handoff %d: %v", value, err)
+		}
+	}
+	const finalValue = byte(0x7f)
+	if err := metal.Fill(buffer, finalValue, bytes); err != nil {
+		t.Fatal(err)
+	}
+	host := make([]byte, bytes)
+	if err := metal.CopyToHost(
+		unsafe.Pointer(unsafe.SliceData(host)),
+		buffer,
+		bytes,
+	); err != nil {
+		t.Fatal(err)
+	}
+	for index, value := range host {
+		if value != finalValue {
+			t.Fatalf("result[%d] = %#x, want %#x", index, value, finalValue)
+		}
+	}
+}
 
 func TestMetalFFT3DRoundTripEvenAndOdd(t *testing.T) {
 	if err := metal.Initialize(); err != nil {
@@ -79,6 +119,122 @@ func TestMetalFFT3DRoundTripEvenAndOdd(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestMetalFFT3DBatchedRoundTrip(t *testing.T) {
+	if err := metal.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	const batch = 3
+	layout, err := NewLayout([]int{2, 3, 5}, batch)
+	if err != nil {
+		t.Fatal(err)
+	}
+	input := make([]float32, layout.RealCount())
+	for i := range input {
+		input[i] = float32(math.Sin(float64(i)*0.19) + 0.03*float64(i))
+	}
+
+	realBuffer := mustMetalAlloc(t, int64(layout.RealCount()*4))
+	spectrumBuffer := mustMetalAlloc(t, int64(layout.HermitianCount()*8))
+	roundTripBuffer := mustMetalAlloc(t, int64(layout.RealCount()*4))
+	defer mustMetalFree(t, realBuffer)
+	defer mustMetalFree(t, spectrumBuffer)
+	defer mustMetalFree(t, roundTripBuffer)
+	if err := metal.CopyToDevice(
+		realBuffer,
+		unsafe.Pointer(unsafe.SliceData(input)),
+		int64(len(input)*4),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	forward, err := CreatePlan(layout, RealToComplex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := DestroyPlan(forward); err != nil {
+			t.Error(err)
+		}
+	}()
+	inverse, err := CreatePlan(layout, ComplexToReal)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := DestroyPlan(inverse); err != nil {
+			t.Error(err)
+		}
+	}()
+
+	if err := Execute(forward, uintptr(realBuffer), uintptr(spectrumBuffer), -1); err != nil {
+		t.Fatal(err)
+	}
+	if err := Execute(inverse, uintptr(spectrumBuffer), uintptr(roundTripBuffer), 1); err != nil {
+		t.Fatal(err)
+	}
+	output := make([]float32, len(input))
+	if err := metal.CopyToHost(
+		unsafe.Pointer(unsafe.SliceData(output)),
+		roundTripBuffer,
+		int64(len(output)*4),
+	); err != nil {
+		t.Fatal(err)
+	}
+
+	scale := float32(product(layout.Dimensions))
+	for i := range input {
+		want := scale * input[i]
+		tolerance := 8e-4 * math.Max(1, math.Abs(float64(want)))
+		if difference := math.Abs(float64(output[i] - want)); difference > tolerance {
+			t.Fatalf("output[%d]=%g, want %g ± %g", i, output[i], want, tolerance)
+		}
+	}
+}
+
+func TestMetalFFTLargePadded2DSmoke(t *testing.T) {
+	if os.Getenv("MUMAX3_METAL_LARGE_FFT_TEST") != "1" {
+		t.Skip("set MUMAX3_METAL_LARGE_FFT_TEST=1 to exercise the padded 8192² FFT")
+	}
+	if err := metal.Initialize(); err != nil {
+		t.Fatal(err)
+	}
+	layout, err := NewLayout([]int{1, 8192, 8192}, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	layout = layout.WithActiveOuter(4096)
+	realBuffer := mustMetalAlloc(t, int64(layout.RealCount()*4))
+	spectrumBuffer := mustMetalAlloc(t, int64(layout.HermitianCount()*8))
+	defer mustMetalFree(t, realBuffer)
+	defer mustMetalFree(t, spectrumBuffer)
+	if err := metal.Fill(realBuffer, 0, int64(layout.RealCount()*4)); err != nil {
+		t.Fatal(err)
+	}
+	plan, err := CreatePlan(layout, RealToComplex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		if err := DestroyPlan(plan); err != nil {
+			t.Error(err)
+		}
+	}()
+	if err := Execute(plan, uintptr(realBuffer), uintptr(spectrumBuffer), -1); err != nil {
+		t.Fatal(err)
+	}
+	var first complex64
+	if err := metal.CopyToHost(
+		unsafe.Pointer(&first),
+		spectrumBuffer,
+		int64(unsafe.Sizeof(first)),
+	); err != nil {
+		t.Fatal(err)
+	}
+	if first != 0 {
+		t.Fatalf("zero-input DC term = %v, want 0", first)
 	}
 }
 

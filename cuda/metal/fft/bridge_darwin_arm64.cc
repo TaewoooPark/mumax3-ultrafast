@@ -384,6 +384,8 @@ extern "C" int mf_plan_execute(void *opaquePlan,
         }
 
         int result = MF_SUCCESS;
+        MPSCommandBuffer *mpsCommandBuffer = nil;
+        id<MTLCommandBuffer> finalCommandBuffer = nil;
         @try {
             mr_buffer_view inputView = {};
             runtimeStatus = mr_resolve_buffer_locked(input, inputBytes, &inputView, &runtimeError);
@@ -427,7 +429,7 @@ extern "C" int mf_plan_execute(void *opaquePlan,
                 } else {
                     id<MTLCommandBuffer> commandBuffer =
                         (__bridge id<MTLCommandBuffer>)context.command_buffer;
-                    MPSCommandBuffer *mpsCommandBuffer =
+                    mpsCommandBuffer =
                         [MPSCommandBuffer commandBufferWithCommandBuffer:commandBuffer];
 
                     /*
@@ -554,10 +556,26 @@ extern "C" int mf_plan_execute(void *opaquePlan,
         } @catch (NSException *exception) {
             mf_set_error(error_message, exception.reason);
             result = MF_ERROR_ENCODING;
+        } @finally {
+            /*
+             * Any method using an MPSCommandBuffer may internally call
+             * commitAndContinue. Apple's contract requires asking the wrapper
+             * for its current live root afterwards; returning the borrowed
+             * object would make the runtime commit an already-committed buffer.
+             * Keep this in @finally so a graph that commits before throwing is
+             * handed off safely as well.
+             */
+            if (mpsCommandBuffer != nil) {
+                finalCommandBuffer = mpsCommandBuffer.rootCommandBuffer;
+            }
         }
 
         char *endError = nullptr;
-        const int endStatus = mr_end_external(&context, result != MF_SUCCESS, &endError);
+        const int endStatus = mr_end_external(
+            &context,
+            (__bridge void *)finalCommandBuffer,
+            result != MF_SUCCESS,
+            &endError);
         if (endStatus != MR_SUCCESS) {
             if (result == MF_SUCCESS) {
                 mf_copy_runtime_error(error_message, endError);
@@ -580,6 +598,52 @@ extern "C" int mf_plan_destroy(void *opaquePlan, char **error_message) {
         (void)plan;
     }
     return MF_SUCCESS;
+}
+
+extern "C" int mf_test_commit_and_continue(char **error_message) {
+    @autoreleasepool {
+        mr_external_context context = {};
+        char *runtimeError = nullptr;
+        int runtimeStatus = mr_begin_external(&context, &runtimeError);
+        if (runtimeStatus != MR_SUCCESS) {
+            mf_copy_runtime_error(error_message, runtimeError);
+            return MF_ERROR_RUNTIME;
+        }
+
+        int result = MF_SUCCESS;
+        MPSCommandBuffer *mpsCommandBuffer = nil;
+        id<MTLCommandBuffer> finalCommandBuffer = nil;
+        @try {
+            id<MTLCommandBuffer> commandBuffer =
+                (__bridge id<MTLCommandBuffer>)context.command_buffer;
+            mpsCommandBuffer =
+                [MPSCommandBuffer commandBufferWithCommandBuffer:commandBuffer];
+            [mpsCommandBuffer commitAndContinue];
+        } @catch (NSException *exception) {
+            mf_set_error(error_message, exception.reason);
+            result = MF_ERROR_ENCODING;
+        } @finally {
+            if (mpsCommandBuffer != nil) {
+                finalCommandBuffer = mpsCommandBuffer.rootCommandBuffer;
+            }
+        }
+
+        char *endError = nullptr;
+        const int endStatus = mr_end_external(
+            &context,
+            (__bridge void *)finalCommandBuffer,
+            result != MF_SUCCESS,
+            &endError);
+        if (endStatus != MR_SUCCESS) {
+            if (result == MF_SUCCESS) {
+                mf_copy_runtime_error(error_message, endError);
+                result = MF_ERROR_RUNTIME;
+            } else if (endError != nullptr) {
+                mr_free_error(endError);
+            }
+        }
+        return result;
+    }
 }
 
 extern "C" void mf_free_error(char *error_message) {

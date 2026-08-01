@@ -45,6 +45,10 @@ int mf_plan_execute(void *plan,
 
 int mf_plan_destroy(void *plan, char **error_message);
 
+/* Test hook: force the same MPSCommandBuffer root replacement that a large
+ * graph may perform internally, without requiring a large allocation. */
+int mf_test_commit_and_continue(char **error_message);
+
 void mf_free_error(char *error_message);
 
 #ifdef __cplusplus

@@ -183,15 +183,7 @@ int checkSubmittedCommandUnlocked(id<MTLCommandBuffer> command_buffer,
     return MR_SUCCESS;
 }
 
-int submitUnlocked(bool wait, std::string &error) {
-    if (current_command_buffer != nil) {
-        id<MTLCommandBuffer> submitting = current_command_buffer;
-        current_command_buffer = nil;
-        encoded_operation_count = 0;
-        [submitting commit];
-        [submitted_command_buffers addObject:submitting];
-    }
-
+int retireSubmittedUnlocked(bool wait, std::string &error) {
     if (submitted_command_buffers.count == 0) {
         return MR_SUCCESS;
     }
@@ -231,6 +223,17 @@ int submitUnlocked(bool wait, std::string &error) {
         error = first_error;
     }
     return first_status;
+}
+
+int submitUnlocked(bool wait, std::string &error) {
+    if (current_command_buffer != nil) {
+        id<MTLCommandBuffer> submitting = current_command_buffer;
+        current_command_buffer = nil;
+        encoded_operation_count = 0;
+        [submitting commit];
+        [submitted_command_buffers addObject:submitting];
+    }
+    return retireSubmittedUnlocked(wait, error);
 }
 
 int operationEncodedUnlocked(std::string &error) {
@@ -1305,6 +1308,7 @@ int mr_resolve_buffer_locked(const void *pointer,
 }
 
 int mr_end_external(mr_external_context *context,
+                    void *final_command_buffer,
                     int encoder_failed,
                     char **error_message) {
     @autoreleasepool {
@@ -1314,11 +1318,43 @@ int mr_end_external(mr_external_context *context,
                         error_message,
                         "external Metal context token is invalid");
         }
+        id<MTLCommandBuffer> borrowed = current_command_buffer;
+        id<MTLCommandBuffer> final_buffer =
+            final_command_buffer == nullptr
+                ? borrowed
+                : (__bridge id<MTLCommandBuffer>)final_command_buffer;
+
+        /*
+         * MPSCommandBuffer may commit the buffer it was given and replace its
+         * root while encoding a graph. The old object is therefore already
+         * submitted: retain it for asynchronous error reporting, but never
+         * call -commit on it again. Assigning the final root to the strong
+         * global before the adapter's ARC local goes out of scope transfers
+         * the live batch back to the runtime without a gap in ownership.
+         */
+        const bool root_changed = final_buffer != borrowed;
+        if (root_changed) {
+            if (borrowed != nil) {
+                [submitted_command_buffers addObject:borrowed];
+            }
+            current_command_buffer = final_buffer;
+            encoded_operation_count = 0;
+        }
+
         std::memset(context, 0, sizeof(*context));
         active_external_token = 0;
         std::string error;
         int status = MR_SUCCESS;
-        if (encoder_failed == 0) {
+        if (root_changed) {
+            /*
+             * commitAndContinue can otherwise grow the retained list without
+             * reaching the runtime's operation-count submission boundary.
+             * Waiting only for the oldest committed buffer preserves queue
+             * ordering and leaves the new live root uncommitted for batching.
+             */
+            status = retireSubmittedUnlocked(false, error);
+        }
+        if (encoder_failed == 0 && status == MR_SUCCESS) {
             status = operationEncodedUnlocked(error);
         }
         runtime_mutex.unlock();
@@ -1326,7 +1362,7 @@ int mr_end_external(mr_external_context *context,
             return fail(MR_ERROR_COMMAND,
                         error_message,
                         "external Metal encoder reported a failure; "
-                        "the current batch is retained for synchronization");
+                        "encoded batches are retained for synchronization");
         }
         return status == MR_SUCCESS
                    ? MR_SUCCESS

@@ -364,7 +364,8 @@ extern "C" int mrg_generate_normal(void *opaqueGenerator,
             }
 
             char *endError = nullptr;
-            const int endStatus = mr_end_external(&context, result != MRG_SUCCESS, &endError);
+            const int endStatus = mr_end_external(
+                &context, nullptr, result != MRG_SUCCESS, &endError);
             if (endStatus != MR_SUCCESS) {
                 if (result == MRG_SUCCESS) {
                     mrg_copy_runtime_error(error_message, endError);
@@ -472,7 +473,8 @@ extern "C" int mrg_generate_raw(void *opaqueGenerator,
             }
 
             char *endError = nullptr;
-            const int endStatus = mr_end_external(&context, result != MRG_SUCCESS, &endError);
+            const int endStatus = mr_end_external(
+                &context, nullptr, result != MRG_SUCCESS, &endError);
             if (endStatus != MR_SUCCESS) {
                 if (result == MRG_SUCCESS) {
                     mrg_copy_runtime_error(error_message, endError);

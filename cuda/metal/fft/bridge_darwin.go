@@ -58,8 +58,9 @@ func CreatePlan(layout Layout, transform Transform) (uintptr, error) {
 }
 
 // Execute appends a transform to the Metal runtime's current command buffer.
-// It deliberately does not commit: Flush/Sync remain the sole ownership point
-// for CUDA-stream-compatible batching.
+// MPSGraph may internally commit a large graph and continue on a replacement;
+// the bridge returns that live root to the runtime so subsequent work remains
+// ordered and Flush/Sync retain ownership of the final batch.
 func Execute(handle, input, output uintptr, direction int) error {
 	if handle == 0 || input == 0 || output == 0 {
 		return fmt.Errorf("metal fft: invalid nil plan or buffer")
@@ -74,6 +75,18 @@ func Execute(handle, input, output uintptr, direction int) error {
 	)
 	if status != C.MF_SUCCESS {
 		return bridgeError("execute", message)
+	}
+	if message != nil {
+		C.mf_free_error(message)
+	}
+	return nil
+}
+
+func forceCommitAndContinueForTest() error {
+	var message *C.char
+	status := C.mf_test_commit_and_continue(&message)
+	if status != C.MF_SUCCESS {
+		return bridgeError("test commit-and-continue", message)
 	}
 	if message != nil {
 		C.mf_free_error(message)
