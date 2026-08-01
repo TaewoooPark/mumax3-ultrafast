@@ -45,8 +45,8 @@ func init() {
 	DeclFunc("Exit", Exit, "Exit from the program")
 	SetSolver(DORMANDPRINCE)
 	_ = NewScalarValue("dt", "s", "Time Step", func() float64 { return Dt_si })
-	_ = NewScalarValue("LastErr", "", "Error of last step", func() float64 { return LastErr })
-	_ = NewScalarValue("PeakErr", "", "Overall maxium error per step", func() float64 { return PeakErr })
+	_ = NewScalarValue("LastErr", "", "Error of last step", GetLastErr)
+	_ = NewScalarValue("PeakErr", "", "Overall maxium error per step", GetPeakErr)
 	_ = NewScalarValue("NEval", "", "Total number of torque evaluations", func() float64 { return float64(NEvals) })
 }
 
@@ -112,8 +112,67 @@ func setLastErr(err float64) {
 	}
 }
 
+// Deferred reductions.
+//
+// Copying a reduction back is what drains the GPU pipeline, and the drain
+// costs far more than the reduction. LastTorque and, when dt is pinned,
+// LastErr are only ever reported, never used to steer the solver, so their
+// read-back is postponed until something actually looks at them. One drain
+// then serves every reduction that piled up behind it, and the reported values
+// are exactly the ones the eager code produced.
+const maxDeferredReductions = 32
+
+type deferredReduction struct {
+	pending *cuda.Pending
+	apply   func(float64)
+}
+
+var deferredReductions []deferredReduction
+
+func deferReduction(pending *cuda.Pending, apply func(float64)) {
+	deferredReductions = append(deferredReductions, deferredReduction{pending, apply})
+	// Each Pending holds one slot of the reduction buffer pool, so the backlog
+	// has to stay well inside it.
+	if len(deferredReductions) >= maxDeferredReductions {
+		resolveReductions()
+	}
+}
+
+// resolveReductions reads back every postponed reduction, in the order they
+// were enqueued, so running maxima like PeakErr see the same sequence they
+// would have seen step by step.
+func resolveReductions() {
+	for _, d := range deferredReductions {
+		d.apply(d.pending.Value())
+	}
+	deferredReductions = deferredReductions[:0]
+}
+
+// GetLastErr, GetPeakErr and GetLastTorque are the read side of the deferred
+// reductions above: asking for the value is what pays for it.
+func GetLastErr() float64 {
+	resolveReductions()
+	return LastErr
+}
+
+func GetPeakErr() float64 {
+	resolveReductions()
+	return PeakErr
+}
+
+func GetLastTorque() float64 {
+	resolveReductions()
+	return LastTorque
+}
+
+// setLastErrLater reports the embedded error estimate without waiting for it.
+// Only valid where the estimate cannot change the step, i.e. under a pinned dt.
+func setLastErrLater(pending *cuda.Pending, scale float64) {
+	deferReduction(pending, func(err float64) { setLastErr(err * scale) })
+}
+
 func setMaxTorque(τ *data.Slice) {
-	LastTorque = cuda.MaxVecNorm(τ)
+	deferReduction(cuda.MaxVecNormAsync(τ), func(v float64) { LastTorque = v })
 }
 
 // adapt time step: dt *= corr, but limited to sensible values.
@@ -176,6 +235,7 @@ func RunWhile(condition func() bool) {
 	const output = true
 	stepper.Free() // start from a clean state
 	runWhile(condition, output)
+	resolveReductions() // hand the script up-to-date LastErr/PeakErr/LastTorque
 	pause = true
 }
 
@@ -187,6 +247,10 @@ func runWhile(condition func() bool, output bool) {
 			step(output)
 		// accept tasks form Inject channel
 		case f := <-Inject:
+			// Injected code, and the gui refresh that rides along with it,
+			// reads the reported solver values, so settle them here where we
+			// are still on the solver goroutine.
+			resolveReductions()
 			f()
 		}
 	}

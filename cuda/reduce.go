@@ -61,9 +61,55 @@ func MaxAbs(in *data.Slice) float32 {
 //
 //	max_i sqrt( x[i]*x[i] + y[i]*y[i] + z[i]*z[i] )
 func MaxVecNorm(v *data.Slice) float64 {
+	return MaxVecNormAsync(v).Value()
+}
+
+// Pending is a reduction whose kernel has been enqueued but whose partial
+// results have not been copied back yet.
+//
+// Reading a reduction is what forces the GPU pipeline to drain, and on a
+// latency-bound backend that costs far more than the reduction itself. A
+// caller that only needs the number for reporting can keep a Pending and
+// resolve it later, when a drain happens anyway. The value is unchanged by
+// waiting: the partial slots are owned by this Pending until Value reads them.
+type Pending struct {
+	buf    unsafe.Pointer
+	nComp  int
+	slots  int
+	sqrt   bool
+	value  float64
+	loaded bool
+}
+
+// Value copies the partial results back, combines them and recycles the
+// reduction buffer. It is idempotent.
+func (p *Pending) Value() float64 {
+	if !p.loaded {
+		v := float64(copybackMax(p.buf, p.nComp, p.slots))
+		if p.sqrt {
+			v = math.Sqrt(v)
+		}
+		p.value = v
+		p.loaded = true
+	}
+	return p.value
+}
+
+// MaxVecNormAsync enqueues MaxVecNorm without reading the result back.
+func MaxVecNormAsync(v *data.Slice) *Pending {
 	out := reduceBuf(0, 1, reduceMaxSlots)
 	k_reducemaxvecnorm2_async(v.DevPtr(0), v.DevPtr(1), v.DevPtr(2), out, 0, v.Len(), reducemaxcfg)
-	return math.Sqrt(float64(copybackMax(out, 1, reduceMaxSlots)))
+	return &Pending{buf: out, nComp: 1, slots: reduceMaxSlots, sqrt: true}
+}
+
+// MaxVecDiffAsync enqueues MaxVecDiff without reading the result back.
+func MaxVecDiffAsync(x, y *data.Slice) *Pending {
+	util.Argument(x.Len() == y.Len())
+	out := reduceBuf(0, 1, reduceMaxSlots)
+	k_reducemaxvecdiff2_async(x.DevPtr(0), x.DevPtr(1), x.DevPtr(2),
+		y.DevPtr(0), y.DevPtr(1), y.DevPtr(2),
+		out, 0, x.Len(), reducemaxcfg)
+	return &Pending{buf: out, nComp: 1, slots: reduceMaxSlots, sqrt: true}
 }
 
 // Maximum of the norms of the difference between all vectors (x1,y1,z1) and (x2,y2,z2)
@@ -71,12 +117,7 @@ func MaxVecNorm(v *data.Slice) float64 {
 //	(dx, dy, dz) = (x1, y1, z1) - (x2, y2, z2)
 //	max_i sqrt( dx[i]*dx[i] + dy[i]*dy[i] + dz[i]*dz[i] )
 func MaxVecDiff(x, y *data.Slice) float64 {
-	util.Argument(x.Len() == y.Len())
-	out := reduceBuf(0, 1, reduceMaxSlots)
-	k_reducemaxvecdiff2_async(x.DevPtr(0), x.DevPtr(1), x.DevPtr(2),
-		y.DevPtr(0), y.DevPtr(1), y.DevPtr(2),
-		out, 0, x.Len(), reducemaxcfg)
-	return math.Sqrt(float64(copybackMax(out, 1, reduceMaxSlots)))
+	return MaxVecDiffAsync(x, y).Value()
 }
 
 var reduceBuffers chan unsafe.Pointer // pool of reduceSlots-wide buffers for reduce
