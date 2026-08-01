@@ -97,10 +97,23 @@ func (rk *RK45DP) Step() {
 	cuda.Madd6(Err, rk.k1, k3, k4, k5, k6, k7, (35./384.)-(5179./57600.), (500./1113.)-(7571./16695.), (125./192.)-(393./640.), (-2187./6784.)-(-92097./339200.), (11./84.)-(187./2100.), (0.)-(1./40.))
 
 	// determine error
+	//
+	// A pinned dt makes the step unconditional, so the estimate is reported
+	// but never waited for: reading it back would drain the GPU pipeline for a
+	// number nothing acts on.
+	if FixDt != 0 {
+		setLastErrLater(cuda.MaxVecNormAsync(Err), float64(h))
+		setMaxTorque(k7)
+		NSteps++
+		Time = t0 + Dt_si
+		Dt_si = FixDt // what adaptDt does under a pinned step
+		data.Copy(rk.k1, k7)
+		return
+	}
 	err := cuda.MaxVecNorm(Err) * float64(h)
 
 	// adjust next time step
-	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
+	if err < MaxErr || Dt_si <= MinDt { // mindt check to avoid infinite loop
 		// step OK
 		setLastErr(err)
 		setMaxTorque(k7)

@@ -33,10 +33,22 @@ func (*Heun) Step() {
 	Time += Dt_si
 	torqueFn(dy)
 
+	// A pinned dt makes the step unconditional, so the error estimate is
+	// reported but never waited for. See RK45DP.Step.
+	if FixDt != 0 {
+		pending := cuda.MaxVecDiffAsync(dy0, dy)
+		cuda.Madd3(y, y, dy, dy0, 1, 0.5*dt, -0.5*dt)
+		M.normalize()
+		NSteps++
+		Dt_si = FixDt // what adaptDt does under a pinned step
+		setLastErrLater(pending, float64(dt))
+		setMaxTorque(dy)
+		return
+	}
 	err := cuda.MaxVecDiff(dy0, dy) * float64(dt)
 
 	// adjust next time step
-	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
+	if err < MaxErr || Dt_si <= MinDt { // mindt check to avoid infinite loop
 		// step OK
 		cuda.Madd3(y, y, dy, dy0, 1, 0.5*dt, -0.5*dt)
 		M.normalize()

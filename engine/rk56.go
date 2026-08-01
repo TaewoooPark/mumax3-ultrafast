@@ -96,10 +96,21 @@ func (rk *RK56) Step() {
 	cuda.Madd4(Err, k1, k6, k7, k8, (-5. / 66.), (-5. / 66.), (5. / 66.), (5. / 66.))
 
 	// determine error
+	//
+	// A pinned dt makes the step unconditional, so the estimate is reported
+	// but never waited for. See RK45DP.Step.
+	if FixDt != 0 {
+		setLastErrLater(cuda.MaxVecNormAsync(Err), float64(h))
+		setMaxTorque(k8)
+		NSteps++
+		Time = t0 + Dt_si
+		Dt_si = FixDt // what adaptDt does under a pinned step
+		return
+	}
 	err := cuda.MaxVecNorm(Err) * float64(h)
 
 	// adjust next time step
-	if err < MaxErr || Dt_si <= MinDt || FixDt != 0 { // mindt check to avoid infinite loop
+	if err < MaxErr || Dt_si <= MinDt { // mindt check to avoid infinite loop
 		// step OK
 		setLastErr(err)
 		setMaxTorque(k8)

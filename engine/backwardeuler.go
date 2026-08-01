@@ -61,10 +61,11 @@ func (s *BackwardEuler) Step() {
 
 	Time = t0 + Dt_si
 
-	err := cuda.MaxVecDiff(dy0, dy1) * float64(dt)
-
+	// This solver always runs at a pinned dt, so the residual between the two
+	// iterations is reported but never acted on. Reading it back would drain
+	// the GPU pipeline once per step for a number nothing consumes.
 	NSteps++
-	setLastErr(err)
+	setLastErrLater(cuda.MaxVecDiffAsync(dy0, dy1), float64(dt))
 	setMaxTorque(dy1)
 }
 
