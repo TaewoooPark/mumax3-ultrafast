@@ -23,7 +23,19 @@ import (
 var (
 	exitStatus       atom = 0
 	numOK, numFailed atom = 0, 0
+	// A single simulation cannot keep an Apple GPU busy once its step rate is
+	// set by host round trips rather than by arithmetic. Measured on an M4 at
+	// 128x128: three concurrent jobs finish in the wall-clock time of one, and
+	// the aggregate rate stops improving past three or four. See -j.
+	flag_jobs = flag.Int("j", 1, "Number of simulations to run concurrently on each GPU")
 )
+
+// A queue slot: which GPU to use, and a stable index used to give each
+// concurrently running job its own GUI port.
+type slot struct {
+	gpu   int
+	index int
+}
 
 func RunQueue(files []string) {
 	s := NewStateTab(files)
@@ -85,26 +97,27 @@ func (s *stateTab) Finish(j job) {
 
 // Runs all the jobs in stateTab.
 func (s *stateTab) Run() {
-	idle, nGPU := initGPUs()
+	idle, nSlots := initSlots()
 	for {
-		gpu := <-idle
+		sl := <-idle
 		addr := ""
 		if *engine.Flag_port != "" {
 			_, p, _ := net.SplitHostPort(*engine.Flag_port)
-			addr = fmt.Sprint(":", atoi(p)+1+gpu) // +1 because Flag_port hosts overview of queue
+			// +1 because Flag_port hosts the overview of the queue itself.
+			addr = fmt.Sprint(":", atoi(p)+1+sl.index)
 		}
 		j, ok := s.StartNext(addr)
 		if !ok {
 			break
 		}
 		go func() {
-			run(j.inFile, gpu, j.webAddr)
+			run(j.inFile, sl.gpu, j.webAddr)
 			s.Finish(j)
-			idle <- gpu
+			idle <- sl
 		}()
 	}
 	// drain remaining tasks (one already done)
-	for i := 1; i < nGPU; i++ {
+	for i := 1; i < nSlots; i++ {
 		<-idle
 	}
 }
@@ -129,7 +142,9 @@ func run(inFile string, gpu int, webAddr string) {
 	// pass through flags
 	flags := []string{gpuFlag, httpFlag}
 	flag.Visit(func(f *flag.Flag) {
-		if f.Name != "gpu" && f.Name != "http" && f.Name != "failfast" {
+		// -j governs this queue, not the single-file children it spawns.
+		if f.Name != "gpu" && f.Name != "http" && f.Name != "failfast" &&
+			f.Name != "j" {
 			flags = append(flags, fmt.Sprintf("-%v=%v", f.Name, f.Value))
 		}
 	})
@@ -151,27 +166,43 @@ func run(inFile string, gpu int, webAddr string) {
 	}
 }
 
-// Creates a concurrent channel containing the available GPU IDs for jobs.
-// Returns the channel and the number of available GPUs for the queue.
-func initGPUs() (chan int, int) {
+// Creates a concurrent channel of runnable slots. Each GPU contributes -j
+// slots, so a queue can keep more than one simulation in flight per device.
+// Returns the channel and the total number of slots.
+func initSlots() (chan slot, int) {
 	nGpu := cu.DeviceGetCount()
 	if nGpu == 0 {
 		log.Fatal("no GPUs available")
 	}
 
 	singleGPU := engine.FlagPassed("gpu")
+	gpus := make([]int, 0, nGpu)
 	if singleGPU {
-		nGpu = 1
-	}
-	idle := make(chan int, nGpu)
-	if singleGPU {
-		idle <- *engine.Flag_gpu
+		gpus = append(gpus, *engine.Flag_gpu)
 	} else {
 		for i := 0; i < nGpu; i++ {
-			idle <- i
+			gpus = append(gpus, i)
 		}
 	}
-	return idle, nGpu
+
+	perGPU := *flag_jobs
+	if perGPU < 1 {
+		perGPU = 1
+	}
+	nSlots := len(gpus) * perGPU
+	idle := make(chan slot, nSlots)
+	index := 0
+	for round := 0; round < perGPU; round++ {
+		for _, gpu := range gpus {
+			idle <- slot{gpu: gpu, index: index}
+			index++
+		}
+	}
+	if perGPU > 1 {
+		log.Printf("//running %d simulations concurrently on each of %d GPU(s)",
+			perGPU, len(gpus))
+	}
+	return idle, nSlots
 }
 
 func (s *stateTab) PrintTo(w io.Writer) {
