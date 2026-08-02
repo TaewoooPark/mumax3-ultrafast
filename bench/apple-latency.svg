@@ -5,9 +5,9 @@
 <text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">Same binary against commit a02cfd9b, medians of three interleaved runs in</text>
 <text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">one session. These are the workloads whose step rate is set by host round</text>
 <text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">trips rather than by arithmetic. The published 4.19M-cell point is</text>
-<text x="78" y="93" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">bandwidth-bound and does not move: 1.0498e8 before against 1.0583e8 after,</text>
-<text x="78" y="108" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">inside a single set's 0.91% CV. The sweep bar compares -j 3 against -j 1,</text>
-<text x="78" y="123" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">so it is aggregate throughput, not single-run speed.</text>
+<text x="78" y="93" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">bandwidth-bound and does not move: 1.0498e8 before against 1.0551e8 after,</text>
+<text x="78" y="108" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">inside the 0.91% CV of the pooled anchor. The sweep bar compares -j 3</text>
+<text x="78" y="123" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">against -j 1, so it is aggregate throughput, not single-run speed.</text>
 <line x1="78" y1="434.0" x2="526.0" y2="434.0" stroke="#e4e6e9" stroke-width="1"/>
 <text x="70" y="438.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
 <line x1="78" y1="364.0" x2="526.0" y2="364.0" stroke="#e4e6e9" stroke-width="1"/>

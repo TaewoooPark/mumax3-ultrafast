@@ -144,6 +144,14 @@ Validate any of the first two against a default run for your own problem. See
 [section 13 of the optimization log](OPTIMIZATION_PLAN.md) for the measurements,
 the accuracy checks, and what is still on the table.
 
+One sizing note that follows from the same measurements: throughput per cell is
+not flat in problem size. On the measured M4 it peaks at 256x256 and is 1.39x
+better there than at the 2048x2048 point the published charts use, while at and
+below 128x128 a fixed per-evaluation overhead of about 187 us dominates and a
+wider GPU cannot help at all. `bench/curve.txt` has the measured curve and
+`bench/apple-crossover.svg` shows, per chip, the smallest mesh at which extra GPU
+width starts to pay.
+
 ## Downloads and documentation
 
 👉 Pre-compiled binaries, examples, and documentation are available on the [mumax³ homepage](https://mumax.github.io).

@@ -19,7 +19,7 @@ class AppleModelTest(unittest.TestCase):
         cls.by_chip = {row["chip"]: row for row in cls.rows}
 
     def test_anchor_uses_heun_cell_evaluations(self):
-        expected = 2048 * 2048 * 100 * 2 / 7.926141958
+        expected = 2048 * 2048 * 100 * 2 / 7.950234208
         self.assertAlmostEqual(apple_project.ANCHOR_THROUGHPUT, expected, places=7)
         anchor = self.by_chip["M4"]
         self.assertEqual(anchor["status"], "measured")
@@ -40,24 +40,24 @@ class AppleModelTest(unittest.TestCase):
         # Rounded M cell-evals/s values independently audited against the model
         # definition. A change here must be accompanied by input provenance.
         #
-        # Refreshing the measured anchor from 7.99095925 s to 7.926141958 s scales
-        # every projection by one factor, 1.0081776597, because the model is
-        # linear in the anchor. These are the previously audited triplets carried
+        # Refreshing the measured anchor from 7.99095925 s to 7.950234208 s scales
+        # every projection by one factor, 1.0051224959, because the model is
+        # linear in the anchor. These are the originally audited triplets carried
         # through that factor at full precision, not values read back out of the
         # model, so the check still catches a structural change.
         expected = {
-            "M1": (61.8, 55.9, 84.7),
-            "M3 Ultra 60c": (525.3, 439.0, 722.5),
-            "M3 Ultra": (737.5, 449.6, 846.7),
-            "M4 Pro 16c": (210.5, 169.3, 240.8),
-            "M4 Pro": (237.2, 211.5, 262.5),
-            "M4 Max 32c": (336.2, 324.5, 361.6),
-            "M4 Max 40c": (417.3, 392.5, 481.5),
-            "M5": (124.2, 105.8, 134.9),
-            "M5 Pro 16c": (239.9, 169.3, 271.8),
-            "M5 Pro": (254.1, 211.7, 275.5),
-            "M5 Max 32c": (386.5, 338.7, 405.7),
-            "M5 Max 40c": (479.8, 423.3, 541.5),
+            "M1": (61.6, 55.8, 84.4),
+            "M3 Ultra 60c": (523.7, 437.7, 720.3),
+            "M3 Ultra": (735.3, 448.2, 844.1),
+            "M4 Pro 16c": (209.8, 168.8, 240.0),
+            "M4 Pro": (236.5, 210.9, 261.7),
+            "M4 Max 32c": (335.2, 323.5, 360.5),
+            "M4 Max 40c": (416.0, 391.3, 480.1),
+            "M5": (123.8, 105.5, 134.5),
+            "M5 Pro 16c": (239.1, 168.8, 271.0),
+            "M5 Pro": (253.3, 211.0, 274.6),
+            "M5 Max 32c": (385.3, 337.6, 404.5),
+            "M5 Max 40c": (478.3, 422.1, 539.9),
         }
         for chip, triplet in expected.items():
             row = self.by_chip[chip]
@@ -87,8 +87,39 @@ class AppleModelTest(unittest.TestCase):
         self.assertEqual([row["total"] for row in apple], [599, 1399, 1999, 3999])
         self.assertEqual(
             [round(row["value"], 1) for row in apple],
-            [105.8, 210.5, 336.2, 525.3],
+            [105.5, 209.8, 335.2, 523.7],
         )
+
+    def test_overhead_floor_matches_the_measured_curve(self):
+        """The floor the model uses must be the floor the curve actually shows."""
+        curve = apple_svg.read_curve(os.path.join(ROOT, "bench", "curve.txt"))
+        by_mesh = {row["name"]: row for row in curve}
+        smallest = min(row["per_eval"] for row in curve)
+        self.assertAlmostEqual(
+            apple_project.OVERHEAD_MICROSECONDS_PER_EVAL, smallest, places=1
+        )
+        # Flat at the small end, clearly off the floor by 256^2. If this stops
+        # holding the two-regime split has lost its basis.
+        self.assertLess(by_mesh["64^2"]["per_eval"] / smallest, 1.1)
+        self.assertGreater(by_mesh["256^2"]["per_eval"] / smallest, 2.0)
+        # The published operating point sits on the plateau, not at the peak.
+        self.assertEqual(max(curve, key=lambda r: r["value"])["name"], "256^2")
+
+    def test_crossover_brackets_the_measured_transition(self):
+        """The anchor chip's crossover has to land where the curve bends."""
+        m4 = self.by_chip["M4"]
+        self.assertGreater(m4["crossover_cells"], 64 * 64)
+        self.assertLess(m4["crossover_cells"], 256 * 256)
+        self.assertAlmostEqual(m4["crossover_mesh"], 140, delta=1)
+        # A wider chip needs a bigger problem before its width is the limit.
+        self.assertGreater(
+            self.by_chip["M3 Ultra"]["crossover_cells"], m4["crossover_cells"]
+        )
+
+    def test_overhead_floor_does_not_bind_at_the_published_point(self):
+        """Which is why refreshing the model leaves published numbers alone."""
+        ceiling = apple_project.overhead_ceiling(2048 * 2048)
+        self.assertGreater(ceiling, 20 * max(row["value"] for row in self.rows))
 
     def test_measured_m4_is_not_duplicated_in_combined_chart(self):
         gpu_path = os.path.join(ROOT, "bench", "gpus.txt")

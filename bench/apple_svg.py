@@ -41,7 +41,16 @@ def read_apple(path):
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            bandwidth, cores, central, low, high, status, name = shlex.split(line)
+            (
+                bandwidth,
+                cores,
+                central,
+                low,
+                high,
+                crossover,
+                status,
+                name,
+            ) = shlex.split(line)
             if status not in {"measured", "modeled"}:
                 raise ValueError(f"unknown Apple result status: {status}")
             rows.append(
@@ -50,6 +59,9 @@ def read_apple(path):
                     "value": float(central) / 1e6,
                     "low": float(low) / 1e6,
                     "high": float(high) / 1e6,
+                    # Square mesh below which the per-evaluation overhead floor
+                    # binds instead of bandwidth, so extra GPU width buys nothing.
+                    "crossover_mesh": float(crossover),
                     "status": status,
                     "bandwidth": float(bandwidth),
                     "cores": int(cores),
@@ -331,6 +343,33 @@ def read_latency(path):
                         "status": status,
                     }
                 )
+    return rows
+
+
+def read_curve(path):
+    """Measured throughput against problem size, from bench/curve.txt.
+
+    One machine, one binary. This is what makes the projection model's regime
+    boundary auditable: the per-evaluation overhead floor it uses is read off the
+    small-mesh end of this curve.
+    """
+    rows = []
+    with open(path) as handle:
+        for line in handle:
+            line = line.strip()
+            if not line or line.startswith("#"):
+                continue
+            mesh, cells, value, spread, per_eval, window = line.split()
+            rows.append(
+                {
+                    "name": f"{mesh}^2",
+                    "value": float(value) / 1e6,
+                    "status": "measured",
+                    "cells": int(float(cells)),
+                    "spread": float(spread),
+                    "per_eval": float(per_eval),
+                }
+            )
     return rows
 
 
@@ -622,8 +661,8 @@ def main():
         "Same binary against commit a02cfd9b, medians of three interleaved runs in one "
         "session. These are the workloads whose step rate is set by host round trips "
         "rather than by arithmetic. The published 4.19M-cell point is bandwidth-bound "
-        "and does not move: 1.0498e8 before against 1.0583e8 after, inside a single "
-        "set's 0.91% CV. The sweep bar compares -j 3 against -j 1, so it is aggregate "
+        "and does not move: 1.0498e8 before against 1.0551e8 after, inside the 0.91% CV "
+        "of the pooled anchor. The sweep bar compares -j 3 against -j 1, so it is aggregate "
         "throughput, not single-run speed.",
         os.path.join(HERE, "apple-latency.svg"),
         [
@@ -634,6 +673,52 @@ def main():
         value_unit="x",
         show_values=True,
         value_format="{:.2f}x",
+    )
+
+    curve = read_curve(os.path.join(HERE, "curve.txt"))
+    render(
+        curve,
+        "Measured MuMax3 throughput against problem size (Apple M4 10c)",
+        "One machine, one binary, one size per fresh process, median of three, with the "
+        "timed window sized per mesh so every point measures seconds of steady state. "
+        "Three regimes, all three set by code paths rather than by the hardware: an "
+        "overhead floor of 187 us per evaluation at and below 128^2, a peak at 256^2 "
+        "where padded 512^2 is inside the default VkFFT gate, a dip at 512^2 where "
+        "padded 1024^2 is not, the MPSGraph plateau that the published 4.19M-cell point "
+        "sits on, and a decline past 4096^2. The published point is not this machine's "
+        "fastest: 256^2 is 1.39x better per cell.",
+        os.path.join(HERE, "apple-size-scaling.svg"),
+        [("measured, median of three fresh processes", "measured")],
+        show_values=True,
+        value_format="{:.1f}",
+    )
+
+    crossover = [
+        {
+            "name": row["name"],
+            "value": row["crossover_mesh"],
+            "status": row["status"],
+        }
+        for row in apple
+    ]
+    render(
+        crossover,
+        "Smallest square mesh where extra Apple GPU width starts to pay",
+        "Below its own bar a chip is limited by the 187 us per-evaluation overhead floor "
+        "measured on the M4, not by bandwidth, so every chip here converges to the same "
+        "ceiling and a wider GPU buys nothing. Above it the projected bandwidth-limited "
+        "rate applies. Derived from each chip's projected 4.19M-cell rate and one measured "
+        "floor, so only the M4 bar rests on a measurement of that chip; the floor itself "
+        "is treated as chip-independent, which a faster CPU or cheaper dispatch would "
+        "lower. Read it as an order of magnitude, not a threshold.",
+        os.path.join(HERE, "apple-crossover.svg"),
+        [
+            ("M4 10c, floor measured on this chip", "measured"),
+            ("projected rate x measured floor", "modeled"),
+        ],
+        y_label="crossover mesh (cells per side)",
+        value_unit="cells per side",
+        show_values=True,
     )
 
     measured = read_gpus(os.path.join(HERE, "gpus.txt"), include_apple=True)

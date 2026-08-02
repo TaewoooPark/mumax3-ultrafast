@@ -1,0 +1,40 @@
+# Measured throughput against problem size on one machine, which is what makes
+# the projection model's regimes auditable instead of assumed.
+#
+# Machine: Apple M4 10-GPU-core, 32 GB, macOS 15.6, go 1.26.5, commit e1d07518.
+# Protocol: bench/bench.mx3's operating point (solver 2 = Heun, two torque
+# evaluations per step) run one size per fresh process, median of three.
+#
+# The timed window is sized per mesh so every point measures seconds of steady
+# state. This matters: bench/bench.mx3 runs a fixed 100 steps for every size, so
+# at 32x32 it times only about 80 ms and reports roughly half the steady-state
+# rate. Those short-window numbers are what the historical single-sweep row set
+# contains; they are not comparable to these.
+#
+# Three regimes, and all three boundaries are set by code paths rather than by
+# the hardware:
+#
+#   <= 128^2   per-evaluation overhead floor, about 187 us, independent of mesh.
+#              Host encoding plus fixed launch cost. Extra GPU width cannot help
+#              here, which is the point of the crossover column in apple.txt.
+#   256^2      fastest point on the machine, 1.4555e8 cell-evals/s. Padded 512^2
+#              is inside the default VkFFT gate, so this is the VkFFT path.
+#   512^2      a dip, not a plateau. Padded 1024^2 falls outside the default gate
+#              and lands on MPSGraph's worst-scheduled size. Also the noisiest
+#              point measured, 19.5% spread over three runs.
+#   1024^2..2048^2  MPSGraph bandwidth plateau, about 1.04e8. The published
+#              operating point (4.194304e6 cells) sits here, near its top edge.
+#   >= 4096^2  decline to about 0.60e8. Confirmed intrinsic, not memory pressure:
+#              a fresh process gives 5.98e7 against 5.92e7 inside the full sweep,
+#              and 4096^2 needs only 2.2 GB. Padded 8192^2 is far past the strided
+#              axis length where MPSGraph collapses. Not characterised further.
+#
+# mesh  cells        cell_evals_per_s   spread_pct  us_per_eval  timed_window_s
+32      1024         5.48363e+06        3.7         186.7        1.9
+64      4096         2.08945e+07        2.6         196.0        2.0
+128     16384        7.14757e+07        1.8         229.2        1.8
+256     65536        1.45551e+08        5.8         450.3        3.6
+512     262144       8.43551e+07        19.5        3107.6       3.7
+1024    1048576      1.03987e+08        2.2         10083.7      4.0
+2048    4194304      1.04425e+08        1.5         40165.5      8.0
+4096    16777216     6.01277e+07        1.7         279026.5     11.2

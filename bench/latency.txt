@@ -2,7 +2,10 @@
 #
 # The published 4.19M-cell operating point (bench/gpus.txt, doc/static/gpus.svg)
 # is bandwidth-bound with rare drains, so it does not move: 1.0498e8 before this
-# round against 1.0583e8 after, a 0.8% difference inside a single set's 0.91% CV.
+# round against 1.0551e8 after, a 0.5% difference inside the 0.91% CV of the
+# pooled 21-run anchor. bench/curve.txt shows why that point is not the whole
+# story - it sits on the middle of three regimes, and the small-mesh regime these
+# numbers live in has a different limit entirely.
 # Everything below is the same binary on workloads whose step rate is set by host
 # round trips instead of by arithmetic, which is where research runs on a Mac
 # actually sit.

@@ -1,0 +1,175 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="728" height="604" viewBox="0 0 728 604">
+<defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><line x1="0" y1="0" x2="0" y2="5" stroke="#ffffff" stroke-width="2.1"/></pattern></defs>
+<rect width="728" height="604" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">Smallest square mesh where extra Apple GPU width starts to pay</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">Below its own bar a chip is limited by the 187 us per-evaluation overhead floor measured on the M4, not</text>
+<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">by bandwidth, so every chip here converges to the same ceiling and a wider GPU buys nothing. Above it the</text>
+<text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">projected bandwidth-limited rate applies. Derived from each chip's projected 4.19M-cell rate and one</text>
+<text x="78" y="93" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">measured floor, so only the M4 bar rests on a measurement of that chip; the floor itself is treated as</text>
+<text x="78" y="108" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">chip-independent, which a faster CPU or cheaper dispatch would lower. Read it as an order of magnitude,</text>
+<text x="78" y="123" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">not a threshold.</text>
+<line x1="78" y1="434.0" x2="702.0" y2="434.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="438.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">0</text>
+<line x1="78" y1="364.0" x2="702.0" y2="364.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="368.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">100</text>
+<line x1="78" y1="294.0" x2="702.0" y2="294.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="298.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">200</text>
+<line x1="78" y1="224.0" x2="702.0" y2="224.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="228.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">300</text>
+<line x1="78" y1="154.0" x2="702.0" y2="154.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="158.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">400</text>
+<line x1="78" y1="154" x2="78" y2="434" stroke="#5f6368" stroke-width="1"/>
+<line x1="78" y1="434" x2="702.0" y2="434" stroke="#5f6368" stroke-width="1"/>
+<text x="18" y="294.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 294.0)">crossover mesh (cells per side)</text>
+<g><title>Apple M1 8c: 107.0 cells per side</title>
+<rect x="82.9" y="359.1" width="16.1" height="74.9" fill="#4b9ae8"/>
+<rect x="82.9" y="359.1" width="16.1" height="74.9" fill="url(#hatch)"/>
+<text x="91.0" y="354.1" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">107</text>
+</g>
+<text x="91.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 91.0 441.0)">Apple M1 8c</text>
+<g><title>Apple M2 10c: 132.0 cells per side</title>
+<rect x="108.9" y="341.6" width="16.1" height="92.4" fill="#4b9ae8"/>
+<rect x="108.9" y="341.6" width="16.1" height="92.4" fill="url(#hatch)"/>
+<text x="117.0" y="336.6" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">132</text>
+</g>
+<text x="117.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 117.0 441.0)">Apple M2 10c</text>
+<g><title>Apple M3 10c: 133.0 cells per side</title>
+<rect x="134.9" y="340.9" width="16.1" height="93.1" fill="#4b9ae8"/>
+<rect x="134.9" y="340.9" width="16.1" height="93.1" fill="url(#hatch)"/>
+<text x="143.0" y="335.9" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">133</text>
+</g>
+<text x="143.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 143.0 441.0)">Apple M3 10c</text>
+<g><title>Apple M4 10c: 140.0 cells per side</title>
+<rect x="160.9" y="336.0" width="16.1" height="98.0" fill="#0b4f9e"/>
+<text x="169.0" y="331.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">140</text>
+</g>
+<text x="169.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 169.0 441.0)">Apple M4 10c</text>
+<g><title>Apple M5 10c: 152.0 cells per side</title>
+<rect x="186.9" y="327.6" width="16.1" height="106.4" fill="#4b9ae8"/>
+<rect x="186.9" y="327.6" width="16.1" height="106.4" fill="url(#hatch)"/>
+<text x="195.0" y="322.6" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">152</text>
+</g>
+<text x="195.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 195.0 441.0)">Apple M5 10c</text>
+<g><title>Apple M3 Pro 18c: 166.0 cells per side</title>
+<rect x="212.9" y="317.8" width="16.1" height="116.2" fill="#4b9ae8"/>
+<rect x="212.9" y="317.8" width="16.1" height="116.2" fill="url(#hatch)"/>
+<text x="221.0" y="312.8" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">166</text>
+</g>
+<text x="221.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 221.0 441.0)">Apple M3 Pro 18c</text>
+<g><title>Apple M1 Pro 16c: 170.0 cells per side</title>
+<rect x="238.9" y="315.0" width="16.1" height="119.0" fill="#4b9ae8"/>
+<rect x="238.9" y="315.0" width="16.1" height="119.0" fill="url(#hatch)"/>
+<text x="247.0" y="310.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">170</text>
+</g>
+<text x="247.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 247.0 441.0)">Apple M1 Pro 16c</text>
+<g><title>Apple M2 Pro 19c: 182.0 cells per side</title>
+<rect x="264.9" y="306.6" width="16.1" height="127.4" fill="#4b9ae8"/>
+<rect x="264.9" y="306.6" width="16.1" height="127.4" fill="url(#hatch)"/>
+<text x="273.0" y="301.6" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">182</text>
+</g>
+<text x="273.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 273.0 441.0)">Apple M2 Pro 19c</text>
+<g><title>Apple M4 Pro 16c: 198.0 cells per side</title>
+<rect x="290.9" y="295.4" width="16.1" height="138.6" fill="#4b9ae8"/>
+<rect x="290.9" y="295.4" width="16.1" height="138.6" fill="url(#hatch)"/>
+<text x="299.0" y="290.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">198</text>
+</g>
+<text x="299.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 299.0 441.0)">Apple M4 Pro 16c</text>
+<g><title>Apple M4 Pro 20c: 210.0 cells per side</title>
+<rect x="316.9" y="287.0" width="16.1" height="147.0" fill="#4b9ae8"/>
+<rect x="316.9" y="287.0" width="16.1" height="147.0" fill="url(#hatch)"/>
+<text x="325.0" y="282.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">210</text>
+</g>
+<text x="325.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 325.0 441.0)">Apple M4 Pro 20c</text>
+<g><title>Apple M5 Pro 16c: 211.0 cells per side</title>
+<rect x="342.9" y="286.3" width="16.1" height="147.7" fill="#4b9ae8"/>
+<rect x="342.9" y="286.3" width="16.1" height="147.7" fill="url(#hatch)"/>
+<text x="351.0" y="281.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">211</text>
+</g>
+<text x="351.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 351.0 441.0)">Apple M5 Pro 16c</text>
+<g><title>Apple M5 Pro 20c: 217.0 cells per side</title>
+<rect x="368.9" y="282.1" width="16.1" height="151.9" fill="#4b9ae8"/>
+<rect x="368.9" y="282.1" width="16.1" height="151.9" fill="url(#hatch)"/>
+<text x="377.0" y="277.1" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">217</text>
+</g>
+<text x="377.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 377.0 441.0)">Apple M5 Pro 20c</text>
+<g><title>Apple M3 Max 30c: 225.0 cells per side</title>
+<rect x="394.9" y="276.5" width="16.1" height="157.5" fill="#4b9ae8"/>
+<rect x="394.9" y="276.5" width="16.1" height="157.5" fill="url(#hatch)"/>
+<text x="403.0" y="271.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">225</text>
+</g>
+<text x="403.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 403.0 441.0)">Apple M3 Max 30c</text>
+<g><title>Apple M1 Max 32c: 231.0 cells per side</title>
+<rect x="420.9" y="272.3" width="16.1" height="161.7" fill="#4b9ae8"/>
+<rect x="420.9" y="272.3" width="16.1" height="161.7" fill="url(#hatch)"/>
+<text x="429.0" y="267.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">231</text>
+</g>
+<text x="429.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 429.0 441.0)">Apple M1 Max 32c</text>
+<g><title>Apple M2 Max 38c: 249.0 cells per side</title>
+<rect x="446.9" y="259.7" width="16.1" height="174.3" fill="#4b9ae8"/>
+<rect x="446.9" y="259.7" width="16.1" height="174.3" fill="url(#hatch)"/>
+<text x="455.0" y="254.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">249</text>
+</g>
+<text x="455.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 455.0 441.0)">Apple M2 Max 38c</text>
+<g><title>Apple M4 Max 32c: 250.0 cells per side</title>
+<rect x="472.9" y="259.0" width="16.1" height="175.0" fill="#4b9ae8"/>
+<rect x="472.9" y="259.0" width="16.1" height="175.0" fill="url(#hatch)"/>
+<text x="481.0" y="254.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">250</text>
+</g>
+<text x="481.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 481.0 441.0)">Apple M4 Max 32c</text>
+<g><title>Apple M3 Max 40c: 259.0 cells per side</title>
+<rect x="498.9" y="252.7" width="16.1" height="181.3" fill="#4b9ae8"/>
+<rect x="498.9" y="252.7" width="16.1" height="181.3" fill="url(#hatch)"/>
+<text x="507.0" y="247.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">259</text>
+</g>
+<text x="507.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 507.0 441.0)">Apple M3 Max 40c</text>
+<g><title>Apple M5 Max 32c: 268.0 cells per side</title>
+<rect x="524.9" y="246.4" width="16.1" height="187.6" fill="#4b9ae8"/>
+<rect x="524.9" y="246.4" width="16.1" height="187.6" fill="url(#hatch)"/>
+<text x="533.0" y="241.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">268</text>
+</g>
+<text x="533.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 533.0 441.0)">Apple M5 Max 32c</text>
+<g><title>Apple M4 Max 40c: 279.0 cells per side</title>
+<rect x="550.9" y="238.7" width="16.1" height="195.3" fill="#4b9ae8"/>
+<rect x="550.9" y="238.7" width="16.1" height="195.3" fill="url(#hatch)"/>
+<text x="559.0" y="233.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">279</text>
+</g>
+<text x="559.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 559.0 441.0)">Apple M4 Max 40c</text>
+<g><title>Apple M5 Max 40c: 299.0 cells per side</title>
+<rect x="576.9" y="224.7" width="16.1" height="209.3" fill="#4b9ae8"/>
+<rect x="576.9" y="224.7" width="16.1" height="209.3" fill="url(#hatch)"/>
+<text x="585.0" y="219.7" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">299</text>
+</g>
+<text x="585.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 585.0 441.0)">Apple M5 Max 40c</text>
+<g><title>Apple M1 Ultra 64c: 305.0 cells per side</title>
+<rect x="602.9" y="220.5" width="16.1" height="213.5" fill="#4b9ae8"/>
+<rect x="602.9" y="220.5" width="16.1" height="213.5" fill="url(#hatch)"/>
+<text x="611.0" y="215.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">305</text>
+</g>
+<text x="611.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 611.0 441.0)">Apple M1 Ultra 64c</text>
+<g><title>Apple M3 Ultra 60c: 313.0 cells per side</title>
+<rect x="628.9" y="214.9" width="16.1" height="219.1" fill="#4b9ae8"/>
+<rect x="628.9" y="214.9" width="16.1" height="219.1" fill="url(#hatch)"/>
+<text x="637.0" y="209.9" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">313</text>
+</g>
+<text x="637.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 637.0 441.0)">Apple M3 Ultra 60c</text>
+<g><title>Apple M2 Ultra 76c: 328.0 cells per side</title>
+<rect x="654.9" y="204.4" width="16.1" height="229.6" fill="#4b9ae8"/>
+<rect x="654.9" y="204.4" width="16.1" height="229.6" fill="url(#hatch)"/>
+<text x="663.0" y="199.4" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">328</text>
+</g>
+<text x="663.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 663.0 441.0)">Apple M2 Ultra 76c</text>
+<g><title>Apple M3 Ultra 80c: 371.0 cells per side</title>
+<rect x="680.9" y="174.3" width="16.1" height="259.7" fill="#4b9ae8"/>
+<rect x="680.9" y="174.3" width="16.1" height="259.7" fill="url(#hatch)"/>
+<text x="689.0" y="169.3" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9" fill="#202124" text-anchor="middle">371</text>
+</g>
+<text x="689.0" y="441.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 689.0 441.0)">Apple M3 Ultra 80c</text>
+<rect x="78.0" y="573" width="11" height="11" fill="#0b4f9e"/>
+<text x="95.0" y="582" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">M4 10c, floor measured on this chip</text>
+<rect x="349.0" y="573" width="11" height="11" fill="#4b9ae8"/>
+<rect x="349.0" y="573" width="11" height="11" fill="url(#hatch)"/>
+<line x1="354.5" y1="572.0" x2="354.5" y2="585.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="350.5" y1="585.0" x2="358.5" y2="585.0" stroke="#173a5e" stroke-width="1.4"/>
+<line x1="350.5" y1="572.0" x2="358.5" y2="572.0" stroke="#173a5e" stroke-width="1.4"/>
+<text x="366.0" y="582" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124">projected rate x measured floor</text>
+</svg>

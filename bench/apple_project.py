@@ -46,24 +46,32 @@ two torque evaluations per timed step, hence:
 
     2048 * 2048 * 100 * 2 / median_wall_seconds
 
-Seven fresh processes after warm-up gave a 7.926141958 s median.  The within-
-session throughput range was 1.05430e8..1.08134e8 cell-evals/s (CV 0.91%).
-That repeatability range is intentionally not mixed with the proxy envelope.
+Three sets of seven fresh processes were run in one session on the shipped
+build.  Every wall time is retained here, in run order, so the anchor arithmetic
+is fully reproducible rather than a summary statistic:
 
-The seven wall times behind the current median, in run order, were 7.757570834,
-7.956545250, 7.846818666, 7.926141958, 7.950234208, 7.928319375 and 7.911491000
-seconds.  An immediately preceding set of seven in the same session gave a
-7.884222250 s median, so the spread between whole sets is about 0.5% and no
-single set should be read as more than that precise.
+  set A  7.800104709 7.826683417 7.938548583 7.855808583 7.884222250
+         7.952432708 7.975447292                      median 7.884222250
+  set B  7.757570834 7.956545250 7.846818666 7.926141958 7.950234208
+         7.928319375 7.911491000                      median 7.926141958
+  set C  7.978404084 7.953746333 7.997228041 7.989331708 7.974756708
+         8.030635458 8.001488750                      median 7.989331708
+
+MEDIAN_WALL_SECONDS is the median of all 21, which is more robust than any one
+set: the three set medians drift upward monotonically across the session
+(7.884 -> 7.926 -> 7.989 s, about 1.3% end to end) while swap use grew from
+10.9 GB to 12.9 GB, so a single set carries a machine-state trend that the
+pooled median damps.  Within-set CV was 0.85%, 0.90% and 0.30%.  That
+repeatability range is intentionally not mixed with the proxy envelope.
 
 The previous anchor was 7.99095925 s (1.0497623e8 cell-evals/s), measured before
 the GPU keep-alive, the FFT tensor-view cache, speculative stepping and the
-device-resident minimizer step.  The 0.8% difference is inside the 0.91% CV of a
-single set, which is the expected result: this operating point is bandwidth-bound
-with rare drains, so none of those changes move it.  They were measured on
-latency-bound workloads instead, where the same binary is 1.6x to 2.2x faster.
-The anchor is refreshed here only because it is a fresh measurement of the
-shipped build, not because it improved.
+device-resident minimizer step.  The 0.5% difference is inside the pooled 0.91%
+CV, which is the expected result: this operating point is bandwidth-bound with
+rare drains, so none of those changes move it.  They were measured on
+latency-bound workloads instead, where the same binary is 1.6x to 2.2x faster
+(bench/latency.txt).  The anchor is refreshed because it is a fresh measurement
+of the shipped build, not because it improved.
 """
 
 import math
@@ -76,7 +84,7 @@ MESH_X = 2048
 MESH_Y = 2048
 TIMED_STEPS = 100
 HEUN_EVALS_PER_STEP = 2
-MEDIAN_WALL_SECONDS = 7.926141958
+MEDIAN_WALL_SECONDS = 7.950234208
 ANCHOR_THROUGHPUT = (
     MESH_X
     * MESH_Y
@@ -365,6 +373,54 @@ def display_name(chip):
     return f"Apple {family} {GPU_CORES[chip]}c"
 
 
+# Measured per-evaluation overhead floor, in microseconds.
+#
+# bench/curve.txt measures throughput against problem size on the anchor machine.
+# Below about 128x128 the time per torque evaluation stops depending on the mesh
+# at all: 186.7 us at 32x32 and 196.0 us at 64x64, against 229.2 us at 128x128 and
+# 450.3 us at 256x256. That plateau is host encoding plus fixed launch cost, and a
+# wider GPU cannot reduce it.
+#
+# This is the one structural thing the old single-number model could not express.
+# It projected the 4.19M-cell operating point and left the reader to assume the
+# ratios carry to any problem size, which is false in exactly the size range most
+# research runs on a Mac actually use.
+#
+# Treated as chip-independent to first order: it is dominated by host-side work
+# and by fixed per-dispatch cost, neither of which scales with GPU core count. A
+# machine with faster single-thread CPU performance, or a newer Metal with cheaper
+# dispatch, would lower it - so read the crossover as an order of magnitude, not a
+# threshold. Only one chip was measured, so there is no cross-chip check for this.
+OVERHEAD_MICROSECONDS_PER_EVAL = 186.7
+
+
+def crossover_cells(throughput):
+    """Cells at which the bandwidth-limited rate stops being the binding limit.
+
+    Below this size the per-evaluation overhead floor dominates and extra GPU
+    width buys nothing; above it the projected bandwidth-limited rate applies.
+    Equating the two limits, throughput = cells / floor, gives cells directly.
+    """
+    return throughput * OVERHEAD_MICROSECONDS_PER_EVAL * 1e-6
+
+
+def overhead_ceiling(cells):
+    """Upper bound imposed by the overhead floor alone, in cell-evals/s.
+
+    A bound, not a projection. No Apple chip can beat it, because the floor is
+    what remains when the mesh contributes nothing; but a real run also pays for
+    the mesh, so it will sit below. On the anchor machine at 128x128 the bound is
+    87.8e6 and the measurement is 71.5e6, or 81% of it.
+
+    Deliberately not turned into a per-chip projected value at a small mesh. That
+    would require knowing each chip's rate in the small-mesh regime, and the
+    anchor only measures the large-mesh one - the two run different FFT backends
+    under the default gate, so the anchor's rate does not transfer. The measured
+    small-mesh numbers for the one chip that was measured are in bench/curve.txt.
+    """
+    return cells / (OVERHEAD_MICROSECONDS_PER_EVAL * 1e-6)
+
+
 def build_rows():
     add_m5_transfers()
     rows = []
@@ -382,39 +438,68 @@ def build_rows():
                 "status": "measured" if chip == "M4" else "modeled",
             }
         )
+        # Where this chip stops being overhead-bound, and what it can actually do
+        # at a mesh typical of a research run rather than at the published point.
+        row = rows[-1]
+        row["crossover_cells"] = crossover_cells(row["value"])
+        row["crossover_mesh"] = math.sqrt(row["crossover_cells"])
     return rows
 
 
 def verify(rows):
     """Catch unit, protocol, input, and accidental model changes."""
-    recorded = 1.0583469289915033e08
+    recorded = 1.0551397330608049e08
     assert math.isclose(ANCHOR_THROUGHPUT, recorded, rel_tol=0, abs_tol=0.05)
     assert set(LLAMA) == set(GENERATIONS)
     assert set(BANDWIDTH) == set(GENERATIONS)
     assert set(GPU_CORES) == set(GENERATIONS)
     by_chip = {row["chip"]: row for row in rows}
     # The model is linear in the anchor, so refreshing the anchor moves every
-    # projection by exactly one scalar. These values are the previously audited
-    # ones multiplied by 7.99095925 / 7.926141958 = 1.0081776597, not values read
-    # back out of the model, so the check still catches a structural change.
+    # projection by exactly one scalar. These values are the originally audited
+    # ones carried through 7.99095925 / 7.950234208 = 1.0051224959 at full
+    # precision, not values read back out of the model, so the check still
+    # catches a structural change. Rescaling always starts from the original
+    # audited numbers rather than chaining, so repeated anchor refreshes cannot
+    # accumulate rounding drift.
     expected_millions = {
-        "M1": 61.8,
-        "M3 Ultra 60c": 525.3,
-        "M3 Ultra": 737.5,
-        "M4 Pro 16c": 210.5,
-        "M4 Pro": 237.2,
-        "M4 Max 32c": 336.2,
-        "M4 Max 40c": 417.3,
-        "M5": 124.2,
-        "M5 Pro": 254.1,
-        "M5 Max 32c": 386.5,
-        "M5 Max 40c": 479.8,
+        "M1": 61.6,
+        "M3 Ultra 60c": 523.7,
+        "M3 Ultra": 735.3,
+        "M4 Pro 16c": 209.8,
+        "M4 Pro": 236.5,
+        "M4 Max 32c": 335.2,
+        "M4 Max 40c": 416.0,
+        "M5": 123.8,
+        "M5 Pro": 253.3,
+        "M5 Max 32c": 385.3,
+        "M5 Max 40c": 478.3,
     }
     for chip, expected in expected_millions.items():
         actual = by_chip[chip]["value"] / 1e6
         assert abs(actual - expected) < 0.051, (chip, actual, expected)
     anchor = by_chip["M4"]
     assert anchor["value"] == anchor["low"] == anchor["high"]
+
+    # The overhead floor is the one part of this model that can be checked
+    # against a second, independent measurement rather than only asserted.
+    #
+    # bench/curve.txt has the anchor machine at 186.7 us per evaluation at 32x32
+    # and 196.0 us at 64x64 - on the floor - and 450.3 us at 256x256, 2.4x the
+    # floor and clearly off it. The model puts the anchor chip's crossover at
+    # 140x140, which has to land inside that bracket or the floor is wrong.
+    m4_crossover = anchor["crossover_cells"]
+    assert 64 * 64 < m4_crossover < 256 * 256, m4_crossover
+    # 128x128 is just below the crossover, so the measured 229.2 us there must be
+    # above the floor but well under twice it.
+    assert 1.0 < 229.2 / OVERHEAD_MICROSECONDS_PER_EVAL < 1.5
+
+    # At the published operating point the floor is orders of magnitude from
+    # binding, which is why refreshing the model does not move any published
+    # number: the bandwidth-limited projection is the only active limit there.
+    published_ceiling = overhead_ceiling(MESH_X * MESH_Y)
+    assert published_ceiling > 20 * max(row["value"] for row in rows), (
+        published_ceiling
+    )
 
 
 def main():
@@ -425,20 +510,30 @@ def main():
         "# Generated by bench/apple_project.py; do not edit numeric rows.",
         "#",
         "# measured: MacBook Air M4 10-GPU-core, 32 GB, fanless; 2048x2048,",
-        "# solver 2 (Heun), 100 timed steps, seven fresh-process median.",
-        "# Historical raw run times were not retained; only the median and",
-        "# summary range/CV survive, so do not treat them as rederived here.",
+        "# solver 2 (Heun), 100 timed steps, median of 21 fresh processes",
+        "# (three sets of seven). Every raw wall time is in the generator",
+        "# docstring, so the anchor arithmetic is reproducible from this repo.",
         "# Modeled rows are not MuMax3 benchmarks. low..high is a workload/model",
         "# envelope (coherent proxy paths + leave-one-family-out), not a CI.",
         "# See the generator docstring for model definition and source URLs.",
         "#",
-        "# columns: bandwidth_GB_s  gpu_cores  central  low  high  status  \"name\"",
+        "# central/low/high describe the 4.19M-cell operating point only, where",
+        "# the workload is bandwidth-bound. crossover_mesh is the square mesh",
+        "# below which the measured per-evaluation overhead floor of",
+        f"# {OVERHEAD_MICROSECONDS_PER_EVAL:.1f} us binds instead, and extra GPU width buys nothing:",
+        "# under it every chip in this table converges to the same ceiling of",
+        f"# cells / {OVERHEAD_MICROSECONDS_PER_EVAL:.1f} us. See bench/curve.txt for the measured",
+        "# size scaling that the floor comes from.",
+        "#",
+        "# columns: bandwidth_GB_s  gpu_cores  central  low  high  crossover_mesh"
+        "  status  \"name\"",
     ]
     for row in rows:
         lines.append(
             f'{row["bandwidth"]:.10g}  {row["cores"]}  '
             f'{row["value"]:.17g}  {row["low"]:.17g}  '
-            f'{row["high"]:.17g}  {row["status"]}  "{row["name"]}"'
+            f'{row["high"]:.17g}  {row["crossover_mesh"]:.0f}  '
+            f'{row["status"]}  "{row["name"]}"'
         )
     path = os.path.join(HERE, "apple.txt")
     with open(path, "w") as handle:
