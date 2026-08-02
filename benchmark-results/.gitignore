@@ -1,0 +1,5 @@
+# Benchmark output directories and console logs are intentional raw results.
+# Override the repository-wide *.out and *.log ignores within this directory.
+!**/*.out/
+!**/*.out/**
+!**/*.log

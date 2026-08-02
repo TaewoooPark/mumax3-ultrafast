@@ -1,0 +1,56 @@
+//mumax 3.12 [darwin_arm64 go1.26.5(gc) Metal-3]
+//commit hash: 90d07e63
+//CPU info: Apple M4, Cores: 10
+//GPU info: Apple M4, unified memory, Metal 3, recommended working set 21845MB, backend=Metal
+//OS  info: macOS 15.6 (24G84), Hostname: bagtaeuui-MacBookAir-4.local
+//Timestamp: 2026-07-30 22:18:06
+//(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium
+//This is free software without any warranty. See license.txt
+//********************************************************************//
+//  If you use mumax in any work or publication,                      //
+//  we kindly ask you to cite the references in references.bib        //
+//********************************************************************//
+//output directory: output.out/
+Nx := 512
+Ny := 128
+c := 5e-9
+setgridsize(Nx, Ny, 1)
+setcellsize(c, c, c)
+ext_makegrains(30e-9, NREGION, 0)
+Ku1 = 0.4e6
+Aex = 10e-12
+Msat = 600e3
+alpha = 1
+delta := 0.2
+for i := 0; i < NREGION; i++ {
+	AnisU.SetRegion(i, vector(delta*(rand()-0.5), delta*(rand()-0.5), 1))
+	for j := i + 1; j < NREGION; j++ {
+		ext_scaleExchange(i, j, 0.1)
+	}
+}
+m = uniform(0, 0, 1)
+mask := newVectorMask(Nx, Ny, 1)
+for i := 0; i < Nx; i++ {
+	for j := 0; j < Ny; j++ {
+		r := index2coord(i, j, 0)
+		x := r.X()
+		y := r.Y()
+		Bz := exp(-pow((x-500e-9)/100e-9, 2)) * exp(-pow(y/250e-9, 2))
+		mask.setVector(i, j, 0, vector(0, 0, Bz))
+	}
+}
+f := 0.5e9
+A := 1.5
+B_ext.add(mask, -A*sin(2*pi*f*t))
+autosave(m, 600e-12)
+ShiftMagR = vector(0, 0, 1)
+for i := 0; i < 120; i++ {
+	run(30e-12)
+	Shift(-1)
+}
+//********************************************************************//
+//Please cite the following references, relevant for your simulation. //
+//See bibtex file in output folder for justification.                 //
+//********************************************************************//
+//   * Vansteenkiste et al., AIP Adv. 4, 107133 (2014).
+//   * Leliaert et al., J. Appl. Phys. 115, 233903 (2014)

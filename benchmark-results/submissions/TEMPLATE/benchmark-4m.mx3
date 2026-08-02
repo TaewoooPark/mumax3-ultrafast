@@ -1,0 +1,37 @@
+// Official mumax3 benchmark, restricted to the 2^11 x 2^11 point used by
+// https://mumax.github.io/ to rank 4-million-cell performance.
+//
+// Source: bench/bench.mx3
+// Upstream: https://github.com/mumax/3/blob/master/bench/bench.mx3
+// Only the original e=5..13 sweep was restricted to e=11; all physics,
+// warm-up, step count, timing, and throughput calculations are unchanged.
+
+msat  = 800e3
+aex   = 13e-12
+alpha = 0.01
+c := 4e-9
+setcellsize(c, c, c)
+setsolver(2)
+
+e := 11
+n := pow(2, e)
+setgridsize(n, n, 1)
+print(n, "x", n)
+
+steps(1) // warm-up kernel
+
+b_ext = vector(0, 0.01, 0)
+m=uniform(1, 0, 0) // warm-up dt
+steps(3)
+
+m=uniform(1, 0, 0) // start!
+t = 0
+start := now()
+neval0 := Neval.get()
+
+steps(100)
+
+wall := since(start).Seconds()
+nevl := Neval.get() - neval0
+N2 := n*n
+fprintln("benchmark.txt", N2, N2*nevl/wall, t/nevl)

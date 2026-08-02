@@ -1,0 +1,33 @@
+//mumax 3.12 [darwin_arm64 go1.26.5(gc) Metal-3]
+//commit hash: 90d07e63
+//CPU info: Apple M4, Cores: 10
+//GPU info: Apple M4, unified memory, Metal 3, recommended working set 21845MB, backend=Metal
+//OS  info: macOS 15.6 (24G84), Hostname: bagtaeuui-MacBookAir-4.local
+//Timestamp: 2026-07-30 22:14:11
+//(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium
+//This is free software without any warranty. See license.txt
+//********************************************************************//
+//  If you use mumax in any work or publication,                      //
+//  we kindly ask you to cite the references in references.bib        //
+//********************************************************************//
+//output directory: output.out/
+setGridSize(128, 128, 1)
+setCellSize(2e-9, 2e-9, 1e-9)
+Msat = 600e3
+Aex = 10e-12
+anisU = vector(0, 0, 1)
+Ku1 = 0.59e6
+alpha = 0.02
+Xi = 0.2
+m = twoDomain(0, 0, 1, 1, 1, 0, 0, 0, -1)
+relax()
+ext_centerWall(2)
+autosave(m, 100e-12)
+j = vector(1.5e13, 0, 0)
+pol = 1
+run(.5e-9)
+//********************************************************************//
+//Please cite the following references, relevant for your simulation. //
+//See bibtex file in output folder for justification.                 //
+//********************************************************************//
+//   * Vansteenkiste et al., AIP Adv. 4, 107133 (2014).

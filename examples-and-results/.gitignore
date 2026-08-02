@@ -1,0 +1,8 @@
+runs/
+bin/
+
+# The canonical example outputs and their console logs are intentional,
+# checked-in reproducibility artifacts. Override the repository-wide ignores.
+!official-examples/**/*.log
+!official-examples/**/output.out/
+!official-examples/**/output.out/**

@@ -1,0 +1,53 @@
+Nx := 512
+Ny := 128
+c := 5e-9
+setgridsize(Nx, Ny, 1)
+setcellsize(c, c, c)
+
+ext_makegrains(30e-9, NREGION, 0)
+
+// PMA material
+Ku1   = 0.4e6
+Aex   = 10e-12
+Msat  = 600e3
+alpha = 1
+
+delta := 0.2 // anisotropy variation
+
+for i:=0; i<NREGION; i++{
+	// random cubic anisotropy direction
+	AnisU.SetRegion(i, vector(delta*(rand()-0.5), delta*(rand()-0.5), 1))
+
+	// strongly reduce exchange coupling between grains
+	for j:=i+1; j<NREGION; j++{
+		ext_scaleExchange(i, j, 0.1)
+	}
+}
+
+m = uniform(0, 0, 1)
+
+// Gaussian external field profile
+mask := newVectorMask(Nx, Ny, 1)
+for i:=0; i<Nx; i++{
+	for j:=0; j<Ny; j++{
+		r := index2coord(i, j, 0)
+		x := r.X()
+		y := r.Y()
+		Bz := exp(-pow((x-500e-9)/100e-9, 2)) * exp(-pow(y/250e-9, 2))
+		mask.setVector(i, j, 0, vector(0, 0, Bz))
+	}
+}
+
+// 500Mbit/s oscillating write field
+f := 0.5e9
+A := 1.5
+B_ext.add(mask, -A*sin(2*pi*f*t))
+
+autosave(m, 600e-12)
+
+// Spin the hard disk
+ShiftMagR = vector(0, 0, 1) // new magnetization to enter
+for i:=0; i<120; i++{
+	run(30e-12)
+	Shift(-1) // one cell to the left
+}

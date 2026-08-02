@@ -1,83 +1,128 @@
 <!-- markdownlint-disable MD033 -->
 
-# mumax³
+# mumax³ for macOS
 
-**GPU-accelerated micromagnetism.**
+**The CUDA-based micromagnetic simulator, rebuilt to run natively on Apple
+Silicon.**
 
-Paper on the design and verification of MuMax3: <http://scitation.aip.org/content/aip/journal/adva/4/10/10.1063/1.4899186>
+Upstream [mumax³](https://github.com/mumax/3) is built around NVIDIA CUDA,
+which is unavailable on current Macs. This fork replaces that GPU execution
+layer with a native Metal implementation, so an Apple-silicon Mac can run
+ordinary `.mx3` simulations locally without an NVIDIA GPU, CUDA, a virtual
+machine, or a remote Linux host.
 
-<!-- [![Build Status](https://travis-ci.org/mumax/3.svg?branch=master)](https://travis-ci.org/mumax/3) -->
+The port changes the hardware backend, not the physical model. The `.mx3`
+language, high-level Go solver, material terms, integration methods, and output
+formats remain mumax³-compatible.
 
-## Apple Silicon macOS
+> [!IMPORTANT]
+> The Metal backend supports Apple Silicon (M1 or newer) on macOS 14 or newer.
+> Intel Macs are not supported. The original CUDA backend remains available for
+> NVIDIA-equipped Linux and Windows systems.
 
-On an M1 or newer Mac running macOS 14 or later, mumax³ uses Metal compute
-shaders, Apple unified memory, an MPSGraph FFT with the packed R2C/C2R layout
-used by cuFFT, and a Philox thermal-noise generator. The `.mx3` language,
-high-level Go solver, physical terms, integration methods, and output formats
-are shared with the CUDA build. Intel Macs are not supported.
+## Install on a Mac
 
-### Automated installation
-
-On a fresh Mac, open Terminal and run:
-
-```bash
-/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/mumax/3/master/install-macos.sh)"
-```
-
-The installer verifies the host, opens the Apple Command Line Tools installer
-when required, installs native Homebrew and Go 1.22.4 or later when missing,
-clones mumax³ into `~/mumax3`, builds the Metal backend, adds the binary path to
-`~/.zprofile`, and runs `mumax3 -test`. It can be run again after an
-interruption. Use `./install-macos.sh --help` when installing from an existing
-checkout or choosing another source directory.
-
-### Manual installation
-
-Install each dependency and build the source separately.
-
-1. Start the Apple Command Line Tools installer and finish the installation
-   window before continuing.
+On a fresh supported Mac, open Terminal and run:
 
 ```bash
-xcode-select --install
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-for-mac/master/install-macos.sh)"
 ```
 
-2. Install native Homebrew and Go.
+The installer checks the machine and shell architecture, opens Apple's Command
+Line Tools installer when necessary, installs native Homebrew and a compatible
+Go toolchain if missing, clones and builds this Metal port, configures the
+binary path, and finishes with `mumax3 -test`. It is safe to rerun after an
+interruption because completed prerequisites are reused.
+
+When installing from an existing checkout, run:
 
 ```bash
-/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-eval "$(/opt/homebrew/bin/brew shellenv)"
-brew install go
+./install-macos.sh
 ```
 
-3. Clone and build mumax³. The Makefile selects Metal automatically on
-   `darwin/arm64`.
+Open a new Terminal after installation so the updated path is loaded.
+
+## Run a simulation
+
+The default mode runs the simulation with the live Web UI:
 
 ```bash
-git clone https://github.com/mumax/3.git
-cd 3
-MACOSX_DEPLOYMENT_TARGET=14.0 CGO_ENABLED=1 make
+mumax3 example.mx3
 ```
 
-4. Save the installed binary directory in the shell profile and verify the
-   Metal backend.
+The UI is served at <http://127.0.0.1:35367>, and simulation output is written
+to `example.out/`. If a browser does not open automatically, open that address
+manually.
+
+For a headless benchmark, script, or batch job, disable the UI explicitly:
 
 ```bash
-export PATH="$(go env GOPATH)/bin:$PATH"
-printf '\nexport PATH="%s:$PATH"\n' "$(go env GOPATH)/bin" >> ~/.zprofile
-mumax3 -test
+mumax3 -http="" example.mx3
 ```
 
-The full Xcode application and CUDA are not required. Generated Metal shaders
-compile through the system runtime when the offline Metal compiler is absent.
-Run a simulation with the live Web UI using `mumax3 example.mx3`, or use
-`mumax3 -http="" example.mx3` for headless execution. `make check-metal` runs
-the generator, shader, FFT, random-number, GPU, and build checks.
+Both modes execute the same simulation and produce the same output. The full
+Xcode application and an offline Metal compiler are not required; the shader
+library can compile through the system Metal runtime.
 
-The Metal backend preserves mumax³'s single-precision numerical model. Parallel
-reductions may differ in their last floating-point bits. Thermal simulations
-use Philox rather than cuRAND's XORWOW sequence, so a seed is reproducible on
-Metal but does not select the same sample sequence as CUDA.
+## How the native port works
+
+| Upstream CUDA component | macOS implementation | Compatibility preserved |
+| --- | --- | --- |
+| CUDA compute kernels | Metal compute shaders and an Objective-C++ runtime bridge | Existing mumax³ kernel contracts and FP32 model |
+| cuFFT | MPSGraph FFT | Packed R2C/C2R layout used by the demagnetizing-field convolution |
+| `cudaMalloc` and CUDA streams | Apple unified-memory buffers, command batching, and one ordered Metal queue | Buffer semantics and execution ordering |
+| cuRAND thermal noise | Philox4x32-10 with Box–Muller normal generation | Seeded reproducibility on Metal and validated noise statistics |
+| CUDA-only platform bindings | `darwin/arm64` build tags and compatibility shims | The `.mx3` language and high-level Go API |
+
+The implementation also uses X-contiguous 32-wide SIMD tiles suited to Apple
+GPUs and runtime shader compilation so the project works with Command Line
+Tools alone.
+
+## Physics fidelity
+
+The physical equations and solvers were not reimplemented independently; the
+native backend executes the existing mumax³ model through Metal. Validation
+against unchanged upstream CUDA-era regression references produced:
+
+| Validation measure | Result |
+| --- | ---: |
+| Non-thermal upstream physics tests passed | **15/15** |
+| Assertions within the original upstream tolerances | **103/103 (100.000%)** |
+| Mean average-magnetization vector agreement | **99.9923%** |
+| Minimum average-magnetization vector agreement | **99.9415%** |
+| Zero-tolerance assertions matched exactly | **19/19** |
+| Official mumax³ example-page simulations completed | **15/15** |
+
+The 100% result is tolerance conformance, not a claim of bit-for-bit identity.
+Parallel GPU reductions can differ in their last floating-point bits. Thermal
+simulations use Philox instead of cuRAND's XORWOW sequence, so the same seed is
+reproducible on Metal but does not generate the same sample-by-sample trajectory
+as CUDA; the statistical behavior is validated instead.
+
+See the [complete physics-validation method and data](physics-validation-results/apple-m4-cuda-era-20260731/)
+and the [official examples, outputs, provenance, and GPL license](examples-and-results/RESULTS.md).
+
+## Performance at a glance
+
+For compact price-class context, the measured base M4 Metal result is compared
+with the RTX 4050 Laptop GPU in the official mumax³ 4-million-cell benchmark.
+Both appeared in consumer notebook families with overlapping launch-price
+ranges, although this is not an exact configuration- or price-normalized test.
+
+| Comparable notebook CUDA reference | M4 Metal throughput ÷ CUDA throughput |
+| --- | ---: |
+| RTX 4050 (mobile) | **37.5%** |
+
+The measured machine was a fanless, base 10-core-GPU M4 MacBook Air, so this is
+one conservative hardware datapoint rather than an Apple Silicon performance
+ceiling. Absolute results, raw runs, the full CUDA comparison, projections,
+limitations, and the measurement-submission protocol are kept in the
+[benchmark documentation](benchmark-results/). The current anchor is the median
+of 21 fresh processes at 4.19M cells, and `bench/curve.txt` shows that per-cell
+throughput is not flat in problem size: on this machine 256x256 is 1.39x better
+per cell than the 4.19M-cell point the charts use.
+
+## Tuning
 
 ### Metal FFT backend selection
 
@@ -152,226 +197,28 @@ wider GPU cannot help at all. `bench/curve.txt` has the measured curve and
 `bench/apple-crossover.svg` shows, per chip, the smallest mesh at which extra GPU
 width starts to pay.
 
-## Downloads and documentation
-
-👉 Pre-compiled binaries, examples, and documentation are available on the [mumax³ homepage](https://mumax.github.io).
-
-Documentation of several tools, like `mumax3-convert`, is available [here](https://godoc.org/github.com/mumax/3/cmd).
-
-## Contributing
-
-Contributions are gratefully accepted. To contribute code, fork our GitHub repo and send a pull request.
-
-## Building from source
-
-Consider downloading a [pre-compiled mumax³ binary](https://mumax.github.io/download.html).
-
-If you want to compile nevertheless, 4 essential components will be required to build mumax³: an ***NVIDIA driver***, ***Go***, ***CUDA*** (&leq;12.9) and ***C***.
-
-* *If they are not yet present on your system*: install them as detailed below.
-* *If they are already installed*: check if they work correctly by running the *check* for each component written below.
-
-Click on the arrows below to expand the installation instructions:<br><sub><sup>These instructions were made for Windows 10 and Ubuntu 22.04 (but should be applicable to all Debian systems). Your mileage may vary.</sup></sub>
-
-<details><summary><b><i>Install an NVIDIA driver</i></b></summary>
-
-* **Windows**: Find a suitable driver [here](https://www.nvidia.com/en-us/drivers/).
-* **Linux**: [Install the NVIDIA proprietary driver](https://www.nvidia.com/en-us/drivers/unix/). <!-- version 440.44 recommended --><details><summary>Troubleshooting Linux &rarr;click here&larr;</summary>
-  If the following error occurs, proceed as follows:
-
-  ```batch
-  nvidia-smi has failed because it couldn't communicate with the NVIDIA driver. Make sure that the latest NVIDIA driver is installed and running
-  ```
-
-  1) Check for existing NVIDIA drivers.
-      * Run `dpkg -l | grep nvidia` to see if any NVIDIA drivers are installed.
-      * If it shows some drivers, you might want to uninstall them before proceeding with the clean installation: `sudo apt-get --purge remove '*nvidia*'`
-  2) Update system packages. Make sure your system is up to date with `sudo apt update` and `sudo apt upgrade`.
-  3) (Optional but recommended:) Add the official NVIDIA PPA to ensure you have access to the latest NVIDIA drivers with `sudo add-apt-repository ppa:graphics-drivers/ppa` and `sudo apt update`.
-  4) Install the recommended driver. Ubuntu can automatically detect and recommend the right NVIDIA driver for your system with the command `ubuntu-drivers devices`. This will list the available drivers for your GPU and mark the recommended one. <br> To install the recommended NVIDIA driver, use `sudo apt install nvidia-driver-<version>` (replace `<version>` with the number of the recommended driver e.g., nvidia-driver-535)
-  5) Reboot your system with `sudo reboot` to apply the changes.
-
-  6) Verify the installation with `nvidia-smi`. This returns something like this, which shows you the driver version in the top center:
-
-  ```bash
-      +-----------------------------------------------------------------------------------------+
-      | NVIDIA-SMI 552.22                 Driver Version: 552.22         CUDA Version: 12.4     |
-      |-----------------------------------------+------------------------+----------------------+
-      | GPU  Name                     TCC/WDDM  | Bus-Id          Disp.A | Volatile Uncorr. ECC |
-      | Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
-      |                                         |                        |               MIG M. |
-      |=========================================+========================+======================|
-      |   0  NVIDIA GeForce RTX 3080 ...  WDDM  |   00000000:01:00.0 Off |                  N/A |
-      | N/A   53C    P8              9W /  115W |     257MiB /   8192MiB |      0%      Default |
-      |                                         |                        |                  N/A |
-      +-----------------------------------------+------------------------+----------------------+
-
-      +-----------------------------------------------------------------------------------------+
-      | Processes:                                                                              |
-      |  GPU   GI   CI        PID   Type   Process name                              GPU Memory |
-      |        ID   ID                                                               Usage      |
-      |=========================================================================================|
-      |    0   N/A  N/A     28420    C+G   ...Programs\Microsoft VS Code\Code.exe      N/A      |
-      |    0   N/A  N/A     31888    C+G   ...les\Microsoft OneDrive\OneDrive.exe      N/A      |
-      +-----------------------------------------------------------------------------------------+
-  ```
-
-  </details>
-* **WSL**: Follow the instructions and troubleshooting for Linux above. If you encounter issues/errors during that process, see the troubleshooting section below: <details><summary>Troubleshooting WSL &rarr;click here&larr;</summary>
-    When using Windows Subsystem for Linux, your graphics card might not be recognized. If an error occurs after running the command:
-
-    1) If `ubuntu-drivers devices` throws the error
-        * `Command 'ubuntu-drivers' not found`: run the command `sudo apt install ubuntu-drivers-common`.
-        * `ERROR:root:aplay command not found`: run the command `sudo apt install alsa-utils`.
-    2) If `sudo apt install nvidia-driver-<version>` throws the error `E: Unable to locate package nvidia-driver-<version>`: run the commands
-
-        ```bash
-        sudo apt install software-properties-gtk
-        sudo add-apt-repository universe
-        sudo add-apt-repository multiverse
-        sudo apt update
-        sudo apt install nvidia-driver-<version> 
-        ```
-
-    3) If `nvidia-smi` throws the error `nvidia: command not found`: the controller is probably not using the correct interface (`sudo lshw -c display` should show NVIDIA). To solve this, follow [these steps](https://learn.microsoft.com/en-us/windows/wsl/tutorials/gpu-compute). If a `docker: permission denied` error occurs: close and re-open WSL.
-
-  </details>
-
-👉 *Check NVIDIA driver installation with: `nvidia-smi`*
-
-</details>
-
-<details><summary><b><i>Install CUDA</i></b> &leq;12.9</summary>
-
-* **Windows**: Download an installer from [the CUDA website](https://developer.nvidia.com/cuda-downloads).
-  * ⚠️ **To be on the safe side, it is recommended to install CUDA in a directory without spaces, like `C:\cuda`.** Spaces should not cause issues when running `deploy_windows.ps1`, but this is not guaranteed.
-* **Linux**: Use `sudo apt-get install nvidia-cuda-toolkit`, or [download an installer](https://developer.nvidia.com/cuda-downloads).
-  * Pick the default installation path. **If this is not `usr/local/cuda/`, create a symlink to that path.**
-  * Match the version shown in your driver (see top right in `nvidia-smi` output).
-  * When prompted what to install: do not install the driver again, only the CUDA toolkit.
-  * Add the CUDA `bin` and `lib64` paths to your `PATH` and `LD_LIBRARY_PATH` by adding the following lines at the end of your shell profile file (usually `.bashrc` for Bash):
-
-    ```bash
-    export PATH=/usr/local/cuda/bin:$PATH
-    export LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH
-    ```
-
-    Apply the changes with `source ~/.bashrc`.
-
-👉 *Check CUDA installation with: `nvcc --version`*
-
-</details>
-
-<details><summary><b><i>Install Go</i></b></summary>
-
-* Download and install from [the Go website](https://go.dev/doc/install).
-* The `GOPATH` environment variable should have been set automatically (note: the folder it points to probably doesn't exist yet).<br>*Check with `go env GOPATH`.* <details><summary><i>Click here to set `GOPATH` manually if it does not exist.</i></summary>
-  * On **Windows:** `%USERPROFILE%/go` is often used, e.g. `C:/Users/<name>/go`. See [this guide](https://www.wikihow.com/Change-the-PATH-Environment-Variable-on-Windows) if you are unfamiliar with environment variables.
-  * On **Linux:** `~/go` is often used. Open or create the `~/.bashrc` file and add the following lines.
-
-    ```bash
-    export GOPATH=$HOME/go
-    export PATH=$GOPATH/bin:$PATH
-    ```
-
-    After editing the file, apply the changes by running `source ~/.bashrc`.
-    </details>
-
-👉 *Check Go installation with: `go version`*
-
-</details>
-
-<details><summary><b><i>Install a C compiler</i></b></summary>
-
-* **Linux:** `sudo apt-get install gcc`
-  * ⚠️ each CUDA version has a maximum supported `gcc` version. [This StackOverflow answer](https://stackoverflow.com/a/46380601) lists the maximum supported `gcc` version for each CUDA version. If necessary, use `sudo apt-get install gcc-<min_version>` instead, with the appropriate `<min_version>`.
-* **Windows:**
-  * CUDA does not support the `gcc` compiler on Windows, so download and install [Visual Studio](https://visualstudio.microsoft.com/downloads/) with the "Desktop development with C++" workload.  After installing, check if the path to `cl.exe` was added to your `PATH` environment variable (i.e., check whether `where cl.exe` returns an appropriate path like `C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64`). If not, add it manually.
-  * To compile Go, on the other hand, `gcc` is needed. Usually this is included in the Go installation, but if not it can be downloaded and installed from [w64devkit](https://github.com/skeeto/w64devkit/releases).
-
-👉 *Check C installation with: `gcc --version` on Linux and `where.exe cl.exe` on Windows.*
-
-</details>
-
-<details><summary>(Optional: <b><i>install git</i></b> to contribute to mumax³)</summary>
-
-<sub><sup>If you don't have a GitHub profile yet, make one [here](https://github.com/join).</sup></sub>
-
-* **Windows:** [Download](https://git-scm.com/downloads) and install.
-  <!-- If Git shows many changed .go files, but the files do not have any visible changes, this is likely due to a different line ending being used. Run `git config core.autocrlf input` in the `mumax/3` directory to avoid changing the line ending. -->
-* **Linux:** `sudo apt install git`
-* [Set up your username in Git](https://docs.github.com/en/get-started/getting-started-with-git/setting-your-username-in-git) and [setup an SSH key for your GitHub account](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/adding-a-new-ssh-key-to-your-github-account).
-
-👉 *Check Git installation with: `git –-version`*
-
-</details>
-
-<details><summary>(Optional: <b><i>install gnuplot</i></b> for pretty graphs)</summary>
-
-* **Windows:** [Download]((http://www.gnuplot.info/download.html)) and install.
-* **Linux:** `sudo apt-get install gnuplot`
-
-👉 *Check gnuplot installation with: `gnuplot -V`*
-
-</details>
-
-With these tools installed, you can build mumax³ yourself.
-
-* Within your `GOPATH` folder, create the subfolders `src/github.com/mumax`.
-* Clone the GitHub repository by running `git clone https://github.com/mumax/3.git` in that newly created `mumax` folder.
-  * If you don't have git, you can manually fetch the source [here](https://github.com/mumax/3/releases) and unzip it into `$GOPATH/src/github.com/mumax/3`.
-* Initialize a Go module by moving to the newly created folder with `cd 3/` and running `go mod init github.com/mumax/3`, followed by `go mod tidy`.
-* Query the compute capability of your GPU using the command `nvidia-smi --query-gpu=compute_cap --format=csv`. Based on this, set the environment variable `CUDA_CC`: if your compute capability is e.g., 8.9, then set the value `CUDA_CC=89`.
-* You can now compile mumax³ ...
-  * ... **on Linux:**
-
-    ```bash
-    make realclean
-    make
-    ```
-
-    Your binary is now at `$GOPATH/bin/mumax3`.
-
-    Note: each CUDA version has a maximum supported GCC version. If your default GCC compiler is too recent, you can use a different GCC compiler by instead running `make NVCC_CCBIN=<path_to_gcc>` where `<path_to_gcc>` is a less recent GCC. [Check the version compatibility here](https://stackoverflow.com/a/46380601). Alternatively, setting the `NVCC_CCBIN` environment variable achieves the same thing, allowing you to run `make` as usual.
-
-  * ... **on Windows:**
-    The `Makefile`s may experience issues with whitespaces. Instead, we recommend to use the `deploy/deploy_windows.ps1` script: this generates the Windows executables for the [mumax³ download page](https://mumax.github.io/download.html), but can also be used to build a single mumax³ executable for yourself by making the following adjustments:
-    1) Change the `$VS2022` variable to point to your Visual Studio executable. If you wish to compile for CUDA versions below v11.6, also set `$VS2017`. Example: if `where.exe cl.exe` returns `foo\bar\cl.exe`, then set `$VS2022 = "foo\bar"`.
-    2) (Not strictly necessary, but check this anyway) Throughout the file there are several `switch ( $CUDA_VERSION )` blocks. If these do not address your installed CUDA version, add your version. Consult nearby comments when in doubt.
-
-    Now you can compile mumax³ by opening Powershell in the `/deploy` directory and running
-
-    ```bat
-    ./deploy_windows.ps1 -CUDA_VERSIONS <your_cuda_version> -CUDA_CC <your_compute_capability>
-    ```
-
-    where e.g. `<your_cuda_version>` is `12.6` and `<your_compute_capability>` is `86`, if you have installed CUDA v12.6 and your GPU's compute capability is 8.6.
-
-    Your executable will be created in the `deploy/build` directory.
-
-* *Check installation with: `which mumax3` on **Linux** or `where.exe mumax3.exe` on **Windows**, followed by `mumax3 -test`.* <details><summary>Troubleshooting: `cuda.h` or `curand.h` not found: &rarr;click here&larr;</summary>
-  This usually means that the `CGO_CFLAGS` and `CGO_LDFLAGS` environment variables are not found or point to the wrong path. To fix this, either define them in the script you are using to build mumax³, or define them in the terminal before running the script.
-  * On **Windows:** set the environment variable `CUDA_PATH` to point to your CUDA folder (e.g. `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v12.9`), then run these two lines in Powershell before running `deploy_windows.ps1`:
-
-    ```powershell
-    $env:CGO_CFLAGS = "-I `"$($env:CUDA_PATH)\include`""
-    $env:CGO_LDFLAGS = "-L `"$($env:CUDA_PATH)\lib\x64`""
-    ```
-
-  </details>
-  <details><summary>Troubleshooting: `mumax3.exe` is not generated: &rarr;click here&larr;</summary>
-
-  If, during the build process of mumax³, everything runs smoothly until you get the error that the `mumax3.exe` executable can not be found, try setting the `CGO_ENABLED` environment variable to `1` in your build script.
-
-  </details>
-  <details><summary>Troubleshooting: `vcvars64.bat` not found or could not initialise VC environment: &rarr;click here&larr;</summary>
-
-  CUDA requires Visual Studio to compile, which tries to set various environment variables.
-  If Visual Studio fails to do so automatically, you can open a new shell, manually run the `vcvars64.bat` file there (the error message should contain the path to this Batch file), and then compile mumax using that shell.
-
-  </details>
-  <details><summary>Troubleshooting: Windows errors not mentioned above: &rarr;click here&larr;</summary>
-
-  If you encounter an error during compilation on Windows, other than those mentioned above, you may try to run the compilation commands in the "Developer Powershell for VS 20XX" that should have been automatically installed alongside MSVC. Sometimes this special shell solves conflicts between MSVC and CUDA, sometimes not.
-
-  </details>
+## Upstream and license
+
+This project is derived from [mumax³](https://github.com/mumax/3), whose design
+and verification are described in the
+[original paper](https://doi.org/10.1063/1.4899186). NVIDIA CUDA users should
+follow the [official mumax³ installation documentation](https://mumax.github.io/download.html).
+This fork is distributed under the [GNU GPL v3 or later](LICENSE). The
+[project notices](NOTICE) preserve the upstream CUDA linking permission and
+identify the July 2026 macOS modifications. Licenses and attribution for
+Random123, Go, SVGo, and Freetype-Go are collected in the
+[third-party notices](THIRD_PARTY_NOTICES.md).
+
+## Creator
+
+I am **Taewoo Park**, and I am an undergraduate physics student at the Korea
+Advanced Institute of Science and Technology (KAIST). Since October 2025, I
+have conducted experimental spintronics research on magnetic domain wall motion
+and neuromorphic computing applications at the
+[KAIST Ultrafast Spin Dynamics Laboratory (USDL)](https://spintronics.kaist.ac.kr/),
+led by **Professor Kab Jin Kim**. From June 2023 through March 2024, I studied
+domain wall motion through theoretical modeling and micromagnetic simulation in
+the KAIST Quantum Spin Dynamics Laboratory under **Professor Se Kwon Kim**.
+
+<a href="https://taewoopark.com"><img src="https://img.shields.io/badge/-taewoopark.com-000000?style=for-the-badge&logo=safari&logoColor=white" alt="Personal site"></a>
+<a href="mailto:ptw151125@kaist.ac.kr"><img src="https://img.shields.io/badge/-Email-D14836?style=for-the-badge&logo=gmail&logoColor=white" alt="Email"></a>

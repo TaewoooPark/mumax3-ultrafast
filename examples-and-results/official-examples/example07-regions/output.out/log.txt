@@ -1,0 +1,41 @@
+//mumax 3.12 [darwin_arm64 go1.26.5(gc) Metal-3]
+//commit hash: 90d07e63
+//CPU info: Apple M4, Cores: 10
+//GPU info: Apple M4, unified memory, Metal 3, recommended working set 21845MB, backend=Metal
+//OS  info: macOS 15.6 (24G84), Hostname: bagtaeuui-MacBookAir-4.local
+//Timestamp: 2026-07-30 22:12:41
+//(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium
+//This is free software without any warranty. See license.txt
+//********************************************************************//
+//  If you use mumax in any work or publication,                      //
+//  we kindly ask you to cite the references in references.bib        //
+//********************************************************************//
+//output directory: output.out/
+N := 128
+setgridsize(N, N, 1)
+c := 4e-9
+setcellsize(c, c, c)
+setgeom(circle(N * c))
+defregion(1, xrange(0, inf))
+defregion(2, xrange(-inf, 0))
+save(regions)
+Ku1.setregion(1, .1e6)
+anisU.setRegion(1, vector(1, 0, 0))
+Ku1.setregion(2, .2e6)
+anisU.setRegion(2, vector(0, 1, 0))
+save(Ku1)
+save(anisU)
+Msat = 800e3
+save(Msat)
+Aex = 12e-13
+alpha = 1
+m.setRegion(1, uniform(1, 1, 0))
+m.setRegion(2, uniform(-1, 1, 0))
+saveas(m, "m_inital")
+run(.1e-9)
+saveas(m, "m_final")
+//********************************************************************//
+//Please cite the following references, relevant for your simulation. //
+//See bibtex file in output folder for justification.                 //
+//********************************************************************//
+//   * Vansteenkiste et al., AIP Adv. 4, 107133 (2014).

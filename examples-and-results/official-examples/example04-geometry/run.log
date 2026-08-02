@@ -1,0 +1,59 @@
+$ /Users/taewoopark/go/bin/mumax3 -http= -f -o output.out example4.mx3
+//mumax 3.12 [darwin_arm64 go1.26.5(gc) Metal-3]
+//commit hash: 90d07e63
+//CPU info: Apple M4, Cores: 10
+//GPU info: Apple M4, unified memory, Metal 3, recommended working set 21845MB, backend=Metal
+//OS  info: macOS 15.6 (24G84), Hostname: bagtaeuui-MacBookAir-4.local
+//Timestamp: 2026-07-30 22:12:23
+//(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium
+//This is free software without any warranty. See license.txt
+//********************************************************************//
+//  If you use mumax in any work or publication,                      //
+//  we kindly ask you to cite the references in references.bib        //
+//********************************************************************//
+//output directory: output.out/
+//not starting GUI (-http="")
+SetGridsize(100, 100, 50)
+SetCellsize(1e-6/100, 1e-6/100, 1e-6/50)
+EdgeSmooth = 8
+setgeom(rect(800e-9, 500e-9))
+// Initializing geometry 0 %
+// Initializing geometry 100 %
+saveas(geom, "rect")
+setgeom(cylinder(800e-9, inf))
+saveas(geom, "cylinder")
+setgeom(circle(200e-9).repeat(300e-9, 400e-9, 0))
+saveas(geom, "circle_repeat")
+setgeom(cylinder(800e-9, inf).inverse())
+saveas(geom, "cylinder_inverse")
+setgeom(cylinder(800e-9, 600e-9).transl(200e-9, 100e-9, 0))
+saveas(geom, "cylinder_transl")
+setgeom(ellipsoid(800e-9, 600e-9, 500e-9))
+saveas(geom, "ellipsoid")
+setgeom(cuboid(800e-9, 600e-9, 500e-9))
+saveas(geom, "cuboid")
+setgeom(cuboid(800e-9, 600e-9, 500e-9).rotz(-10 * pi / 180))
+saveas(geom, "cuboid_rotZ")
+setgeom(layers(0, 25))
+saveas(geom, "layers")
+setgeom(cell(50, 20, 0))
+saveas(geom, "cell")
+setgeom(xrange(0, inf))
+saveas(geom, "xrange")
+a := cylinder(600e-9, 600e-9).transl(-150e-9, 50e-9, 0)
+b := rect(600e-9, 600e-9).transl(150e-9, -50e-9, 0)
+setgeom(a.add(b))
+saveas(geom, "logicAdd")
+setgeom(a.sub(b))
+saveas(geom, "logicSub")
+setgeom(a.intersect(b))
+saveas(geom, "logicAnd")
+setgeom(a.xor(b))
+saveas(geom, "logicXor")
+setgeom(imageShape("mask.png"))
+saveas(geom, "imageShape")
+//********************************************************************//
+//Please cite the following references, relevant for your simulation. //
+//See bibtex file in output folder for justification.                 //
+//********************************************************************//
+//   * Vansteenkiste et al., AIP Adv. 4, 107133 (2014).

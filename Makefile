@@ -17,12 +17,20 @@ else
 	GPU_KERNELS := cudakernels
 endif
 
-.PHONY: all cudakernels metalkernels check-metal metal-shaders clean realclean checktests runtests hooks
+.PHONY: all cudakernels metalkernels check-licenses check-metal metal-shaders clean realclean checktests runtests hooks
 
 
-all: $(GPU_KERNELS) hooks
+all: check-licenses $(GPU_KERNELS) hooks
 	go install -v $(GO_BUILDFLAGS) github.com/mumax/3/...
 	cd cmd/mumax3/ && $(MAKE)
+
+check-licenses:
+	@test -s LICENSE
+	@test -s NOTICE
+	@test -s THIRD_PARTY_NOTICES.md
+	@grep -Fq "GNU GENERAL PUBLIC LICENSE" LICENSE
+	@grep -Fq "D. E. Shaw Research" THIRD_PARTY_NOTICES.md
+	@grep -Fq "Copyright 2009 The Go Authors." THIRD_PARTY_NOTICES.md
 
 cudakernels:
 	cd cuda && $(MAKE) NVCC_CCBIN=$(NVCC_CCBIN)
@@ -46,7 +54,7 @@ metal-shaders: metalkernels
 		echo "Offline Metal compiler not installed; runtime compilation will be used"; \
 	fi
 
-check-metal: metal-shaders
+check-metal: check-licenses metal-shaders
 	python3 cuda/metal/cmd/cuda2metal/generate.py --check
 	python3 -m unittest discover -s cuda/metal/cmd/cuda2metal -p 'test_*.py'
 	go test ./cuda/metal/...
