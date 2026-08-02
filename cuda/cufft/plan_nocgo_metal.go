@@ -21,6 +21,14 @@ func Plan3d(nx, ny, nz int, typ Type) Handle {
 	panic(metalCgoRequired)
 }
 
+func Plan3dPadded(nx, ny, nz int, typ Type, activeOuter int) Handle {
+	panic(metalCgoRequired)
+}
+
+func Plan3dPaddedBatch(nx, ny, nz int, typ Type, batch, activeOuter int) Handle {
+	panic(metalCgoRequired)
+}
+
 func PlanMany(n []int, inembed []int, istride int, oembed []int, ostride int, typ Type, batch int) Handle {
 	panic(metalCgoRequired)
 }

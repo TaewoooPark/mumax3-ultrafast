@@ -33,6 +33,12 @@ func Plan3dPadded(nx, ny, nz int, typ Type, activeOuter int) Handle {
 	return newMetalPlan([]int{nx, ny, nz}, typ, 1, activeOuter)
 }
 
+// Plan3dPaddedBatch is the contiguous batched counterpart of Plan3dPadded.
+// Each transform occupies one complete, tightly packed array.
+func Plan3dPaddedBatch(nx, ny, nz int, typ Type, batch, activeOuter int) Handle {
+	return newMetalPlan([]int{nx, ny, nz}, typ, batch, activeOuter)
+}
+
 // PlanMany supports the contiguous subset used by mumax3. Non-unit strides or
 // explicit embedding would require a gather/scatter graph and are rejected
 // rather than silently producing a differently laid-out transform.

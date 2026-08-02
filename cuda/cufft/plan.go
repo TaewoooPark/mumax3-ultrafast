@@ -77,6 +77,16 @@ func Plan3dPadded(nx, ny, nz int, typ Type, activeOuter int) Handle {
 	return Plan3d(nx, ny, nz, typ)
 }
 
+// Plan3dPaddedBatch creates tightly packed, contiguous 3D transforms. cuFFT
+// infers the input and output distances when the embed arrays are nil.
+func Plan3dPaddedBatch(nx, ny, nz int, typ Type, batch, activeOuter int) Handle {
+	_ = activeOuter
+	if batch == 1 {
+		return Plan3d(nx, ny, nz, typ)
+	}
+	return PlanMany([]int{nx, ny, nz}, nil, 1, nil, 1, typ, batch)
+}
+
 func PlanMany(n []int, inembed []int, istride int, oembed []int, ostride int, typ Type, batch int) Handle {
 	var handle C.cufftHandle
 

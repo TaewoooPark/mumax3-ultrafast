@@ -12,7 +12,8 @@ import (
 // 3D single-precision complex-to-real FFT plan.
 type fft3DC2RPlan struct {
 	fftplan
-	size [3]int
+	size  [3]int
+	batch int
 }
 
 // 3D single-precision complex-to-real FFT plan.
@@ -20,9 +21,13 @@ type fft3DC2RPlan struct {
 // MuMax3 zero-pads the magnetisation, so the transform along X maps the
 // padded rows to zero rows and can skip them exactly.
 func newFFT3DC2R(Nx, Ny, Nz, activeY int) fft3DC2RPlan {
-	handle := cufft.Plan3dPadded(Nz, Ny, Nx, cufft.C2R, activeY) // new xyz swap
+	return newFFT3DC2RBatch(Nx, Ny, Nz, 1, activeY)
+}
+
+func newFFT3DC2RBatch(Nx, Ny, Nz, batch, activeY int) fft3DC2RPlan {
+	handle := cufft.Plan3dPaddedBatch(Nz, Ny, Nx, cufft.C2R, batch, activeY) // new xyz swap
 	handle.SetStream(stream0)
-	return fft3DC2RPlan{fftplan{handle}, [3]int{Nx, Ny, Nz}}
+	return fft3DC2RPlan{fftplan{handle}, [3]int{Nx, Ny, Nz}, batch}
 }
 
 // Execute the FFT plan, asynchronous.
@@ -31,6 +36,9 @@ func (p *fft3DC2RPlan) ExecAsync(src, dst *data.Slice) {
 	if Synchronous {
 		Sync()
 		timer.Start("fft")
+	}
+	if src.NComp() != p.batch || dst.NComp() != p.batch || !src.Contiguous() || !dst.Contiguous() {
+		panic(fmt.Errorf("fft batch mismatch: expecting %d contiguous components, got input=%d output=%d", p.batch, src.NComp(), dst.NComp()))
 	}
 	oksrclen := p.InputLenFloats()
 	if src.Len() != oksrclen {

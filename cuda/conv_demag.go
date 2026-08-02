@@ -12,11 +12,14 @@ type DemagConvolution struct {
 	inputSize        [3]int            // 3D size of the input/output data
 	realKernSize     [3]int            // Size of kernel and logical FFT size.
 	fftKernLogicSize [3]int            // logic size FFTed kernel, real parts only, we store less
+	fftRStorage      *data.Slice       // contiguous component-major forward input
+	fftCStorage      *data.Slice       // contiguous component-major forward output
 	fftRBuf          [3]*data.Slice    // FFT input buf; 2D: Z shares storage with X.
 	fftCBuf          [3]*data.Slice    // FFT output buf; 2D: Z shares storage with X.
 	fftBwBuf         *data.Slice       // inverse FFT output, see bwFFT
 	kern             [3][3]*data.Slice // FFT kernel on device
-	fwPlan           fft3DR2CPlan      // Forward FFT (1 component)
+	fwPlan           fft3DR2CPlan      // Forward FFT (2 components in 2D, 3 in 3D)
+	fwScalarPlan     fft3DR2CPlan      // 2D Z pass, which reuses X storage
 	bwPlan           fft3DC2RPlan      // Backward FFT (1 component)
 }
 
@@ -50,8 +53,9 @@ func (c *DemagConvolution) Exec(B, m, vol *data.Slice, Msat MSlice) {
 
 func (c *DemagConvolution) exec3D(outp, inp, vol *data.Slice, Msat MSlice) {
 	for i := 0; i < 3; i++ { // FW FFT
-		c.fwFFT(i, inp, vol, Msat)
+		c.prepareFw(i, inp, vol, Msat)
 	}
+	c.fwPlan.ExecAsync(c.fftRStorage, c.fftCStorage)
 
 	// kern mul
 	kernMulRSymm3D_async(c.fftCBuf,
@@ -71,13 +75,15 @@ func (c *DemagConvolution) exec2D(outp, inp, vol *data.Slice, Msat MSlice) {
 	Nx, Ny := c.fftKernLogicSize[X], c.fftKernLogicSize[Y]
 
 	// Z
-	c.fwFFT(Z, inp, vol, Msat)
+	c.prepareFw(Z, inp, vol, Msat)
+	c.fwScalarPlan.ExecAsync(c.fftRBuf[Z], c.fftCBuf[Z])
 	kernMulRSymm2Dz_async(c.fftCBuf[Z], c.kern[Z][Z], Nx, Ny)
 	c.bwFFT(Z, outp)
 
 	// XY
-	c.fwFFT(X, inp, vol, Msat)
-	c.fwFFT(Y, inp, vol, Msat)
+	c.prepareFw(X, inp, vol, Msat)
+	c.prepareFw(Y, inp, vol, Msat)
+	c.fwPlan.ExecAsync(c.fftRStorage, c.fftCStorage)
 	kernMulRSymm2Dxy_async(c.fftCBuf[X], c.fftCBuf[Y],
 		c.kern[X][X], c.kern[Y][Y], c.kern[X][Y], Nx, Ny)
 	c.bwFFT(X, outp)
@@ -101,10 +107,9 @@ func zero1_async(dst *data.Slice) {
 // buffer; it now targets fftBwBuf instead. That removes one full padded-buffer
 // clear plus one dispatch per component per field evaluation, which is 18
 // dispatches per RK45DP step.
-func (c *DemagConvolution) fwFFT(i int, inp, vol *data.Slice, Msat MSlice) {
+func (c *DemagConvolution) prepareFw(i int, inp, vol *data.Slice, Msat MSlice) {
 	in := inp.Comp(i)
 	copyPadMul(c.fftRBuf[i], in, vol, c.realKernSize, c.inputSize, Msat)
-	c.fwPlan.ExecAsync(c.fftRBuf[i], c.fftCBuf[i])
 }
 
 // backward FFT component i
@@ -122,20 +127,19 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 	// init device buffers
 	// 2D re-uses fftBuf[X] as fftBuf[Z], 3D needs all 3 fftBufs.
 	nc := fftR2COutputSizeFloats(c.realKernSize)
-	c.fftCBuf[X] = NewSlice(1, nc)
-	c.fftCBuf[Y] = NewSlice(1, nc)
+	forwardBatch := 3
+	if c.is2D() {
+		forwardBatch = 2
+	}
+	c.fftCStorage = NewSlice(forwardBatch, nc)
+	c.fftRStorage = NewSlice(forwardBatch, c.realKernSize)
+	for i := 0; i < forwardBatch; i++ {
+		c.fftCBuf[i] = c.fftCStorage.Comp(i)
+		c.fftRBuf[i] = c.fftRStorage.Comp(i)
+	}
 	if c.is2D() {
 		c.fftCBuf[Z] = c.fftCBuf[X]
-	} else {
-		c.fftCBuf[Z] = NewSlice(1, nc)
-	}
-
-	c.fftRBuf[X] = NewSlice(1, c.realKernSize)
-	c.fftRBuf[Y] = NewSlice(1, c.realKernSize)
-	if c.is2D() {
 		c.fftRBuf[Z] = c.fftRBuf[X]
-	} else {
-		c.fftRBuf[Z] = NewSlice(1, c.realKernSize)
 	}
 
 	// Dedicated inverse-FFT output, so the forward buffers keep their zero
@@ -161,7 +165,10 @@ func (c *DemagConvolution) init(realKern [3][3]*data.Slice) {
 	if c.realKernSize[Z] == 1 {
 		activeY = c.inputSize[Y]
 	}
-	c.fwPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeY)
+	c.fwPlan = newFFT3DR2CBatch(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], forwardBatch, activeY)
+	if c.is2D() {
+		c.fwScalarPlan = newFFT3DR2C(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeY)
+	}
 	c.bwPlan = newFFT3DC2R(c.realKernSize[X], c.realKernSize[Y], c.realKernSize[Z], activeY)
 
 	// init FFT kernel
@@ -234,9 +241,11 @@ func (c *DemagConvolution) Free() {
 	c.realKernSize = [3]int{}
 	c.fftBwBuf.Free()
 	c.fftBwBuf = nil
+	c.fftCStorage.Free()
+	c.fftRStorage.Free()
+	c.fftCStorage = nil
+	c.fftRStorage = nil
 	for i := 0; i < 3; i++ {
-		c.fftCBuf[i].Free()
-		c.fftRBuf[i].Free()
 		c.fftCBuf[i] = nil
 		c.fftRBuf[i] = nil
 
@@ -245,6 +254,7 @@ func (c *DemagConvolution) Free() {
 			c.kern[i][j] = nil
 		}
 		c.fwPlan.Free()
+		c.fwScalarPlan.Free()
 		c.bwPlan.Free()
 
 		cudaCtx.SetCurrent()
