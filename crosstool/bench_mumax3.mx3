@@ -1,0 +1,14 @@
+setcellsize(4e-9, 4e-9, 4e-9)
+setgridsize(NNN, NNN, 1)
+msat  = 800e3
+aex   = 13e-12
+alpha = 0.02
+setsolver(2)
+fixdt = 1e-13
+m = uniform(1, 0.1, 0)
+steps(2)
+start  := now()
+nev0   := Neval.get()
+steps(SSS)
+wall := since(start).Seconds()
+fprintln("res.txt", NNN*NNN, SSS, wall, m.comp(0).average(), NNN*NNN*2*SSS/wall, Neval.get()-nev0)

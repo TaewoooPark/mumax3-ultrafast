@@ -1,0 +1,64 @@
+# MIF 2.1
+#
+# OOMMF arm of the Apple Silicon cross-tool benchmark.
+#
+# Same problem as every other arm: NNN x NNN x 1 cells of 4 nm, Ms = 8e5 A/m,
+# A = 1.3e-11 J/m, alpha = 0.02, demag + exchange only, m0 = normalize(1, 0.1, 0).
+#
+# The integrator is rk2, which is Heun - matching mumax3's setsolver(2), the
+# magnum.np arm and the MicroMagnetic.jl arm, so every arm does exactly two
+# effective-field evaluations per step. The adaptive controller is disabled by
+# pinning min_timestep = max_timestep = 1e-13 and setting every error limit to -1,
+# so OOMMF cannot shorten the run by taking different steps than the others.
+#
+# OOMMF has no GPU backend of any kind; this is the CPU reference point.
+
+set PI [expr {4 * atan(1.)}]
+set MU0 [expr {4 * $PI * 1e-7}]
+
+Specify Oxs_BoxAtlas:atlas [subst {
+  xrange {0 [expr {NNN * 4e-9}]}
+  yrange {0 [expr {NNN * 4e-9}]}
+  zrange {0 4e-9}
+}]
+
+Specify Oxs_RectangularMesh:mesh {
+  cellsize {4e-9 4e-9 4e-9}
+  atlas :atlas
+}
+
+Specify Oxs_UniformExchange {
+  A 1.3e-11
+}
+
+Specify Oxs_Demag {}
+
+Specify Oxs_RungeKuttaEvolve:evolve {
+  alpha 0.02
+  gamma_LL 2.211e5
+  method rk2
+  min_timestep 1e-13
+  max_timestep 1e-13
+  absolute_step_error -1
+  relative_step_error -1
+  error_rate -1
+}
+
+Specify Oxs_TimeDriver {
+  evolver :evolve
+  mesh :mesh
+  Ms 8e5
+  m0 { Oxs_UniformVectorField {
+    norm 1
+    vector {1 0.1 0}
+  } }
+  stopping_time TTT
+  stage_count 1
+  basename oommf_bench
+}
+
+# Without a destination OOMMF runs the problem and writes nothing, so there is no
+# way to confirm the step count or the final magnetization. One table at the end
+# of the stage is enough and costs nothing during the run.
+Destination archive mmArchive
+Schedule DataTable archive Stage 1

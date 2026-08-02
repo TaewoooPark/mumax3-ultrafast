@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="470" viewBox="0 0 860 470">
+<rect width="860" height="470" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">Every micromagnetic simulator that runs on a Mac, on the same Mac</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">Throughput on one M4 MacBook Air. Identical physics in every arm — demag + exchange, Heun</text>
+<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">integration at a fixed 1e-13 s step, the same number of steps per mesh — so each arm performs</text>
+<text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">exactly two effective-field evaluations per step. Higher is better.</text>
+<line x1="78" y1="350.6" x2="628" y2="350.6" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="354.5880915104159" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">10⁷</text>
+<line x1="78" y1="301.1" x2="628" y2="301.1" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="272.2" x2="628" y2="272.2" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="251.6" x2="628" y2="251.6" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="235.7" x2="628" y2="235.7" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="222.7" x2="628" y2="222.7" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="211.7" x2="628" y2="211.7" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="202.1" x2="628" y2="202.1" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="193.7" x2="628" y2="193.7" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="186.2" x2="628" y2="186.2" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="190.2117858761329" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">10⁸</text>
+<line x1="78" y1="136.7" x2="628" y2="136.7" stroke="#e4e6e9" stroke-width="1" opacity="0.5"/>
+<line x1="78" y1="118" x2="78" y2="416" stroke="#5f6368" stroke-width="1"/>
+<line x1="78" y1="416" x2="628" y2="416" stroke="#5f6368" stroke-width="1"/>
+<text x="78.0" y="434" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">128²</text>
+<text x="215.5" y="434" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">256²</text>
+<text x="353.0" y="434" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">512²</text>
+<text x="490.5" y="434" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">1024²</text>
+<text x="628.0" y="434" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2048²</text>
+<text x="353.0" y="456" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle">mesh</text>
+<text x="18" y="267" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 267)">cell-evaluations per second</text>
+<g><title>mumax3-ultrafast: 117M cell-evaluations/s at 2048²</title>
+<polyline fill="none" points="78.0,152.2 215.5,129.8 353.0,164.3 490.5,169.3 628.0,175.0" stroke="#0b4f9e" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="78.0" cy="152.2" r="3.4" fill="#0b4f9e"/>
+<circle cx="215.5" cy="129.8" r="3.4" fill="#0b4f9e"/>
+<circle cx="353.0" cy="164.3" r="3.4" fill="#0b4f9e"/>
+<circle cx="490.5" cy="169.3" r="3.4" fill="#0b4f9e"/>
+<circle cx="628.0" cy="175.0" r="3.4" fill="#0b4f9e"/>
+</g>
+<g><title>magnum.np (MPS): 30M cell-evaluations/s at 2048²</title>
+<polyline fill="none" points="78.0,343.3 215.5,291.8 353.0,309.5 490.5,281.5 628.0,271.7" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="78.0" cy="343.3" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="291.8" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="309.5" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="281.5" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="271.7" r="2.5" fill="#9aa0a6"/>
+</g>
+<g><title>OOMMF (CPU, 8 threads): 28M cell-evaluations/s at 2048²</title>
+<polyline fill="none" points="78.0,268.2 215.5,253.2 353.0,249.1 490.5,262.9 628.0,275.8" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="78.0" cy="268.2" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="253.2" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="249.1" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="262.9" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="275.8" r="2.5" fill="#9aa0a6"/>
+</g>
+<g><title>MicroMagnetic.jl (CPU): 8M cell-evaluations/s at 2048²</title>
+<polyline fill="none" points="78.0,306.8 215.5,316.2 353.0,332.5 490.5,348.5 628.0,364.6" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="78.0" cy="306.8" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="316.2" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="332.5" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="348.5" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="364.6" r="2.5" fill="#9aa0a6"/>
+</g>
+<g><title>magnum.np (CPU): 5M cell-evaluations/s at 2048²</title>
+<polyline fill="none" points="78.0,372.0 215.5,372.5 353.0,372.5 490.5,393.4 628.0,400.5" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/>
+<circle cx="78.0" cy="372.0" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="372.5" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="372.5" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="393.4" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="400.5" r="2.5" fill="#9aa0a6"/>
+</g>
+<text x="640.0" y="178.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#202124" font-weight="600">mumax3-ultrafast <tspan fill="#5f6368" font-size="9.5">117M/s</tspan></text>
+<text x="640.0" y="275.2" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">magnum.np (MPS) <tspan fill="#5f6368" font-size="9.5">30M/s</tspan></text>
+<path fill="none" stroke="#9aa0a6" stroke-width="1" opacity="0.5" d="M 631.0 275.8 L 637.0 290.7"/>
+<text x="640.0" y="294.2" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">OOMMF (CPU, 8 threads) <tspan fill="#5f6368" font-size="9.5">28M/s</tspan></text>
+<text x="640.0" y="368.1" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">MicroMagnetic.jl (CPU) <tspan fill="#5f6368" font-size="9.5">8M/s</tspan></text>
+<text x="640.0" y="404.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">magnum.np (CPU) <tspan fill="#5f6368" font-size="9.5">5M/s</tspan></text>
+<text x="640" y="426.5430107510845" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#c5221f" font-weight="600">MicroMagnetic.jl (Metal)</text>
+<text x="640" y="439.5430107510845" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#c5221f">cannot run — every path reaches a</text>
+<text x="640" y="450.5430107510845" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#c5221f">Float64 inside a Metal kernel</text>
+</svg>

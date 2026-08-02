@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="352" viewBox="0 0 860 352">
+<rect width="860" height="352" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">Largest problem that fits on a 32 GB MacBook Air</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">The biggest mesh each simulator completes without paging out. A run that swaps has left the</text>
+<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">single-device regime the question is about, so it is killed and recorded as not fitting.</text>
+<text x="186" y="125" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#202124" text-anchor="end" font-weight="600">mumax3-ultrafast</text>
+<g><title>mumax3-ultrafast: 83.9M cells</title><rect x="196" y="112" width="441.2" height="20" fill="#0b4f9e"/></g>
+<text x="645.1764705882354" y="126" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" font-weight="600">83.9M cells</text>
+<text x="844" y="126" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">8192 x 10240</text>
+<text x="186" y="159" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">OOMMF (CPU, 8 threads)</text>
+<g><title>OOMMF (CPU, 8 threads): 83.9M cells</title><rect x="196" y="146" width="441.2" height="20" fill="#9aa0a6"/></g>
+<text x="645.1764705882354" y="160" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">83.9M cells</text>
+<text x="844" y="160" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">8192 x 10240</text>
+<text x="186" y="193" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">magnum.np (MPS)</text>
+<g><title>magnum.np (MPS): 16.8M cells</title><rect x="196" y="180" width="88.2" height="20" fill="#9aa0a6"/></g>
+<text x="292.2352941176471" y="194" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">16.8M cells</text>
+<text x="844" y="194" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">4096 x 4096</text>
+<text x="186" y="227" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">magnum.np (CPU)</text>
+<g><title>magnum.np (CPU): 16.8M cells</title><rect x="196" y="214" width="88.2" height="20" fill="#9aa0a6"/></g>
+<text x="292.2352941176471" y="228" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">16.8M cells</text>
+<text x="844" y="228" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">4096 x 4096</text>
+<text x="186" y="261" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">MicroMagnetic.jl (CPU)</text>
+<g><title>MicroMagnetic.jl (CPU): 16.8M cells</title><rect x="196" y="248" width="88.2" height="20" fill="#9aa0a6"/></g>
+<text x="292.2352941176471" y="262" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">16.8M cells</text>
+<text x="844" y="262" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">4096 x 4096</text>
+<text x="186" y="295" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">MicroMagnetic.jl (Metal)</text>
+<rect x="196" y="282" width="2.5" height="20" fill="#c5221f"/>
+<text x="206" y="296" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#c5221f" font-weight="600">cannot run — no Apple GPU path works at all</text>
+<text x="196" y="338" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#202124">cells</text>
+<text x="844" y="338" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">at the size where they tie, mumax3-ultrafast is 4.5× faster than OOMMF</text>
+</svg>

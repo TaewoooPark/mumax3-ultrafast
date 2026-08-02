@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="524" viewBox="0 0 1000 524">
+<rect width="1000" height="524" fill="#ffffff"/>
+<text x="500" y="42" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="24" font-weight="700" fill="#202124" text-anchor="middle">The fastest micromagnetic simulator on a Mac</text>
+<text x="500" y="70" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="#5f6368" text-anchor="middle">Every simulator that runs on Apple Silicon, measured on one M4 MacBook Air — same physics, same Heun integrator,</text>
+<text x="500" y="88" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12.5" fill="#5f6368" text-anchor="middle">same fixed 1e-13 s step, same step count. Taller is better in all three panels.</text>
+<text x="62" y="116" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#202124">Speed</text>
+<text x="62" y="132" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">cell-evaluations per second, 512²</text>
+<line x1="62" y1="346" x2="330" y2="346" stroke="#5f6368" stroke-width="1"/>
+<g><title>mumax3-ultrafast: 136M</title><rect x="73.8" y="195.2" width="30" height="150.8" fill="#0b4f9e"/></g>
+<text x="88.8" y="175.23076923076923" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#202124" text-anchor="middle" font-weight="600">136M</text>
+<text x="88.8" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 88.8 354)">mumax3-ultrafast</text>
+<g><title>OOMMF (CPU): 41M</title><rect x="127.4" y="300.1" width="30" height="45.9" fill="#9aa0a6"/></g>
+<text x="142.4" y="280.070814479638" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">41M</text>
+<text x="142.4" y="293.070814479638" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">3.3×</text>
+<text x="142.4" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 142.4 354)">OOMMF (CPU)</text>
+<g><title>magnum.np (MPS): 18M</title><rect x="181.0" y="326.3" width="30" height="19.7" fill="#9aa0a6"/></g>
+<text x="196.0" y="306.27805429864253" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">18M</text>
+<text x="196.0" y="319.27805429864253" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">7.6×</text>
+<text x="196.0" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 196.0 354)">magnum.np (MPS)</text>
+<g><title>MicroMagnetic.jl (CPU): 13M</title><rect x="234.6" y="331.7" width="30" height="14.3" fill="#9aa0a6"/></g>
+<text x="249.6" y="311.7212669683258" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">13M</text>
+<text x="249.6" y="324.7212669683258" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">10.6×</text>
+<text x="249.6" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 249.6 354)">MicroMagnetic.jl (CPU)</text>
+<g><title>magnum.np (CPU): 7M</title><rect x="288.2" y="337.8" width="30" height="8.2" fill="#9aa0a6"/></g>
+<text x="303.20000000000005" y="317.8385067873303" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">7M</text>
+<text x="303.20000000000005" y="330.8385067873303" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">18.5×</text>
+<text x="303.2" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 303.2 354)">magnum.np (CPU)</text>
+<text x="364" y="116" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#202124">Energy</text>
+<text x="364" y="132" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">cell-evaluations per joule, same 512² run</text>
+<line x1="364" y1="346" x2="632" y2="346" stroke="#5f6368" stroke-width="1"/>
+<g><title>mumax3-ultrafast: 22.5M</title><rect x="375.8" y="195.2" width="30" height="150.8" fill="#0b4f9e"/></g>
+<text x="390.8" y="175.23076923076923" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#202124" text-anchor="middle" font-weight="600">22.5M</text>
+<text x="390.8" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 390.8 354)">mumax3-ultrafast</text>
+<g><title>OOMMF (CPU): 2.5M</title><rect x="429.4" y="329.1" width="30" height="16.9" fill="#9aa0a6"/></g>
+<text x="444.4" y="309.0543689983939" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">2.5M</text>
+<text x="444.4" y="322.0543689983939" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">8.9×</text>
+<text x="444.4" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 444.4 354)">OOMMF (CPU)</text>
+<g><title>magnum.np (MPS): 3.8M</title><rect x="483.0" y="320.7" width="30" height="25.3" fill="#9aa0a6"/></g>
+<text x="498.0" y="300.6820216655845" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">3.8M</text>
+<text x="498.0" y="313.6820216655845" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">6.0×</text>
+<text x="498.0" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 498.0 354)">magnum.np (MPS)</text>
+<g><title>MicroMagnetic.jl (CPU): 1.9M</title><rect x="536.6" y="333.5" width="30" height="12.5" fill="#9aa0a6"/></g>
+<text x="551.6" y="313.4749683901172" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">1.9M</text>
+<text x="551.6" y="326.4749683901172" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">12.0×</text>
+<text x="551.6" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 551.6 354)">MicroMagnetic.jl (CPU)</text>
+<g><title>magnum.np (CPU): 0.9M</title><rect x="590.2" y="340.2" width="30" height="5.8" fill="#9aa0a6"/></g>
+<text x="605.2" y="320.2398250350272" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">0.9M</text>
+<text x="605.2" y="333.2398250350272" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">26.2×</text>
+<text x="605.2" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 605.2 354)">magnum.np (CPU)</text>
+<text x="666" y="116" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" font-weight="600" fill="#202124">Size</text>
+<text x="666" y="132" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">largest mesh that fits in 32 GB</text>
+<line x1="666" y1="346" x2="934" y2="346" stroke="#5f6368" stroke-width="1"/>
+<g><title>mumax3-ultrafast: 84M</title><rect x="677.8" y="195.2" width="30" height="150.8" fill="#0b4f9e"/></g>
+<text x="692.8" y="175.23076923076923" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#202124" text-anchor="middle" font-weight="600">84M</text>
+<text x="692.8" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124" font-weight="600" text-anchor="end" transform="rotate(-90 692.8 354)">mumax3-ultrafast</text>
+<g><title>OOMMF (CPU): 84M</title><rect x="731.4" y="195.2" width="30" height="150.8" fill="#9aa0a6"/></g>
+<text x="746.4" y="175.23076923076923" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">84M</text>
+<text x="746.4" y="188.23076923076923" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">tie</text>
+<text x="746.4" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 746.4 354)">OOMMF (CPU)</text>
+<g><title>magnum.np (MPS): 17M</title><rect x="785.0" y="315.8" width="30" height="30.2" fill="#9aa0a6"/></g>
+<text x="800.0" y="295.84615384615387" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">17M</text>
+<text x="800.0" y="308.84615384615387" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">5.0×</text>
+<text x="800.0" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 800.0 354)">magnum.np (MPS)</text>
+<g><title>MicroMagnetic.jl (CPU): 17M</title><rect x="838.6" y="315.8" width="30" height="30.2" fill="#9aa0a6"/></g>
+<text x="853.6" y="295.84615384615387" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">17M</text>
+<text x="853.6" y="308.84615384615387" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">5.0×</text>
+<text x="853.6" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 853.6 354)">MicroMagnetic.jl (CPU)</text>
+<g><title>magnum.np (CPU): 17M</title><rect x="892.2" y="315.8" width="30" height="30.2" fill="#9aa0a6"/></g>
+<text x="907.2" y="295.84615384615387" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11.5" fill="#5f6368" text-anchor="middle">17M</text>
+<text x="907.2" y="308.84615384615387" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#0b4f9e" text-anchor="middle" font-weight="600">5.0×</text>
+<text x="907.2" y="354" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end" transform="rotate(-90 907.2 354)">magnum.np (CPU)</text>
+<text x="62" y="498" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#c5221f">MicroMagnetic.jl's Metal backend is absent because it cannot run at all — every path reaches a Float64 inside a Metal kernel, and Apple GPUs have no double precision.</text>
+<text x="62" y="513" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368">Size is a tie with OOMMF at 83.9M cells — mumax3-ultrafast is 4.5× faster at that size.</text>
+</svg>

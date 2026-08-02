@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="400" viewBox="0 0 860 400">
+<rect width="860" height="400" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">All four codes compute the same magnetization</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">Relative deviation of the mean in-plane magnetization from mumax3-ultrafast after the same number</text>
+<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">of steps. Four independently written simulators, three languages, three backends — the worst</text>
+<text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">disagreement anywhere in the sweep is 7.1×10⁻⁵. Points resting on the axis floor are exact</text>
+<text x="78" y="93" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">agreement to every digit printed. Lower is better.</text>
+<line x1="78" y1="346.0" x2="628" y2="346.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="350.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">10⁻⁸</text>
+<line x1="78" y1="289.0" x2="628" y2="289.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="293.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">10⁻⁷</text>
+<line x1="78" y1="232.0" x2="628" y2="232.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="236.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">10⁻⁶</text>
+<line x1="78" y1="175.0" x2="628" y2="175.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="179.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">10⁻⁵</text>
+<line x1="78" y1="118.0" x2="628" y2="118.0" stroke="#e4e6e9" stroke-width="1"/>
+<text x="70" y="122.0" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">10⁻⁴</text>
+<line x1="78" y1="118" x2="78" y2="346" stroke="#5f6368" stroke-width="1"/>
+<line x1="78" y1="346" x2="628" y2="346" stroke="#5f6368" stroke-width="1"/>
+<text x="78.0" y="364" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">128²</text>
+<text x="215.5" y="364" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">256²</text>
+<text x="353.0" y="364" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">512²</text>
+<text x="490.5" y="364" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="middle">1024²</text>
+<text x="628.0" y="364" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#5f6368" text-anchor="end">2048²</text>
+<text x="353.0" y="386" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle">mesh</text>
+<text x="18" y="232" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" text-anchor="middle" transform="rotate(-90 18 232)">relative deviation</text>
+<line x1="78" y1="118.0" x2="628" y2="118.0" stroke="#5f6368" stroke-width="1" stroke-dasharray="5 4" opacity="0.7"/>
+<text x="640" y="121.5" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10" fill="#202124">0.01% — every code sits below</text>
+<g><title>MicroMagnetic.jl (CPU): 6.0e-06 relative deviation at 2048²</title>
+<polyline fill="none" points="78.0,170.2 215.5,214.7 353.0,346.0 490.5,271.7 628.0,187.5" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round"/>
+<circle cx="78.0" cy="170.2" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="214.7" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="346.0" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="271.7" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="187.5" r="2.5" fill="#9aa0a6"/>
+</g>
+<g><title>magnum.np (CPU): 6.0e-06 relative deviation at 2048²</title>
+<polyline fill="none" points="78.0,150.2 215.5,192.0 353.0,346.0 490.5,271.7 628.0,187.5" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round"/>
+<circle cx="78.0" cy="150.2" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="192.0" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="346.0" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="271.7" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="187.5" r="2.5" fill="#9aa0a6"/>
+</g>
+<g><title>OOMMF (CPU, 8 threads): 5.9e-06 relative deviation at 2048²</title>
+<polyline fill="none" points="78.0,126.6 215.5,163.2 353.0,204.7 490.5,288.9 628.0,187.9" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round"/>
+<circle cx="78.0" cy="126.6" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="163.2" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="204.7" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="288.9" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="187.9" r="2.5" fill="#9aa0a6"/>
+</g>
+<g><title>magnum.np (MPS): 5.9e-06 relative deviation at 2048²</title>
+<polyline fill="none" points="78.0,150.2 215.5,192.0 353.0,346.0 490.5,271.7 628.0,187.9" stroke="#9aa0a6" stroke-width="1.7" stroke-linejoin="round"/>
+<circle cx="78.0" cy="150.2" r="2.5" fill="#9aa0a6"/>
+<circle cx="215.5" cy="192.0" r="2.5" fill="#9aa0a6"/>
+<circle cx="353.0" cy="346.0" r="2.5" fill="#9aa0a6"/>
+<circle cx="490.5" cy="271.7" r="2.5" fill="#9aa0a6"/>
+<circle cx="628.0" cy="187.9" r="2.5" fill="#9aa0a6"/>
+</g>
+<text x="640" y="191.02236162471564" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#9aa0a6">MicroMagnetic.jl (CPU)</text>
+<text x="640" y="208.02236162471564" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#9aa0a6">magnum.np (CPU)</text>
+<text x="640" y="225.02236162471564" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#9aa0a6">OOMMF (CPU, 8 threads)</text>
+<text x="640" y="242.02236162471564" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#9aa0a6">magnum.np (MPS)</text>
+</svg>

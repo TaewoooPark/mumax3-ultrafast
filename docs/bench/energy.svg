@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="860" height="318" viewBox="0 0 860 318">
+<rect width="860" height="318" fill="#ffffff"/>
+<text x="78" y="30" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="600" fill="#202124">Energy for one identical simulation</text>
+<text x="78" y="48" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">512² mesh, 2000 Heun steps = 1.049×10⁹ cell-evaluations in every arm, so the physics performed is</text>
+<text x="78" y="63" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">the same and only the joules differ. GPU, CPU and combined rails sampled with powermetrics at 2 Hz</text>
+<text x="78" y="78" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">while the workload ran; the machine's idle floor was 0.195 W combined. Higher is better.</text>
+<text x="186" y="125" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#202124" text-anchor="end" font-weight="600">mumax3-ultrafast</text>
+<g><title>mumax3-ultrafast: 22.51 M/J</title><rect x="196" y="112" width="441.2" height="20" fill="#0b4f9e"/></g>
+<text x="645.1764705882354" y="126" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#202124" font-weight="600">22.51 M/J</text>
+<text x="844" y="126" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">47 J · 7.6 s · 6.1 W</text>
+<text x="186" y="159" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">magnum.np (MPS)</text>
+<g><title>magnum.np (MPS): 3.78 M/J</title><rect x="196" y="146" width="74.1" height="20" fill="#9aa0a6"/></g>
+<text x="278.0847205163718" y="160" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">3.78 M/J</text>
+<text x="844" y="160" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">277 J · 43.4 s · 6.4 W</text>
+<text x="186" y="193" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">OOMMF (CPU, 8 threads)</text>
+<g><title>OOMMF (CPU, 8 threads): 2.53 M/J</title><rect x="196" y="180" width="49.6" height="20" fill="#9aa0a6"/></g>
+<text x="253.5858050016986" y="194" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">2.53 M/J</text>
+<text x="844" y="194" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">414 J · 25.2 s · 16.4 W</text>
+<text x="186" y="227" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">MicroMagnetic.jl (CPU)</text>
+<g><title>MicroMagnetic.jl (CPU): 1.87 M/J</title><rect x="196" y="214" width="36.7" height="20" fill="#9aa0a6"/></g>
+<text x="240.65037760995114" y="228" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">1.87 M/J</text>
+<text x="844" y="228" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">561 J · 86.1 s · 6.5 W</text>
+<text x="186" y="261" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#5f6368" text-anchor="end">magnum.np (CPU)</text>
+<g><title>magnum.np (CPU): 0.86 M/J</title><rect x="196" y="248" width="16.9" height="20" fill="#9aa0a6"/></g>
+<text x="220.85525387409518" y="262" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="11" fill="#5f6368">0.86 M/J</text>
+<text x="844" y="262" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">1,218 J · 143.7 s · 8.5 W</text>
+<text x="196" y="304" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="10.5" fill="#202124">million cell-evaluations per joule</text>
+<text x="844" y="304" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="9.5" fill="#5f6368" text-anchor="end">measured on the rails — not derived from any TDP figure</text>
+</svg>
