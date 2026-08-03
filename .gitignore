@@ -27,6 +27,7 @@ doc/doc.exe
 apps/desktop/node_modules/
 apps/desktop/dist/
 apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
 .mumax3-ultrafast/
 
 # Benchmark runs are scratch. bench/capacity.sh writes a timestamped directory

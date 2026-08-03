@@ -85,7 +85,9 @@ func runInteractive() {
 		alpha = 1
 		m = RandomMag()`)
 	addr := goServeGUI()
-	openbrowser("http://127.0.0.1" + addr)
+	if *engine.Flag_openbrowser {
+		openbrowser("http://127.0.0.1" + addr)
+	}
 	engine.RunInteractive()
 }
 
@@ -117,7 +119,7 @@ func runScript(fname string) {
 	// now the parser is not used anymore so it can handle web requests
 	addr := goServeGUI()
 
-	if *engine.Flag_interactive {
+	if *engine.Flag_interactive && *engine.Flag_openbrowser {
 		openbrowser("http://127.0.0.1" + addr)
 	}
 
