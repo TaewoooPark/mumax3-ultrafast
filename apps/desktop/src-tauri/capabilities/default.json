@@ -1,0 +1,15 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "default",
+  "description": "Default permissions for the local mumax3-ultrafast desktop workspace",
+  "windows": ["main"],
+  "permissions": [
+    "core:default",
+    "dialog:allow-confirm",
+    "dialog:allow-open",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [{ "url": "http://127.0.0.1:*" }]
+    }
+  ]
+}

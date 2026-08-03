@@ -23,6 +23,13 @@ tmp/
 __pycache__/
 doc/doc.exe
 
+# Desktop wrapper build outputs and managed local engine builds.
+apps/desktop/node_modules/
+apps/desktop/dist/
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/
+.mumax3-ultrafast/
+
 # Benchmark runs are scratch. bench/capacity.sh writes a timestamped directory
 # per run and compiles mumax3 builds into work/ inside it; crosstool/ scripts
 # drop raw JSON and logs beside themselves. The record that is kept is

@@ -16,6 +16,7 @@ var (
 	Flag_cachedir    = flag.String("cache", os.TempDir(), "Kernel cache directory (empty disables caching)")
 	Flag_gpu         = flag.Int("gpu", 0, "Specify a single GPU (Metal uses the system default Apple GPU)")
 	Flag_interactive = flag.Bool("i", false, "Open interactive browser session")
+	Flag_openbrowser = flag.Bool("openbrowser", true, "Open the system browser for interactive sessions")
 	Flag_od          = flag.String("o", "", "Override output directory")
 	Flag_port        = flag.String("http", ":35367", "Port to serve web gui")
 	Flag_selftest    = flag.Bool("paranoid", false, "Enable convolution self-test for GPU FFT sanity.")

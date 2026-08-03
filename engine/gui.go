@@ -533,7 +533,13 @@ func (g *guistate) Div(heading string) string {
 
 func GoServe(addr string) string {
 	gui_.PrepareServer()
+	l, boundAddr := listenForGUI(addr)
+	go func() { LogErr(http.Serve(l, nil)) }()
+	httpfs.Put(OD()+"gui", []byte(l.Addr().String()))
+	return advertisedGUIAddress(boundAddr, l.Addr())
+}
 
+func listenForGUI(addr string) (net.Listener, string) {
 	// find a free port starting from the usual number
 	l, err := net.Listen("tcp", addr)
 	for err != nil {
@@ -541,9 +547,19 @@ func GoServe(addr string) string {
 		addr = fmt.Sprint(h, ":", atoi(p)+1)
 		l, err = net.Listen("tcp", addr)
 	}
-	go func() { LogErr(http.Serve(l, nil)) }()
-	httpfs.Put(OD()+"gui", []byte(l.Addr().String()))
-	return addr
+	return l, addr
+}
+
+func advertisedGUIAddress(requested string, actual net.Addr) string {
+	host, port, err := net.SplitHostPort(requested)
+	if err != nil || port != "0" {
+		return requested
+	}
+	_, actualPort, err := net.SplitHostPort(actual.String())
+	if err != nil {
+		return requested
+	}
+	return net.JoinHostPort(host, actualPort)
 }
 
 func atoi(a string) int {
