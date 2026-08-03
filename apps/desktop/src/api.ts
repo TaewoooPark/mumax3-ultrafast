@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { AppInfo, BuildResult, GuiValues, RuntimeSnapshot, ScriptDocument, StartRequest } from "./types";
+import type { AppInfo, BuildResult, GuiValues, ResultSet, RuntimeSnapshot, ScriptDocument, StartRequest, VectorFrame } from "./types";
 
 export const desktop = {
   info: () => invoke<AppInfo>("app_info"),
@@ -11,4 +11,6 @@ export const desktop = {
   stopSimulation: () => invoke<RuntimeSnapshot>("stop_simulation"),
   runtimeSnapshot: () => invoke<RuntimeSnapshot>("runtime_snapshot"),
   guiSnapshot: () => invoke<GuiValues>("gui_snapshot"),
+  listResultFrames: () => invoke<ResultSet>("list_result_frames"),
+  loadResultFrame: (fileName: string) => invoke<VectorFrame>("load_result_frame", { fileName }),
 };

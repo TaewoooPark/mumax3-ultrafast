@@ -103,6 +103,7 @@ struct RuntimeSnapshot {
 #[serde(rename_all = "camelCase")]
 struct ResultFrameInfo {
     file_name: String,
+    quantity: String,
     size_bytes: u64,
 }
 
@@ -185,7 +186,11 @@ fn checked_file_name(value: &str) -> Result<String, String> {
             "The script name must be a file name without directory components.".to_string(),
         );
     }
-    if path.extension().is_some_and(|extension| extension == "mx3") {
+    if path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_some_and(|extension| extension.eq_ignore_ascii_case("mx3"))
+    {
         Ok(trimmed.to_string())
     } else {
         Ok(format!("{trimmed}.mx3"))
@@ -533,8 +538,10 @@ fn parse_ovf_reader<R: BufRead>(reader: &mut R, file_name: String) -> Result<Vec
         return Err("OVF dimensions must be greater than zero.".to_string());
     }
     let value_dim = parse_header_value::<usize>(&header, "valuedim")?;
-    if value_dim == 0 {
-        return Err("OVF valuedim must be greater than zero.".to_string());
+    if value_dim != 3 {
+        return Err(format!(
+            "The 3D result viewer supports 3-component OVF vector fields; this file has valuedim {value_dim}."
+        ));
     }
     let total_cells = dimensions
         .iter()
@@ -660,6 +667,12 @@ fn current_output_directory(runtime: &DesktopRuntime) -> Result<PathBuf, String>
     path.canonicalize().map_err(|error| error.to_string())
 }
 
+fn ovf_quantity(file_name: &str) -> String {
+    let stem = file_name.strip_suffix(".ovf").unwrap_or(file_name);
+    let quantity = stem.trim_end_matches(|character: char| character.is_ascii_digit());
+    quantity.trim_end_matches(['_', '-']).to_string()
+}
+
 #[tauri::command]
 fn app_info(runtime: State<'_, DesktopRuntime>) -> AppInfo {
     AppInfo {
@@ -753,7 +766,11 @@ fn load_script(path: String) -> Result<ScriptDocument, String> {
     if !path.is_absolute() || !path.is_file() {
         return Err("Choose an existing .mx3 file.".to_string());
     }
-    if path.extension().is_none_or(|extension| extension != "mx3") {
+    if path
+        .extension()
+        .and_then(|extension| extension.to_str())
+        .is_none_or(|extension| !extension.eq_ignore_ascii_case("mx3"))
+    {
         return Err("Only .mx3 scripts can be opened.".to_string());
     }
     let canonical = path.canonicalize().map_err(|error| error.to_string())?;
@@ -914,9 +931,11 @@ fn list_result_frames(runtime: State<'_, DesktopRuntime>) -> Result<ResultSet, S
                 return None;
             }
             let file_name = path.file_name()?.to_str()?.to_string();
+            let quantity = ovf_quantity(&file_name);
             let size_bytes = entry.metadata().ok()?.len();
             Some(ResultFrameInfo {
                 file_name,
+                quantity,
                 size_bytes,
             })
         })
@@ -929,7 +948,7 @@ fn list_result_frames(runtime: State<'_, DesktopRuntime>) -> Result<ResultSet, S
 }
 
 #[tauri::command]
-fn load_result_frame(
+async fn load_result_frame(
     file_name: String,
     runtime: State<'_, DesktopRuntime>,
 ) -> Result<VectorFrame, String> {
@@ -953,8 +972,12 @@ fn load_result_frame(
     if !path.starts_with(&output_directory) || !path.is_file() {
         return Err("The requested OVF frame is outside the current result folder.".to_string());
     }
-    let file = File::open(&path).map_err(|error| error.to_string())?;
-    parse_ovf_reader(&mut BufReader::new(file), file_name)
+    tauri::async_runtime::spawn_blocking(move || {
+        let file = File::open(&path).map_err(|error| error.to_string())?;
+        parse_ovf_reader(&mut BufReader::new(file), file_name)
+    })
+    .await
+    .map_err(|error| error.to_string())?
 }
 
 fn extract_gui_values(calls: Vec<GuiCall>) -> HashMap<String, Value> {
@@ -1034,6 +1057,7 @@ mod tests {
     fn script_names_are_normalized_and_confined_to_one_component() {
         assert_eq!(checked_file_name("sample").unwrap(), "sample.mx3");
         assert_eq!(checked_file_name("sample.mx3").unwrap(), "sample.mx3");
+        assert_eq!(checked_file_name("sample.MX3").unwrap(), "sample.MX3");
         assert!(checked_file_name("../sample.mx3").is_err());
         assert!(checked_file_name("folder/sample.mx3").is_err());
         assert!(checked_file_name("").is_err());
@@ -1138,5 +1162,30 @@ mod tests {
             .map(|(dimension, step)| dimension.div_ceil(step))
             .product::<usize>();
         assert!(sampled <= MAX_RESULT_GLYPHS);
+    }
+
+    #[test]
+    fn ovf_frame_names_are_grouped_by_quantity() {
+        assert_eq!(ovf_quantity("m000010.ovf"), "m");
+        assert_eq!(ovf_quantity("B_demag-0012.ovf"), "B_demag");
+        assert_eq!(ovf_quantity("final.ovf"), "final");
+    }
+
+    #[test]
+    fn scalar_ovf_frames_are_not_misrepresented_as_vectors() {
+        let text = b"# OOMMF OVF 2.0\n\
+# Begin: Header\n\
+# xnodes: 1\n\
+# ynodes: 1\n\
+# znodes: 1\n\
+# valuedim: 1\n\
+# End: Header\n\
+# Begin: Data Text\n\
+1\n";
+        let error = match parse_ovf_reader(&mut Cursor::new(text), "energy.ovf".to_string()) {
+            Ok(_) => panic!("scalar data must not be rendered as a vector field"),
+            Err(error) => error,
+        };
+        assert!(error.contains("3-component OVF vector fields"));
     }
 }

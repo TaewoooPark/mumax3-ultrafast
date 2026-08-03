@@ -17,12 +17,14 @@
     "@tauri-apps/plugin-dialog": "2.7.2",
     "@tauri-apps/plugin-opener": "2.5.2",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "2.11.4",
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
+    "@types/three": "^0.185.3",
     "@vitejs/plugin-react": "latest",
     "typescript": "7.0.2",
     "vite": "8.1.5"

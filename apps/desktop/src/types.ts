@@ -39,3 +39,25 @@ export interface RuntimeSnapshot {
 }
 
 export type GuiValues = Record<string, string | number | boolean>;
+
+export interface ResultFrameInfo {
+  fileName: string;
+  quantity: string;
+  sizeBytes: number;
+}
+
+export interface ResultSet {
+  outputDirectory: string;
+  frames: ResultFrameInfo[];
+}
+
+export interface VectorFrame {
+  fileName: string;
+  title: string;
+  timeLabel: string;
+  dimensions: [number, number, number];
+  sampleStep: [number, number, number];
+  glyphs: number[];
+  magnitudeMin: number;
+  magnitudeMax: number;
+}

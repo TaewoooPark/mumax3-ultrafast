@@ -13,9 +13,9 @@ the user-facing workflow around them.
 4. Select **Build engine** to compile the native Go and Metal executable.
 5. Select **Run simulation** to start a private loopback viewer on a free port.
 6. Watch the live magnetization, solver values, and process output.
-7. After the script completes, select **Open full viewer** for the complete
-   interactive mumax³ page. The wrapper keeps that process alive until Stop or
-   application exit.
+7. After the script completes, select **View result** to open the integrated 3D
+   OVF viewer. Rotate, pan, zoom, recolor, switch glyph styles, and play saved
+   field frames without keeping the simulation process alive.
 
 Every run receives a unique timestamped `.out` directory. Existing result
 directories are never cleaned or overwritten by the desktop application.
@@ -54,8 +54,10 @@ The managed engine is written to
 - The existing mumax³ `/render/m` endpoint supplies live JPEG frames.
 - The existing GUI update endpoint supplies step, time, timestep, torque,
   integration error, and progress values.
-- The complete upstream-compatible viewer remains available at the same local
-  URL instead of being reimplemented.
+- A streaming Rust parser reads OVF Text, Binary 4, and Binary 8 results and
+  samples large meshes to a bounded glyph count.
+- Three.js renders result frames as interactive arrows or cuboids with
+  direction and magnitude color modes.
 
 The visual tokens are adapted from Harness Router under Apache-2.0. Attribution
 is recorded in [`NOTICE`](NOTICE).
@@ -66,8 +68,10 @@ is recorded in [`NOTICE`](NOTICE).
 - GUI metric requests reject non-loopback URLs.
 - Script names cannot contain parent or nested directory components.
 - The wrapper writes only to the working folder selected by the user.
+- Result loading is confined to OVF files inside the current run directory.
 - Engine stdin is closed and all stdout and stderr are captured for display.
-- Closing the application terminates the managed simulation process.
+- Completed simulations exit normally; closing the application terminates an
+  active managed simulation process.
 
 ## Validation
 

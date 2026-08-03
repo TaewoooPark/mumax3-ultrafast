@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
-import { open } from "@tauri-apps/plugin-dialog";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent, type UIEvent } from "react";
+import { confirm, open } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { desktop } from "./api";
 import { GlassButton, Glyph } from "./components/GlassPrimitives";
-import type { GuiValues, RuntimePhase, RuntimeSnapshot } from "./types";
+import type { GuiValues, ResultSet, RuntimePhase, RuntimeSnapshot } from "./types";
+
+const ResultViewer = lazy(() => import("./components/ResultViewer").then((module) => ({ default: module.ResultViewer })));
 
 const starterScript = `// Permalloy relaxation example
 SetGridSize(256, 128, 1)
@@ -40,7 +42,7 @@ const phaseLabels: Record<RuntimePhase, string> = {
   ready: "Engine ready",
   starting: "Starting simulation",
   running: "Simulation running",
-  completed: "Script complete · interactive viewer ready",
+  completed: "Simulation complete",
   failed: "Simulation failed",
   stopped: "Simulation stopped",
 };
@@ -99,7 +101,10 @@ export default function App() {
   const [dirty, setDirty] = useState(true);
   const [previewReady, setPreviewReady] = useState(false);
   const [frame, setFrame] = useState(0);
+  const [resultSet, setResultSet] = useState<ResultSet | null>(null);
+  const [showResults, setShowResults] = useState(false);
   const consoleRef = useRef<HTMLPreElement>(null);
+  const discoveredOutputRef = useRef("");
 
   useEffect(() => {
     void desktop.info()
@@ -118,6 +123,15 @@ export default function App() {
           setRuntime(next);
           if (next.viewerAvailable) setFrame((value) => value + 1);
           if (next.lastError) setMessage(next.lastError);
+          if (next.phase === "completed" && next.outputDirectory && discoveredOutputRef.current !== next.outputDirectory) {
+            discoveredOutputRef.current = next.outputDirectory;
+            void desktop.listResultFrames()
+              .then((results) => {
+                setResultSet(results);
+                setMessage(results.frames.length ? `Result ready · ${results.frames.length} OVF frames` : "Simulation completed without OVF frames.");
+              })
+              .catch((error) => setMessage(`Simulation completed, but result discovery failed: ${String(error)}`));
+          }
         })
         .catch(() => undefined);
     }, 550);
@@ -144,6 +158,13 @@ export default function App() {
   };
 
   const openScript = async () => {
+    if (dirty) {
+      const discard = await confirm("Discard the unsaved editor changes and open another script?", {
+        title: "Open a script",
+        kind: "warning",
+      });
+      if (!discard) return;
+    }
     const selected = await open({
       directory: false,
       multiple: false,
@@ -164,6 +185,20 @@ export default function App() {
     } finally {
       setBusyAction("");
     }
+  };
+
+  const newScript = async () => {
+    if (dirty) {
+      const discard = await confirm("Discard the unsaved editor changes and start a new script?", {
+        title: "New script",
+        kind: "warning",
+      });
+      if (!discard) return;
+    }
+    setScript(starterScript);
+    setFileName("untitled.mx3");
+    setDirty(true);
+    setMessage("New script · choose a folder and file name, then run.");
   };
 
   const saveScript = async () => {
@@ -208,6 +243,9 @@ export default function App() {
     setBusyAction("run");
     setPreviewReady(false);
     setGuiValues({});
+    setResultSet(null);
+    setShowResults(false);
+    discoveredOutputRef.current = "";
     setMessage("Saving the script and starting mumax3-ultrafast…");
     try {
       const next = await desktop.startSimulation({ workingDirectory, fileName, contents: script });
@@ -246,6 +284,18 @@ export default function App() {
   const phase = busyAction === "build" ? "building" : runtime.phase;
   const running = runtime.processAlive && runtime.phase !== "completed";
   const renderSource = runtime.renderUrl ? `${runtime.renderUrl}?frame=${frame}` : "";
+  const normalizedFileName = /\.mx3$/i.test(fileName.trim())
+    ? fileName.trim()
+    : `${fileName.trim() || "untitled"}.mx3`;
+  const runTarget = workingDirectory ? `${workingDirectory.replace(/\/$/, "")}/${normalizedFileName}` : "Choose a folder to define the save and run path.";
+
+  if (showResults && resultSet) {
+    return (
+      <Suspense fallback={<main className="viewer-loading">Preparing the 3D result viewer…</main>}>
+        <ResultViewer resultSet={resultSet} onBack={() => setShowResults(false)} />
+      </Suspense>
+    );
+  }
 
   return (
     <main className="app-shell">
@@ -262,7 +312,11 @@ export default function App() {
         </div>
         <div className={`status-chip glass phase-${phase}`}><i /><span>{busyAction === "build" ? phaseLabels.building : phaseLabels[runtime.phase]}</span></div>
         <div className="topbar-actions">
-          <GlassButton disabled={!runtime.viewerAvailable} onClick={() => void openUrl(runtime.guiUrl)}>Open full viewer ↗</GlassButton>
+          {resultSet?.frames.length ? (
+            <button className="primary-button" type="button" onClick={() => setShowResults(true)}>View result <b>→</b></button>
+          ) : (
+            <GlassButton disabled={!runtime.viewerAvailable} onClick={() => void openUrl(runtime.guiUrl)}>Open live controls ↗</GlassButton>
+          )}
         </div>
       </header>
 
@@ -273,9 +327,16 @@ export default function App() {
               <div><span className="eyebrow">LIVE MAGNETIZATION</span><strong>m · vector field</strong></div>
               <span className={`live-state ${runtime.viewerAvailable ? "active" : ""}`}><i /> {runtime.viewerAvailable ? runtime.phase === "completed" ? "Complete" : "Live" : "Waiting"}</span>
             </div>
-            <div className={`preview-stage ${previewReady ? "ready" : ""}`}>
+            <div className={`preview-stage ${previewReady && renderSource ? "ready" : ""}`}>
               {renderSource && <img src={renderSource} alt="Live mumax3 magnetization" onLoad={() => setPreviewReady(true)} onError={() => setPreviewReady(false)} />}
-              {!previewReady && (
+              {resultSet?.frames.length && !runtime.processAlive ? (
+                <div className="result-ready">
+                  <span>{resultSet.frames.length}</span>
+                  <strong>OVF frames ready</strong>
+                  <p>Rotate, zoom, recolor, and play the vector field in the integrated result viewer.</p>
+                  <button className="primary-button" type="button" onClick={() => setShowResults(true)}>Open 3D result <b>→</b></button>
+                </div>
+              ) : !previewReady && (
                 <div className="preview-empty">
                   <div className="field-orb"><span /><span /><span /></div>
                   <strong>{runtime.viewerAvailable ? "Preparing the first field frame" : "Your simulation will appear here"}</strong>
@@ -326,8 +387,14 @@ export default function App() {
             </label>
           </div>
 
+          <div className="run-target" title={runTarget}>
+            <span>WILL SAVE AND RUN</span>
+            <code>{runTarget}</code>
+          </div>
+
           <div className="editor-toolbar">
-            <GlassButton disabled={actionBusy || running} onClick={() => void openScript()}>{busyAction === "open" ? "Opening…" : "Open"}</GlassButton>
+            <GlassButton disabled={actionBusy || running} onClick={() => void newScript()}>New</GlassButton>
+            <GlassButton disabled={actionBusy || running} onClick={() => void openScript()}>{busyAction === "open" ? "Opening…" : "Open .mx3"}</GlassButton>
             <GlassButton disabled={actionBusy || running} onClick={() => void saveScript()}>{busyAction === "save" ? "Saving…" : "Save"}</GlassButton>
             <span />
             <GlassButton disabled={actionBusy || runtime.processAlive} onClick={() => void buildEngine()}>{busyAction === "build" ? "Building…" : engineBuilt ? "Rebuild engine" : "Build engine"}</GlassButton>

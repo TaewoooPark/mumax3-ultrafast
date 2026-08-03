@@ -183,7 +183,8 @@ Output lands in `example.out/`. Both modes execute the same simulation and produ
 The repository includes a lightweight macOS workspace that keeps the `.mx3`
 script as the source of truth while adding a native editor, explicit working
 folder selection, one-click engine builds, live magnetization, solver metrics,
-runtime logs, and a handoff to the complete local mumax³ viewer.
+runtime logs, and an integrated 3D OVF result viewer with rotation, zoom,
+color modes, glyph styles, and frame playback.
 
 ```sh
 cd apps/desktop
