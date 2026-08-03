@@ -31,6 +31,17 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": []
+    "icon": ["icons/icon.png"],
+    "license": "GPL-3.0-or-later",
+    "licenseFile": "../../../LICENSE",
+    "resources": {
+      "../../../LICENSE": "licenses/LICENSE",
+      "../../../NOTICE": "licenses/NOTICE",
+      "../../../THIRD_PARTY_NOTICES.md": "licenses/THIRD_PARTY_NOTICES.md",
+      "../NOTICE": "licenses/DESKTOP_NOTICE"
+    },
+    "macOS": {
+      "minimumSystemVersion": "14.0"
+    }
   }
 }

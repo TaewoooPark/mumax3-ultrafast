@@ -10,7 +10,8 @@ the user-facing workflow around them.
 1. Choose a working folder.
 2. Open or edit an `.mx3` script.
 3. Save the script explicitly or let **Run simulation** save it before launch.
-4. Select **Build engine** to compile the native Go and Metal executable.
+4. Install the standalone `mumax3-ultrafast` engine if it is not already on the
+   Mac. The desktop app is an optional client and does not bundle or replace it.
 5. Select **Run simulation** to start a private loopback viewer on a free port.
 6. Watch the live magnetization, solver values, and process output.
 7. After the script completes, select **View result** to open the integrated 3D
@@ -36,15 +37,27 @@ pnpm install
 pnpm desktop
 ```
 
-The application currently expects to run from a source checkout. Repository
-discovery follows this order:
+The development build discovers a compatible standalone engine in this order:
 
-1. `MUMAX3_ULTRAFAST_HOME`
-2. the current directory and its parents
-3. the repository containing the compiled Tauri crate
+1. `MUMAX3_ULTRAFAST_BIN` or `MUMAX3_BINARY`
+2. `.mumax3-ultrafast/bin/mumax3` in a developer checkout
+3. `~/.local/bin/mumax3`
+4. `/opt/homebrew/bin/mumax3`
+5. `/usr/local/bin/mumax3`
+6. the inherited `PATH`
 
-The managed engine is written to
-`.mumax3-ultrafast/bin/mumax3-ultrafast` at the repository root.
+Every candidate must return the `mumax3-ultrafast` Metal desktop compatibility
+identifier before the app will run it, preventing an older upstream or
+`mumax3-for-mac` executable from being selected accidentally. Distributed app
+builds do not search for a source checkout. Set `MUMAX3_ULTRAFAST_HOME` only to
+enable the developer-only **Build dev engine** fallback; its output is written
+to `.mumax3-ultrafast/bin/mumax3` inside that checkout.
+
+The standalone engine remains installed if the optional desktop app is removed.
+The engine installer replaces an existing `mumax3` only after checksum,
+compatibility, and Metal smoke tests pass. Run `install-macos.sh --uninstall`
+with the same `--install-dir` to remove the engine without deleting simulation
+files or other commands in that directory.
 
 ## Architecture
 

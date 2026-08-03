@@ -37,6 +37,61 @@ jobs:
       - name: Verify license notices
         run: make check-licenses
 
+      - name: Verify the binary-first macOS installer
+        run: |
+          bash -n install-macos.sh
+          bash install-macos.sh --help >/dev/null
+          fixture=$(mktemp -d "${RUNNER_TEMP}/mumax3-installer.XXXXXX")
+          trap 'rm -rf "$fixture"' EXIT
+          mkdir -p "$fixture/release" "$fixture/home" "$fixture/bin"
+          printf '%s\n' '#!/bin/bash' \
+            'if [[ "$1" == "-ultrafast-probe" ]]; then' \
+            '  echo "mumax3-ultrafast desktop-api=1 backend=metal"' \
+            'fi' > "$fixture/release/mumax3"
+          chmod +x "$fixture/release/mumax3"
+          tar -C "$fixture/release" -czf "$fixture/release/mumax3-ultrafast-darwin-arm64.tar.gz" mumax3
+          (
+            cd "$fixture/release"
+            shasum -a 256 mumax3-ultrafast-darwin-arm64.tar.gz \
+              > mumax3-ultrafast-darwin-arm64.tar.gz.sha256
+          )
+          HOME="$fixture/home" \
+            MUMAX3_RELEASE_BASE_URL="file://$fixture/release" \
+            bash install-macos.sh --install-dir "$fixture/bin" --no-profile
+          test -x "$fixture/bin/mumax3"
+          test "$("$fixture/bin/mumax3" -ultrafast-probe)" = \
+            "mumax3-ultrafast desktop-api=1 backend=metal"
+
+          printf '%s\n' '#!/bin/bash' \
+            'echo "incompatible engine"' > "$fixture/release/mumax3"
+          chmod +x "$fixture/release/mumax3"
+          tar -C "$fixture/release" -czf "$fixture/release/mumax3-ultrafast-darwin-arm64.tar.gz" mumax3
+          (
+            cd "$fixture/release"
+            shasum -a 256 mumax3-ultrafast-darwin-arm64.tar.gz \
+              > mumax3-ultrafast-darwin-arm64.tar.gz.sha256
+          )
+          if HOME="$fixture/home" \
+            MUMAX3_RELEASE_BASE_URL="file://$fixture/release" \
+            bash install-macos.sh --install-dir "$fixture/bin" --no-profile; then
+            echo "An incompatible engine unexpectedly installed" >&2
+            exit 1
+          fi
+          test "$("$fixture/bin/mumax3" -ultrafast-probe)" = \
+            "mumax3-ultrafast desktop-api=1 backend=metal"
+          HOME="$fixture/home" bash install-macos.sh \
+            --install-dir "$fixture/bin" --no-profile --uninstall
+          test ! -e "$fixture/bin/mumax3"
+          printf '%s\n' '#!/bin/bash' \
+            'echo "unowned mumax3 command"' > "$fixture/bin/mumax3"
+          chmod +x "$fixture/bin/mumax3"
+          if HOME="$fixture/home" bash install-macos.sh \
+            --install-dir "$fixture/bin" --no-profile --uninstall; then
+            echo "The uninstaller unexpectedly removed an unowned mumax3 command" >&2
+            exit 1
+          fi
+          test -e "$fixture/bin/mumax3"
+
       - name: Verify generated Metal sources
         run: |
           python3 cuda/metal/cmd/cuda2metal/generate.py --check
@@ -60,6 +115,58 @@ jobs:
           test "$(go list -f '{{len .CXXFiles}}' ./cuda/metal/fft)" -eq 1
           test "$(go list -f '{{len .CXXFiles}}' ./cuda/metal/rng)" -eq 1
           go build ./...
+
+  desktop:
+    name: Optional desktop app checks
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.9.0
+          run_install: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Install frontend dependencies
+        working-directory: apps/desktop
+        run: pnpm install --frozen-lockfile
+
+      - name: Check the frontend and Rust runtime
+        working-directory: apps/desktop
+        run: |
+          pnpm build
+          cargo fmt --manifest-path src-tauri/Cargo.toml --check
+          cargo test --manifest-path src-tauri/Cargo.toml --locked
+          cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
+
+      - name: Build and inspect the unsigned app bundle
+        working-directory: apps/desktop
+        run: |
+          pnpm tauri build --bundles app
+          app_path='src-tauri/target/release/bundle/macos/mumax3 ultrafast.app'
+          executable_name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' \
+            "$app_path/Contents/Info.plist")
+          executable="$app_path/Contents/MacOS/$executable_name"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' \
+            "$app_path/Contents/Info.plist")" = "14.0"
+          minos=$(otool -l "$executable" | awk \
+            '/LC_BUILD_VERSION/ { section = 1 } section && $1 == "minos" { print $2; exit }')
+          test "$minos" = "14.0"
+          test -s "$app_path/Contents/Resources/mumax3 ultrafast.icns"
+          test -s "$app_path/Contents/Resources/licenses/LICENSE"
+          test -s "$app_path/Contents/Resources/licenses/NOTICE"
+          test -s "$app_path/Contents/Resources/licenses/THIRD_PARTY_NOTICES.md"
+          test -s "$app_path/Contents/Resources/licenses/DESKTOP_NOTICE"
+          if strings "$executable" | grep -F "$GITHUB_WORKSPACE"; then
+            echo "The desktop app embeds the CI checkout path" >&2
+            exit 1
+          fi
 
   gpu:
     name: GPU numerical regression and benchmarks

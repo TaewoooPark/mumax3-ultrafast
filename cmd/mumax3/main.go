@@ -21,10 +21,15 @@ import (
 )
 
 var (
-	flag_failfast = flag.Bool("failfast", false, "If one simulation fails, stop entire batch immediately")
-	flag_test     = flag.Bool("test", false, "GPU backend test (internal)")
-	flag_version  = flag.Bool("v", true, "Print version")
-	flag_vet      = flag.Bool("vet", false, "Check input files for errors, but don't run them")
+	flag_failfast        = flag.Bool("failfast", false, "If one simulation fails, stop entire batch immediately")
+	flag_test            = flag.Bool("test", false, "GPU backend test (internal)")
+	flag_version         = flag.Bool("v", true, "Print version")
+	flag_vet             = flag.Bool("vet", false, "Check input files for errors, but don't run them")
+	flag_ultrafast_probe = flag.Bool(
+		"ultrafast-probe",
+		false,
+		"Print the mumax3-ultrafast desktop compatibility identifier and exit",
+	)
 	// more flags in engine/gofiles.go
 	commitHash string
 )
@@ -33,6 +38,13 @@ func main() {
 	flag.Parse()
 	log.SetPrefix("")
 	log.SetFlags(0)
+	if *flag_ultrafast_probe {
+		if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+			fmt.Println("mumax3-ultrafast desktop-api=1 backend=metal")
+			return
+		}
+		os.Exit(1)
+	}
 
 	cuda.Init(*engine.Flag_gpu)
 
@@ -187,7 +199,7 @@ func printVersion() {
 	engine.LogOut(osInfo)
 	engine.LogOut(fmt.Sprintf("Timestamp: %s", time.Now().Format("2006-01-02 15:04:05")))
 	engine.LogOut("(c) Arne Vansteenkiste, Dynamat LAB, Ghent University, Belgium")
-	engine.LogOut("This is free software without any warranty. See license.txt")
+	engine.LogOut("This is free software without any warranty. See LICENSE")
 	engine.LogOut("********************************************************************//")
 	engine.LogOut("  If you use mumax in any work or publication,                      //")
 	engine.LogOut("  we kindly ask you to cite the references in references.bib        //")

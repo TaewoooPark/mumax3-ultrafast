@@ -9,7 +9,7 @@ use std::{
     process::{Child, Command, Stdio},
     sync::{Arc, Mutex},
     thread,
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tauri::{Manager, State, WindowEvent};
 
@@ -18,8 +18,7 @@ const MAX_RESULT_GLYPHS: usize = 12_000;
 
 #[derive(Clone)]
 struct DesktopRuntime {
-    repository_root: PathBuf,
-    binary_path: PathBuf,
+    repository_root: Option<PathBuf>,
     state: Arc<Mutex<ProcessState>>,
 }
 
@@ -57,7 +56,8 @@ struct AppInfo {
     repository_root: String,
     default_working_directory: String,
     binary_path: String,
-    engine_built: bool,
+    engine_available: bool,
+    developer_build_available: bool,
 }
 
 #[derive(Serialize)]
@@ -134,27 +134,142 @@ struct GuiCall {
     args: Vec<Value>,
 }
 
-fn find_repository_root() -> Result<PathBuf, String> {
+fn is_repository_root(path: &Path) -> bool {
+    path.join("go.mod").is_file() && path.join("cmd/mumax3").is_dir()
+}
+
+fn find_repository_root() -> Option<PathBuf> {
     if let Some(configured) = env::var_os("MUMAX3_ULTRAFAST_HOME").map(PathBuf::from)
-        && configured.join("go.mod").is_file()
-        && configured.join("cmd/mumax3").is_dir()
+        && is_repository_root(&configured)
     {
-        return configured.canonicalize().map_err(|error| error.to_string());
+        return configured.canonicalize().ok();
     }
 
-    if let Ok(current) = env::current_dir()
-        && let Some(root) = current
+    #[cfg(debug_assertions)]
+    {
+        if let Ok(current) = env::current_dir()
+            && let Some(root) = current.ancestors().find(|path| is_repository_root(path))
+        {
+            return Some(root.to_path_buf());
+        }
+
+        Path::new(env!("CARGO_MANIFEST_DIR"))
             .ancestors()
-            .find(|path| path.join("go.mod").is_file() && path.join("cmd/mumax3").is_dir())
+            .find(|path| is_repository_root(path))
+            .map(Path::to_path_buf)
+    }
+    #[cfg(not(debug_assertions))]
     {
-        return Ok(root.to_path_buf());
+        None
+    }
+}
+
+fn developer_binary_path(repository_root: &Path) -> PathBuf {
+    repository_root.join(".mumax3-ultrafast/bin/mumax3")
+}
+
+fn executable_file(path: &Path) -> bool {
+    path.is_file()
+        && path
+            .metadata()
+            .map(|metadata| {
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    metadata.permissions().mode() & 0o111 != 0
+                }
+                #[cfg(not(unix))]
+                {
+                    true
+                }
+            })
+            .unwrap_or(false)
+}
+
+fn first_engine_binary(candidates: impl IntoIterator<Item = PathBuf>) -> Option<PathBuf> {
+    candidates
+        .into_iter()
+        .find(|candidate| executable_file(candidate))
+        .and_then(|candidate| candidate.canonicalize().ok())
+}
+
+fn engine_probe_is_compatible(stdout: &[u8]) -> bool {
+    String::from_utf8_lossy(stdout).trim() == "mumax3-ultrafast desktop-api=1 backend=metal"
+}
+
+fn engine_is_compatible(path: &Path) -> bool {
+    if !executable_file(path) {
+        return false;
+    }
+    let Ok(mut child) = Command::new(path)
+        .arg("-ultrafast-probe")
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+    else {
+        return false;
+    };
+    let deadline = Instant::now() + Duration::from_millis(750);
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(10)),
+            Ok(None) => {
+                let _ = child.kill();
+                return false;
+            }
+            Err(_) => return false,
+        }
+    };
+    if !status.success() {
+        return false;
+    }
+    let mut stdout = Vec::new();
+    child
+        .stdout
+        .take()
+        .is_some_and(|mut pipe| pipe.read_to_end(&mut stdout).is_ok())
+        && engine_probe_is_compatible(&stdout)
+}
+
+fn find_engine_binary(repository_root: Option<&Path>) -> Option<PathBuf> {
+    let mut candidates = Vec::new();
+    if let Some(configured) = env::var_os("MUMAX3_ULTRAFAST_BIN") {
+        let configured = PathBuf::from(configured);
+        return engine_is_compatible(&configured)
+            .then_some(configured)
+            .and_then(|path| path.canonicalize().ok());
+    }
+    if let Some(configured) = env::var_os("MUMAX3_BINARY") {
+        candidates.push(PathBuf::from(configured));
+    }
+    if let Some(repository_root) = repository_root {
+        candidates.push(developer_binary_path(repository_root));
     }
 
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .ancestors()
-        .find(|path| path.join("go.mod").is_file() && path.join("cmd/mumax3").is_dir())
-        .map(Path::to_path_buf)
-        .ok_or_else(|| "Could not locate the mumax3-ultrafast repository.".to_string())
+    if let Some(home) = env::var_os("HOME").map(PathBuf::from) {
+        candidates.push(home.join(".local/bin/mumax3"));
+    }
+    for path in [
+        "/opt/homebrew/bin/mumax3",
+        "/opt/homebrew/bin/mumax3-ultrafast",
+        "/usr/local/bin/mumax3",
+        "/usr/local/bin/mumax3-ultrafast",
+    ] {
+        candidates.push(PathBuf::from(path));
+    }
+    if let Some(path) = env::var_os("PATH") {
+        for directory in env::split_paths(&path) {
+            candidates.push(directory.join("mumax3"));
+            candidates.push(directory.join("mumax3-ultrafast"));
+        }
+    }
+    first_engine_binary(
+        candidates
+            .into_iter()
+            .filter(|candidate| engine_is_compatible(candidate)),
+    )
 }
 
 fn checked_working_directory(value: &str) -> Result<PathBuf, String> {
@@ -675,16 +790,30 @@ fn ovf_quantity(file_name: &str) -> String {
 
 #[tauri::command]
 fn app_info(runtime: State<'_, DesktopRuntime>) -> AppInfo {
+    let binary_path = find_engine_binary(runtime.repository_root.as_deref());
     AppInfo {
-        repository_root: runtime.repository_root.to_string_lossy().into_owned(),
+        repository_root: runtime
+            .repository_root
+            .as_ref()
+            .map(|path| path.to_string_lossy().into_owned())
+            .unwrap_or_default(),
         default_working_directory: String::new(),
-        binary_path: runtime.binary_path.to_string_lossy().into_owned(),
-        engine_built: runtime.binary_path.is_file(),
+        binary_path: binary_path
+            .as_ref()
+            .map(|path| path.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+        engine_available: binary_path.is_some(),
+        developer_build_available: runtime.repository_root.is_some(),
     }
 }
 
 #[tauri::command]
 fn build_engine(runtime: State<'_, DesktopRuntime>) -> Result<BuildResult, String> {
+    let repository_root = runtime.repository_root.as_ref().ok_or_else(|| {
+        "Developer builds require a source checkout. Install the standalone mumax3-ultrafast engine instead."
+            .to_string()
+    })?;
+    let binary_path = developer_binary_path(repository_root);
     {
         let mut state = runtime.state.lock().map_err(|error| error.to_string())?;
         if state.child.is_some() {
@@ -697,7 +826,7 @@ fn build_engine(runtime: State<'_, DesktopRuntime>) -> Result<BuildResult, Strin
             .push_back("[wrapper] Building the native Metal engine…".to_string());
     }
 
-    if let Some(parent) = runtime.binary_path.parent()
+    if let Some(parent) = binary_path.parent()
         && let Err(error) = fs::create_dir_all(parent)
     {
         let message = format!("Could not prepare the engine build directory: {error}");
@@ -713,9 +842,13 @@ fn build_engine(runtime: State<'_, DesktopRuntime>) -> Result<BuildResult, Strin
     };
     let output = Command::new(go_executable)
         .args(["build", "-o"])
-        .arg(&runtime.binary_path)
+        .arg(&binary_path)
         .arg("./cmd/mumax3")
-        .current_dir(&runtime.repository_root)
+        .current_dir(repository_root)
+        .env("MACOSX_DEPLOYMENT_TARGET", "14.0")
+        .env("CGO_CFLAGS", "-mmacosx-version-min=14.0")
+        .env("CGO_CXXFLAGS", "-mmacosx-version-min=14.0")
+        .env("CGO_LDFLAGS", "-mmacosx-version-min=14.0")
         .output();
     let output = match output {
         Ok(output) => output,
@@ -741,12 +874,11 @@ fn build_engine(runtime: State<'_, DesktopRuntime>) -> Result<BuildResult, Strin
         return Err(format!("{}\n{}", state.last_error, combined.trim()));
     }
     state.phase = "ready".to_string();
-    state.logs.push_back(format!(
-        "[wrapper] Engine ready: {}",
-        runtime.binary_path.display()
-    ));
+    state
+        .logs
+        .push_back(format!("[wrapper] Engine ready: {}", binary_path.display()));
     Ok(BuildResult {
-        binary_path: runtime.binary_path.to_string_lossy().into_owned(),
+        binary_path: binary_path.to_string_lossy().into_owned(),
         output: combined,
     })
 }
@@ -796,9 +928,10 @@ fn start_simulation(
     request: StartRequest,
     runtime: State<'_, DesktopRuntime>,
 ) -> Result<RuntimeSnapshot, String> {
-    if !runtime.binary_path.is_file() {
-        return Err("Build the mumax3-ultrafast engine before starting a simulation.".to_string());
-    }
+    let binary_path = find_engine_binary(runtime.repository_root.as_deref()).ok_or_else(|| {
+        "mumax3-ultrafast is not installed. Install the standalone engine, then reopen the app."
+            .to_string()
+    })?;
     {
         let mut state = runtime.state.lock().map_err(|error| error.to_string())?;
         if state.child.is_some() {
@@ -821,7 +954,7 @@ fn start_simulation(
         .unwrap_or("simulation");
     let output_directory = working_directory.join(format!("{stem}-{}.out", unix_millis()));
 
-    let mut command = Command::new(&runtime.binary_path);
+    let mut command = Command::new(&binary_path);
     command
         .arg("-i=false")
         .arg("-openbrowser=false")
@@ -1011,11 +1144,8 @@ fn stop_child(runtime: &DesktopRuntime) {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let repository_root =
-        find_repository_root().expect("Could not locate the mumax3-ultrafast repository");
     let runtime = DesktopRuntime {
-        binary_path: repository_root.join(".mumax3-ultrafast/bin/mumax3-ultrafast"),
-        repository_root,
+        repository_root: find_repository_root(),
         state: Arc::new(Mutex::new(ProcessState::default())),
     };
 
@@ -1052,6 +1182,36 @@ mod tests {
     use super::*;
     use serde_json::json;
     use std::io::Cursor;
+
+    #[test]
+    fn engine_discovery_skips_missing_candidates() {
+        let current_executable = env::current_exe().unwrap();
+        let selected = first_engine_binary([
+            PathBuf::from("/definitely/missing/mumax3"),
+            current_executable.clone(),
+        ])
+        .unwrap();
+        assert_eq!(selected, current_executable.canonicalize().unwrap());
+    }
+
+    #[test]
+    fn engine_probe_requires_the_ultrafast_metal_api() {
+        assert!(engine_probe_is_compatible(
+            b"mumax3-ultrafast desktop-api=1 backend=metal\n"
+        ));
+        assert!(!engine_probe_is_compatible(b"mumax3 3.12 linux_cuda\n"));
+        assert!(!engine_probe_is_compatible(
+            b"mumax3-ultrafast desktop-api=2 backend=metal\n"
+        ));
+    }
+
+    #[test]
+    fn developer_engine_stays_inside_the_checkout() {
+        assert_eq!(
+            developer_binary_path(Path::new("/tmp/mumax3-ultrafast")),
+            PathBuf::from("/tmp/mumax3-ultrafast/.mumax3-ultrafast/bin/mumax3")
+        );
+    }
 
     #[test]
     fn script_names_are_normalized_and_confined_to_one_component() {

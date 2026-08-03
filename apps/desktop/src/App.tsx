@@ -93,7 +93,8 @@ export default function App() {
   const [script, setScript] = useState(starterScript);
   const [workingDirectory, setWorkingDirectory] = useState("");
   const [fileName, setFileName] = useState("relaxation.mx3");
-  const [engineBuilt, setEngineBuilt] = useState(false);
+  const [engineAvailable, setEngineAvailable] = useState(false);
+  const [developerBuildAvailable, setDeveloperBuildAvailable] = useState(false);
   const [runtime, setRuntime] = useState<RuntimeSnapshot>(idleRuntime);
   const [guiValues, setGuiValues] = useState<GuiValues>({});
   const [busyAction, setBusyAction] = useState("");
@@ -110,8 +111,11 @@ export default function App() {
     void desktop.info()
       .then((info) => {
         setWorkingDirectory(info.defaultWorkingDirectory);
-        setEngineBuilt(info.engineBuilt);
-        setMessage(info.engineBuilt ? "Metal engine ready" : "Build the Metal engine to begin");
+        setEngineAvailable(info.engineAvailable);
+        setDeveloperBuildAvailable(info.developerBuildAvailable);
+        setMessage(info.engineAvailable
+          ? `Metal engine ready · ${info.binaryPath}`
+          : "Install the standalone mumax3-ultrafast engine to begin");
       })
       .catch((error) => setMessage(`Desktop runtime unavailable: ${String(error)}`));
   }, []);
@@ -226,7 +230,7 @@ export default function App() {
     setMessage("Compiling the native Metal engine…");
     try {
       const result = await desktop.buildEngine();
-      setEngineBuilt(true);
+      setEngineAvailable(true);
       setMessage(`Engine built at ${result.binaryPath}`);
     } catch (error) {
       setMessage(String(error));
@@ -340,7 +344,7 @@ export default function App() {
                 <div className="preview-empty">
                   <div className="field-orb"><span /><span /><span /></div>
                   <strong>{runtime.viewerAvailable ? "Preparing the first field frame" : "Your simulation will appear here"}</strong>
-                  <p>{runtime.viewerAvailable ? "The Metal renderer is warming up." : "Build the Metal engine, then run the script from the editor."}</p>
+                  <p>{runtime.viewerAvailable ? "The Metal renderer is warming up." : engineAvailable ? "Choose a folder, then run the script from the editor." : "Install the standalone mumax3-ultrafast engine, then reopen the app."}</p>
                 </div>
               )}
             </div>
@@ -397,11 +401,13 @@ export default function App() {
             <GlassButton disabled={actionBusy || running} onClick={() => void openScript()}>{busyAction === "open" ? "Opening…" : "Open .mx3"}</GlassButton>
             <GlassButton disabled={actionBusy || running} onClick={() => void saveScript()}>{busyAction === "save" ? "Saving…" : "Save"}</GlassButton>
             <span />
-            <GlassButton disabled={actionBusy || runtime.processAlive} onClick={() => void buildEngine()}>{busyAction === "build" ? "Building…" : engineBuilt ? "Rebuild engine" : "Build engine"}</GlassButton>
+            {developerBuildAvailable && (
+              <GlassButton disabled={actionBusy || runtime.processAlive} onClick={() => void buildEngine()}>{busyAction === "build" ? "Building…" : engineAvailable ? "Rebuild dev engine" : "Build dev engine"}</GlassButton>
+            )}
             {runtime.processAlive ? (
               <button className="stop-button" disabled={actionBusy} type="button" onClick={() => void stopSimulation()}>{busyAction === "stop" ? "Stopping…" : "Stop"} <b>■</b></button>
             ) : (
-              <button className="primary-button" disabled={actionBusy || !engineBuilt || !workingDirectory} type="button" onClick={() => void runSimulation()}>{busyAction === "run" ? "Starting…" : "Run simulation"} <b>▶</b></button>
+              <button className="primary-button" disabled={actionBusy || !engineAvailable || !workingDirectory} type="button" onClick={() => void runSimulation()}>{busyAction === "run" ? "Starting…" : "Run simulation"} <b>▶</b></button>
             )}
           </div>
 

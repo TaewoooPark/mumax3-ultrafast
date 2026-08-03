@@ -39,6 +39,11 @@
   <img src="./docs/bench/hero.svg" alt="애플 실리콘에서 실행되는 모든 마이크로마그네틱 시뮬레이터의 3분할 비교. M4 MacBook Air 한 대에서 측정." width="100%">
 </p>
 
+<p align="center">
+  <img src="./docs/app/result-viewer-close-up.png" alt="선택형 mumax3-ultrafast 데스크톱 앱에서 OVF 벡터장을 대화형 3차원 화살표로 표시한 화면." width="100%"><br>
+  <sub>선택형 데스크톱 앱에서 완료된 시뮬레이션을 바로 열어 OVF 결과를 3D로 회전·확대·색상 변경·재생할 수 있습니다.</sub>
+</p>
+
 ---
 
 ## 왜 만들었는가
@@ -156,18 +161,41 @@ OOMMF도 같은 8390만 셀에 도달합니다. 다만 그 크기에서 mumax3-u
 /bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-macos.sh)"
 ```
 
-설치 스크립트는 기계와 셸의 아키텍처를 확인하고, 필요하면 애플의 Command Line Tools 설치 화면을 띄우며, 없으면 네이티브 Homebrew와 호환 Go 툴체인을 설치하고, 프로젝트를 클론해 빌드한 뒤 바이너리 경로를 설정하고, 마지막으로 `mumax3 -test`를 실행합니다. 중간에 끊겨도 다시 실행하면 됩니다.
+설치 스크립트는 먼저 최신 GitHub 릴리스에서 사전 빌드된 애플 실리콘 엔진과 함께 배포된 `.sha256` 파일을 찾습니다. 해당 자산이 있으면 SHA-256 체크섬을 검증하고 실행 파일을 `~/.local/bin/mumax3`에 설치한 뒤, 이 경로를 `~/.zprofile`에 추가하고 `mumax3 -test`로 마무리합니다. 이 사전 빌드 경로에는 Homebrew, Go, Git, 소스 체크아웃이 필요하지 않습니다. 이 명령은 데스크톱 앱을 설치하지 않습니다.
 
-이미 체크아웃한 저장소에서 실행할 경우는 다음과 같습니다.
+엔진 아카이브가 명시적인 HTTP 404를 반환하면—예를 들어 아직 자산이 배포되지 않은 버전이면—설치 스크립트가 자동으로 소스 빌드로 전환하며 Apple Command Line Tools, 네이티브 Homebrew, Go를 설치할 수 있습니다. 네트워크 및 기타 연결 오류에서는 이 전환을 하지 않고 안전하게 중단합니다. 중간에 끊긴 설치는 다시 실행해도 됩니다.
+
+이미 체크아웃한 저장소에서 소스 빌드를 강제로 실행하려면 다음을 사용합니다.
 
 ```bash
-./install-macos.sh
+./install-macos.sh --from-source
 ```
 
 설치 후에는 새 터미널을 열어야 갱신된 경로가 반영됩니다.
 
 > [!IMPORTANT]
 > 애플 실리콘(M1 이상), macOS 14 이상이 필요합니다. 인텔 맥은 지원하지 않습니다. NVIDIA GPU가 있는 리눅스와 윈도우에서는 원본 CUDA 백엔드를 그대로 쓰면 됩니다.
+
+### 선택 사항: 데스크톱 앱
+
+위에서 설치하는 `mumax3-ultrafast` 엔진과 명령줄 사용 방식이 기본이며, macOS 데스크톱 앱은 그 위에 선택적으로 더하는 인터페이스입니다. `.mx3` 파일을 기준으로 삼으면서 편집기, 작업 폴더 선택, 원클릭 실행, 실시간 자화와 솔버 수치, 실행 로그, 통합 3D OVF 결과 뷰어를 제공합니다.
+
+[GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases)에 `mumax3-ultrafast-app-darwin-arm64.dmg`가 포함되어 있다면, 그 자산이 선택형으로 설치할 수 있는 서명·공증된 앱입니다. DMG가 없는 릴리스에는 설치 가능한 앱이 제공되지 않으므로 [`apps/desktop/README.md`](apps/desktop/README.md)의 개발 절차를 사용하세요.
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-workspace-editor.png" alt="시뮬레이션 작업 공간과 mx3 편집기를 표시한 데스크톱 앱." width="100%"><br><sub><b>스크립트 작업 공간</b> — 선택한 폴더에서 <code>.mx3</code> 파일을 열거나 작성합니다.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-simulation-running.png" alt="실시간 수치와 함께 실행 중인 시뮬레이션을 표시한 데스크톱 앱." width="100%"><br><sub><b>실시간 실행</b> — 자화, 솔버 수치, 진행률, 로그를 한눈에 확인합니다.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-results-ready.png" alt="완료된 시뮬레이션의 OVF 프레임을 표시한 데스크톱 앱." width="100%"><br><sub><b>결과 준비</b> — 작업 공간을 떠나지 않고 완료된 실행의 OVF 프레임을 엽니다.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-overview.png" alt="OVF 벡터장의 대화형 3D 전체 보기." width="100%"><br><sub><b>3D 벡터장</b> — 결과를 회전·이동·확대·색상 변경·재생합니다.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="3D 결과 뷰어에 표시된 색상 벡터 화살표의 확대 화면." width="100%"><br><sub><b>세부 보기</b> — 글리프 형태와 방향·크기 색상 모드를 전환합니다.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-top-view.png" alt="데스크톱 결과 뷰어에 표시된 OVF 벡터장의 상단 보기." width="100%"><br><sub><b>상단 보기</b> — 시뮬레이션 평면의 텍스처를 살펴봅니다.</sub></td>
+  </tr>
+</table>
 
 ## 시뮬레이션 실행
 

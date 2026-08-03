@@ -4,7 +4,8 @@ export interface AppInfo {
   repositoryRoot: string;
   defaultWorkingDirectory: string;
   binaryPath: string;
-  engineBuilt: boolean;
+  engineAvailable: boolean;
+  developerBuildAvailable: boolean;
 }
 
 export interface BuildResult {

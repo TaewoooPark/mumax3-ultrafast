@@ -1,0 +1,210 @@
+name: macOS Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  MACOSX_DEPLOYMENT_TARGET: "14.0"
+  CLI_ARCHIVE: mumax3-ultrafast-darwin-arm64.tar.gz
+  APP_DMG: mumax3-ultrafast-app-darwin-arm64.dmg
+
+jobs:
+  engine:
+    name: Publish standalone engine
+    runs-on: macos-15-xlarge
+    timeout-minutes: 30
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Build the Apple Silicon engine
+        run: |
+          test "$(uname -m)" = arm64
+          mkdir -p package release
+          commit_hash="${GITHUB_SHA:0:12}"
+          CGO_CFLAGS='-mmacosx-version-min=14.0' \
+            CGO_CXXFLAGS='-mmacosx-version-min=14.0' \
+            CGO_LDFLAGS='-mmacosx-version-min=14.0' \
+            CGO_ENABLED=1 go build -trimpath \
+            -ldflags "-s -w -X main.commitHash=${commit_hash}" \
+            -o package/mumax3 ./cmd/mumax3
+          minos=$(otool -l package/mumax3 | awk \
+            '/LC_BUILD_VERSION/ { section = 1 } section && $1 == "minos" { print $2; exit }')
+          test "$minos" = "14.0"
+          if strings package/mumax3 | grep -F "$GITHUB_WORKSPACE"; then
+            echo "The standalone engine embeds the release checkout path" >&2
+            exit 1
+          fi
+          test "$(package/mumax3 -ultrafast-probe)" = \
+            "mumax3-ultrafast desktop-api=1 backend=metal"
+          package/mumax3 -test
+          cp LICENSE NOTICE THIRD_PARTY_NOTICES.md package/
+
+      - name: Package and checksum the engine
+        run: |
+          tar -C package -czf "release/${CLI_ARCHIVE}" \
+            mumax3 LICENSE NOTICE THIRD_PARTY_NOTICES.md
+          (
+            cd release
+            shasum -a 256 "${CLI_ARCHIVE}" > "${CLI_ARCHIVE}.sha256"
+          )
+
+      - name: Attest the standalone engine package
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: release/${{ env.CLI_ARCHIVE }}
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release $GITHUB_REF_NAME already exists; refusing to replace immutable assets." >&2
+            exit 1
+          fi
+          gh release create "$GITHUB_REF_NAME" release/* \
+            --draft --verify-tag --generate-notes --title "$GITHUB_REF_NAME"
+
+  desktop-app:
+    name: Publish optional notarized desktop app
+    needs: engine
+    runs-on: macos-15
+    timeout-minutes: 45
+    permissions:
+      attestations: write
+      contents: write
+      id-token: write
+    env:
+      SIGNING_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      NOTARIZATION_APPLE_ID: ${{ secrets.APPLE_ID }}
+      NOTARIZATION_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+      NOTARIZATION_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - name: Check signing configuration
+        id: signing
+        run: |
+          if [[ -n "$SIGNING_CERTIFICATE" && \
+                -n "$SIGNING_CERTIFICATE_PASSWORD" && \
+                -n "$SIGNING_IDENTITY" && \
+                -n "$NOTARIZATION_APPLE_ID" && \
+                -n "$NOTARIZATION_PASSWORD" && \
+                -n "$NOTARIZATION_TEAM_ID" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "The standalone engine was released. The optional app was skipped because Apple signing secrets are incomplete."
+            {
+              echo "### Optional desktop app skipped"
+              echo
+              echo "The standalone engine release completed, but no DMG was attached because the Apple signing and notarization secrets are incomplete."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - uses: actions/checkout@v6
+        if: steps.signing.outputs.configured == 'true'
+      - uses: pnpm/action-setup@v4
+        if: steps.signing.outputs.configured == 'true'
+        with:
+          version: 11.9.0
+          run_install: false
+      - uses: actions/setup-node@v6
+        if: steps.signing.outputs.configured == 'true'
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: apps/desktop/pnpm-lock.yaml
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.signing.outputs.configured == 'true'
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Build, sign, and notarize the optional app
+        if: steps.signing.outputs.configured == 'true'
+        working-directory: apps/desktop
+        env:
+          APPLE_CERTIFICATE: ${{ env.SIGNING_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ env.SIGNING_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ env.SIGNING_IDENTITY }}
+          APPLE_ID: ${{ env.NOTARIZATION_APPLE_ID }}
+          APPLE_PASSWORD: ${{ env.NOTARIZATION_PASSWORD }}
+          APPLE_TEAM_ID: ${{ env.NOTARIZATION_TEAM_ID }}
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm tauri build --target aarch64-apple-darwin
+
+      - name: Verify and package the optional app
+        if: steps.signing.outputs.configured == 'true'
+        run: |
+          source_app=$(find apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/macos \
+            -maxdepth 1 -name '*.app' -print -quit)
+          source_dmg=$(find apps/desktop/src-tauri/target/aarch64-apple-darwin/release/bundle/dmg \
+            -maxdepth 1 -name '*.dmg' -print -quit)
+          test -n "$source_app"
+          test -n "$source_dmg"
+          app_executable_name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' \
+            "$source_app/Contents/Info.plist")
+          app_executable="$source_app/Contents/MacOS/$app_executable_name"
+          minos=$(otool -l "$app_executable" | awk \
+            '/LC_BUILD_VERSION/ { section = 1 } section && $1 == "minos" { print $2; exit }')
+          test "$minos" = "14.0"
+          if strings "$app_executable" | grep -F "$GITHUB_WORKSPACE"; then
+            echo "The desktop app embeds the release checkout path" >&2
+            exit 1
+          fi
+          codesign --verify --deep --strict --verbose=2 "$source_app"
+          spctl --assess --type execute --verbose=2 "$source_app"
+          xcrun stapler validate "$source_app"
+          hdiutil verify "$source_dmg"
+          mkdir -p release
+          cp "$source_dmg" "release/${APP_DMG}"
+          (
+            cd release
+            shasum -a 256 "${APP_DMG}" > "${APP_DMG}.sha256"
+          )
+
+      - name: Attest the optional desktop app package
+        if: steps.signing.outputs.configured == 'true'
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-path: release/${{ env.APP_DMG }}
+
+      - name: Upload the optional app to the release
+        if: steps.signing.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" release/*
+          {
+            echo "### Optional desktop app published"
+            echo
+            echo "The DMG passed code-signature, Gatekeeper, notarization-ticket, and disk-image verification."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish the completed release
+        if: success()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release edit "$GITHUB_REF_NAME" --draft=false
+          {
+            echo "### Release published"
+            echo
+            echo "All available, verified assets were attached while the release was private, then published together."
+          } >> "$GITHUB_STEP_SUMMARY"

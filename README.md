@@ -39,6 +39,11 @@ The port changes the hardware backend, not the physical model. The `.mx3` langua
   <img src="./docs/bench/hero.svg" alt="Three-panel comparison of every micromagnetic simulator that runs on Apple Silicon, measured on one M4 MacBook Air. Speed: mumax3-ultrafast at 136M cell-evaluations per second, 3.3x to 18.5x ahead of OOMMF, magnum.np and MicroMagnetic.jl. Energy: 22.5M cell-evaluations per joule, 6x to 26x ahead. Size: 84M cells, tied with OOMMF and 5x ahead of every other tool." width="100%">
 </p>
 
+<p align="center">
+  <img src="./docs/app/result-viewer-close-up.png" alt="The optional mumax3-ultrafast desktop app displaying an OVF vector field as interactive three-dimensional arrows." width="100%"><br>
+  <sub>Open completed simulations directly in the optional desktop app, then rotate, zoom, recolor, and play the OVF result in 3D.</sub>
+</p>
+
 ---
 
 ## Why this exists
@@ -156,18 +161,41 @@ On a supported Mac, open Terminal and run:
 /bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-macos.sh)"
 ```
 
-The installer checks the machine and shell architecture, opens Apple's Command Line Tools installer when necessary, installs native Homebrew and a compatible Go toolchain if missing, clones and builds the project, configures the binary path, and finishes with `mumax3 -test`. It is safe to rerun after an interruption.
+The installer first looks for the prebuilt Apple Silicon engine and its published `.sha256` file in the latest GitHub release. When those assets are available, it verifies the SHA-256 checksum, installs the executable as `~/.local/bin/mumax3`, adds that directory to `~/.zprofile`, and finishes with `mumax3 -test`. This prebuilt path does not require Homebrew, Go, Git, or a source checkout. The desktop app is never installed by this command.
 
-From an existing checkout:
+If the engine archive returns an explicit HTTP 404—for example, for a version whose assets have not yet been published—the installer automatically falls back to a source build and may install Apple Command Line Tools, native Homebrew, and Go. Network and other connectivity errors do not trigger that fallback; the installer stops safely instead. It is safe to rerun after an interruption.
+
+To force a source build from an existing checkout:
 
 ```bash
-./install-macos.sh
+./install-macos.sh --from-source
 ```
 
 Open a new Terminal afterwards so the updated path is loaded.
 
 > [!IMPORTANT]
 > Apple Silicon (M1 or newer) on macOS 14 or newer. Intel Macs are not supported. The original CUDA backend remains available for NVIDIA-equipped Linux and Windows systems.
+
+### Optional desktop app
+
+The `mumax3-ultrafast` engine and command-line workflow remain the primary installation above; the macOS desktop app is an optional interface on top. It keeps `.mx3` files as the source of truth while adding an editor, explicit working-folder selection, one-click runs, live magnetization and solver metrics, runtime logs, and an integrated 3D OVF result viewer.
+
+When a [GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) includes `mumax3-ultrafast-app-darwin-arm64.dmg`, that asset is the optional signed and notarized app installer. A release without the DMG does not provide an installable app; use the [`apps/desktop/README.md`](apps/desktop/README.md) development procedure instead.
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-workspace-editor.png" alt="Desktop app with the simulation workspace and mx3 editor." width="100%"><br><sub><b>Script workspace</b> — open or write an <code>.mx3</code> file in the folder you choose.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-simulation-running.png" alt="Desktop app showing a simulation in progress with live metrics." width="100%"><br><sub><b>Live run</b> — follow magnetization, solver metrics, progress, and logs.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-results-ready.png" alt="Desktop app presenting OVF frames after a completed simulation." width="100%"><br><sub><b>Results ready</b> — open the completed run's OVF frames without leaving the workspace.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-overview.png" alt="Interactive 3D overview of an OVF vector field." width="100%"><br><sub><b>3D vector field</b> — rotate, pan, zoom, recolor, and play the result.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="Close-up of colored vector arrows in the 3D result viewer." width="100%"><br><sub><b>Detail view</b> — switch glyph styles and direction or magnitude colors.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-top-view.png" alt="Top view of an OVF vector field in the desktop result viewer." width="100%"><br><sub><b>Top view</b> — inspect the texture in the simulation plane.</sub></td>
+  </tr>
+</table>
 
 ## Run a simulation
 
@@ -177,25 +205,6 @@ mumax3 -http="" example.mx3   # headless, for benchmarks and batch jobs
 ```
 
 Output lands in `example.out/`. Both modes execute the same simulation and produce the same output. The full Xcode application and an offline Metal compiler are not required — the shader library compiles through the system Metal runtime.
-
-### Desktop workspace preview
-
-The repository includes a lightweight macOS workspace that keeps the `.mx3`
-script as the source of truth while adding a native editor, explicit working
-folder selection, one-click engine builds, live magnetization, solver metrics,
-runtime logs, and an integrated 3D OVF result viewer with rotation, zoom,
-color modes, glyph styles, and frame playback.
-
-```sh
-cd apps/desktop
-pnpm install
-pnpm desktop
-```
-
-The initial wrapper runs from a source checkout and builds its managed engine
-into the ignored `.mumax3-ultrafast/` directory. See
-[`apps/desktop/README.md`](apps/desktop/README.md) for architecture, security,
-development, and validation details.
 
 ---
 

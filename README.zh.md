@@ -39,6 +39,11 @@
   <img src="./docs/bench/hero.svg" alt="在一台 M4 MacBook Air 上测得的、所有可在 Apple Silicon 上运行的微磁学模拟器的三面板对比。" width="100%">
 </p>
 
+<p align="center">
+  <img src="./docs/app/result-viewer-close-up.png" alt="可选的 mumax3-ultrafast 桌面应用将 OVF 矢量场显示为可交互的三维箭头。" width="100%"><br>
+  <sub>可在选装的桌面应用中直接打开已完成的模拟，并以 3D 方式旋转、缩放、变色和播放 OVF 结果。</sub>
+</p>
+
 ---
 
 ## 为什么会有这个项目
@@ -156,18 +161,41 @@ OOMMF 也能达到同样的 8390 万，但在这个规模上 mumax3-ultrafast **
 /bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-macos.sh)"
 ```
 
-安装脚本会检查机器与 shell 的架构，必要时打开 Apple 的 Command Line Tools 安装程序，在缺失时安装原生 Homebrew 和兼容的 Go 工具链，克隆并构建项目，配置二进制路径，最后执行 `mumax3 -test`。中途被打断后重新运行是安全的。
+安装程序会先在最新的 GitHub Release 中查找预编译的 Apple Silicon 引擎及其发布的 `.sha256` 文件。找到这些文件时，它会验证 SHA-256 校验和，将可执行文件安装为 `~/.local/bin/mumax3`，把该目录加入 `~/.zprofile`，最后执行 `mumax3 -test`。这条预编译安装路径不需要 Homebrew、Go、Git 或源码检出。此命令不会安装桌面应用。
 
-在已有的检出目录中运行：
+如果引擎压缩包返回明确的 HTTP 404，例如指定版本的发布文件尚未上传，安装程序会自动转为源码构建，并可能安装 Apple Command Line Tools、原生 Homebrew 和 Go。网络及其他连接错误不会触发这种回退，安装程序会安全地停止。中途被打断后重新运行是安全的。
+
+要在已有的检出目录中明确执行源码构建，请运行：
 
 ```bash
-./install-macos.sh
+./install-macos.sh --from-source
 ```
 
 安装完成后请打开一个新的终端，以便加载更新后的路径。
 
 > [!IMPORTANT]
 > 需要 Apple Silicon（M1 或更新）与 macOS 14 或更新版本。不支持 Intel Mac。配备 NVIDIA GPU 的 Linux 与 Windows 仍可使用原始的 CUDA 后端。
+
+### 可选：桌面应用
+
+上方安装的 `mumax3-ultrafast` 引擎与命令行工作流仍是默认方案；macOS 桌面应用是在其上按需安装的可选界面。它继续以 `.mx3` 文件为唯一依据，同时提供编辑器、明确的工作文件夹选择、一键运行、实时磁化与求解器指标、运行日志，以及集成的 3D OVF 结果查看器。
+
+如果某个 [GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) 包含 `mumax3-ultrafast-app-darwin-arm64.dmg`，该文件就是可选安装的已签名并经过公证的应用。没有 DMG 的 Release 不提供可安装的应用，请改用 [`apps/desktop/README.md`](apps/desktop/README.md) 中的开发流程。
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-workspace-editor.png" alt="显示模拟工作区与 mx3 编辑器的桌面应用。" width="100%"><br><sub><b>脚本工作区</b> — 在所选文件夹中打开或编写 <code>.mx3</code> 文件。</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-simulation-running.png" alt="显示运行中模拟与实时指标的桌面应用。" width="100%"><br><sub><b>实时运行</b> — 查看磁化、求解器指标、进度与日志。</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-results-ready.png" alt="显示已完成模拟的 OVF 帧的桌面应用。" width="100%"><br><sub><b>结果就绪</b> — 无需离开工作区即可打开已完成任务的 OVF 帧。</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-overview.png" alt="OVF 矢量场的交互式 3D 全景。" width="100%"><br><sub><b>3D 矢量场</b> — 旋转、平移、缩放、变色并播放结果。</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="3D 结果查看器中彩色矢量箭头的特写。" width="100%"><br><sub><b>细节视图</b> — 切换符号样式以及方向或幅值配色。</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-top-view.png" alt="桌面结果查看器中的 OVF 矢量场俯视图。" width="100%"><br><sub><b>俯视图</b> — 检查模拟平面内的纹理。</sub></td>
+  </tr>
+</table>
 
 ## 运行模拟
 

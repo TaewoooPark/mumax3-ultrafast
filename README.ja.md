@@ -39,6 +39,11 @@
   <img src="./docs/bench/hero.svg" alt="Apple Silicon で動作するすべてのマイクロマグネティクスシミュレータを、1 台の M4 MacBook Air で測定した 3 パネル比較。" width="100%">
 </p>
 
+<p align="center">
+  <img src="./docs/app/result-viewer-close-up.png" alt="任意導入の mumax3-ultrafast デスクトップアプリで、OVF ベクトル場を対話的な 3 次元矢印として表示した画面。" width="100%"><br>
+  <sub>任意導入のデスクトップアプリで完了したシミュレーションを直接開き、OVF 結果を 3D で回転、ズーム、色変更、再生できます。</sub>
+</p>
+
 ---
 
 ## なぜ作ったか
@@ -156,18 +161,41 @@ OOMMF も同じ 8390 万に到達します。ただしそのサイズにおい�
 /bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-macos.sh)"
 ```
 
-インストーラは機械とシェルのアーキテクチャを確認し、必要に応じて Apple の Command Line Tools インストーラを開き、未導入であればネイティブ Homebrew と互換性のある Go ツールチェインを導入し、プロジェクトをクローンしてビルドし、バイナリのパスを設定して、最後に `mumax3 -test` を実行します。途中で中断しても、再実行して問題ありません。
+インストーラはまず、最新の GitHub リリースにあるビルド済み Apple Silicon エンジンと公開済みの `.sha256` ファイルを探します。これらが利用できる場合は SHA-256 チェックサムを検証し、実行ファイルを `~/.local/bin/mumax3` として配置して、そのディレクトリを `~/.zprofile` に追加し、最後に `mumax3 -test` を実行します。このビルド済みバイナリの経路では、Homebrew、Go、Git、ソースのチェックアウトは不要です。このコマンドがデスクトップアプリを導入することはありません。
 
-既存のチェックアウトから実行する場合は次のとおりです。
+エンジンアーカイブが明示的な HTTP 404 を返した場合、たとえば対象バージョンのアセットがまだ公開されていない場合には、インストーラは自動的にソースビルドへ切り替わり、Apple Command Line Tools、ネイティブ Homebrew、Go を導入することがあります。ネットワークなどの接続エラーではこの切り替えを行わず、安全に停止します。途中で中断しても、再実行して問題ありません。
+
+既存のチェックアウトからソースビルドを明示的に行うには、次を実行します。
 
 ```bash
-./install-macos.sh
+./install-macos.sh --from-source
 ```
 
 インストール後は、更新されたパスを読み込むために新しいターミナルを開いてください。
 
 > [!IMPORTANT]
 > Apple Silicon（M1 以降）と macOS 14 以降が必要です。Intel Mac には対応していません。NVIDIA GPU を搭載した Linux と Windows では、従来の CUDA バックエンドをそのまま利用できます。
+
+### オプション：デスクトップアプリ
+
+上記の `mumax3-ultrafast` エンジンとコマンドライン操作が基本のインストールであり、macOS デスクトップアプリはその上に任意で追加するインターフェースです。`.mx3` ファイルを正本としたまま、エディタ、作業フォルダの明示的な選択、ワンクリック実行、リアルタイムの磁化とソルバ指標、実行ログ、統合 3D OVF 結果ビューアを利用できます。
+
+[GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) に `mumax3-ultrafast-app-darwin-arm64.dmg` が含まれている場合、それが任意で導入できる署名・公証済みのアプリです。DMG のないリリースではインストール可能なアプリは提供されないため、[`apps/desktop/README.md`](apps/desktop/README.md) の開発手順を利用してください。
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-workspace-editor.png" alt="シミュレーションワークスペースと mx3 エディタを表示したデスクトップアプリ。" width="100%"><br><sub><b>スクリプト作業画面</b> — 選択したフォルダの <code>.mx3</code> ファイルを開くか作成します。</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-simulation-running.png" alt="ライブ指標とともに実行中のシミュレーションを表示したデスクトップアプリ。" width="100%"><br><sub><b>リアルタイム実行</b> — 磁化、ソルバ指標、進行状況、ログを確認します。</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/desktop-results-ready.png" alt="完了したシミュレーションの OVF フレームを表示したデスクトップアプリ。" width="100%"><br><sub><b>結果の準備完了</b> — ワークスペースを離れずに OVF フレームを開きます。</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-overview.png" alt="OVF ベクトル場の対話的な 3D 全体表示。" width="100%"><br><sub><b>3D ベクトル場</b> — 結果を回転、移動、ズーム、色変更、再生します。</sub></td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="3D 結果ビューアに表示された色付きベクトル矢印の拡大画面。" width="100%"><br><sub><b>詳細表示</b> — グリフ形状と方向・大きさの色モードを切り替えます。</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-top-view.png" alt="デスクトップ結果ビューアに表示された OVF ベクトル場の上面表示。" width="100%"><br><sub><b>上面表示</b> — シミュレーション平面のテクスチャを確認します。</sub></td>
+  </tr>
+</table>
 
 ## シミュレーションの実行
 
