@@ -178,6 +178,24 @@ mumax3 -http="" example.mx3   # headless, for benchmarks and batch jobs
 
 Output lands in `example.out/`. Both modes execute the same simulation and produce the same output. The full Xcode application and an offline Metal compiler are not required — the shader library compiles through the system Metal runtime.
 
+### Desktop workspace preview
+
+The repository includes a lightweight macOS workspace that keeps the `.mx3`
+script as the source of truth while adding a native editor, explicit working
+folder selection, one-click engine builds, live magnetization, solver metrics,
+runtime logs, and a handoff to the complete local mumax³ viewer.
+
+```sh
+cd apps/desktop
+pnpm install
+pnpm desktop
+```
+
+The initial wrapper runs from a source checkout and builds its managed engine
+into the ignored `.mumax3-ultrafast/` directory. See
+[`apps/desktop/README.md`](apps/desktop/README.md) for architecture, security,
+development, and validation details.
+
 ---
 
 ## How the native port works

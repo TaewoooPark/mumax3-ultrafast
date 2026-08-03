@@ -264,7 +264,7 @@ fn unix_millis() -> u128 {
 fn app_info(runtime: State<'_, DesktopRuntime>) -> AppInfo {
     AppInfo {
         repository_root: runtime.repository_root.to_string_lossy().into_owned(),
-        default_working_directory: runtime.repository_root.to_string_lossy().into_owned(),
+        default_working_directory: String::new(),
         binary_path: runtime.binary_path.to_string_lossy().into_owned(),
         engine_built: runtime.binary_path.is_file(),
     }
@@ -462,11 +462,15 @@ fn runtime_snapshot(runtime: State<'_, DesktopRuntime>) -> Result<RuntimeSnapsho
 
 #[tauri::command]
 async fn gui_snapshot(gui_url: String) -> Result<HashMap<String, Value>, String> {
-    if !gui_url.starts_with("http://127.0.0.1:") {
+    let parsed_url = reqwest::Url::parse(&gui_url).map_err(|error| error.to_string())?;
+    if parsed_url.scheme() != "http"
+        || parsed_url.host_str() != Some("127.0.0.1")
+        || parsed_url.port().is_none()
+    {
         return Err("The viewer URL must use the local loopback interface.".to_string());
     }
     let calls = reqwest::Client::new()
-        .post(gui_url)
+        .post(parsed_url)
         .timeout(Duration::from_millis(900))
         .header("content-type", "application/x-www-form-urlencoded")
         .body("id=mumax3-ultrafast-desktop")
@@ -478,6 +482,10 @@ async fn gui_snapshot(gui_url: String) -> Result<HashMap<String, Value>, String>
         .json::<Vec<GuiCall>>()
         .await
         .map_err(|error| error.to_string())?;
+    Ok(extract_gui_values(calls))
+}
+
+fn extract_gui_values(calls: Vec<GuiCall>) -> HashMap<String, Value> {
     let mut values = HashMap::new();
     for call in calls {
         if call.f != "setAttr" || call.args.len() < 3 {
@@ -493,7 +501,7 @@ async fn gui_snapshot(gui_url: String) -> Result<HashMap<String, Value>, String>
             values.insert(id.to_string(), call.args[2].clone());
         }
     }
-    Ok(values)
+    values
 }
 
 fn stop_child(runtime: &DesktopRuntime) {
@@ -537,4 +545,55 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running the mumax3-ultrafast desktop application");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn script_names_are_normalized_and_confined_to_one_component() {
+        assert_eq!(checked_file_name("sample").unwrap(), "sample.mx3");
+        assert_eq!(checked_file_name("sample.mx3").unwrap(), "sample.mx3");
+        assert!(checked_file_name("../sample.mx3").is_err());
+        assert!(checked_file_name("folder/sample.mx3").is_err());
+        assert!(checked_file_name("").is_err());
+    }
+
+    #[test]
+    fn gui_values_keep_only_supported_dom_updates() {
+        let values = extract_gui_values(vec![
+            GuiCall {
+                f: "setAttr".to_string(),
+                args: vec![json!("nsteps"), json!("innerHTML"), json!(42)],
+            },
+            GuiCall {
+                f: "setAttr".to_string(),
+                args: vec![json!("progress"), json!("value"), json!(75)],
+            },
+            GuiCall {
+                f: "setTextbox".to_string(),
+                args: vec![json!("Msat"), json!(800000)],
+            },
+        ]);
+        assert_eq!(values.get("nsteps"), Some(&json!(42)));
+        assert_eq!(values.get("progress"), Some(&json!(75)));
+        assert!(!values.contains_key("Msat"));
+    }
+
+    #[test]
+    fn engine_output_advances_runtime_phases() {
+        let state = Arc::new(Mutex::new(ProcessState {
+            phase: "starting".to_string(),
+            ..ProcessState::default()
+        }));
+        push_log(
+            &state,
+            "//starting GUI at http://127.0.0.1:35367".to_string(),
+        );
+        assert_eq!(state.lock().unwrap().phase, "running");
+        push_log(&state, "//entering interactive mode".to_string());
+        assert_eq!(state.lock().unwrap().phase, "completed");
+    }
 }

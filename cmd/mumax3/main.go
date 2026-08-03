@@ -86,7 +86,7 @@ func runInteractive() {
 		m = RandomMag()`)
 	addr := goServeGUI()
 	if *engine.Flag_openbrowser {
-		openbrowser("http://127.0.0.1" + addr)
+		openbrowser(guiURL(addr))
 	}
 	engine.RunInteractive()
 }
@@ -120,7 +120,7 @@ func runScript(fname string) {
 	addr := goServeGUI()
 
 	if *engine.Flag_interactive && *engine.Flag_openbrowser {
-		openbrowser("http://127.0.0.1" + addr)
+		openbrowser(guiURL(addr))
 	}
 
 	// start executing the tree, possibly injecting commands from web gui
@@ -162,8 +162,15 @@ func goServeGUI() string {
 		return ""
 	}
 	addr := engine.GoServe(*engine.Flag_port)
-	fmt.Print("//starting GUI at http://127.0.0.1", addr, "\n")
+	fmt.Print("//starting GUI at ", guiURL(addr), "\n")
 	return addr
+}
+
+func guiURL(addr string) string {
+	if strings.HasPrefix(addr, ":") {
+		return "http://127.0.0.1" + addr
+	}
+	return "http://" + addr
 }
 
 // print version to stdout
