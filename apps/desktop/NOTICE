@@ -1,0 +1,6 @@
+The desktop wrapper visual system is adapted from Harness Router
+(https://github.com/TaewoooPark/Harness-Router), Copyright 2026 Harness
+Router contributors, licensed under the Apache License, Version 2.0.
+
+The adapted elements include the white visual palette, glass surface tokens,
+typography stack, shadows, focus states, and interaction motion.
