@@ -99,6 +99,7 @@ export default function App() {
   const [dirty, setDirty] = useState(true);
   const [previewReady, setPreviewReady] = useState(false);
   const [frame, setFrame] = useState(0);
+  const consoleRef = useRef<HTMLPreElement>(null);
 
   useEffect(() => {
     void desktop.info()
@@ -116,6 +117,7 @@ export default function App() {
         .then((next) => {
           setRuntime(next);
           if (next.viewerAvailable) setFrame((value) => value + 1);
+          if (next.lastError) setMessage(next.lastError);
         })
         .catch(() => undefined);
     }, 550);
@@ -125,12 +127,16 @@ export default function App() {
   useEffect(() => {
     if (!runtime.guiUrl || !runtime.viewerAvailable) return;
     const timer = window.setInterval(() => {
-      void desktop.guiSnapshot(runtime.guiUrl)
+      void desktop.guiSnapshot()
         .then((values) => setGuiValues((current) => ({ ...current, ...values })))
         .catch(() => undefined);
     }, 650);
     return () => window.clearInterval(timer);
   }, [runtime.guiUrl, runtime.viewerAvailable]);
+
+  useEffect(() => {
+    if (consoleRef.current) consoleRef.current.scrollTop = consoleRef.current.scrollHeight;
+  }, [runtime.logs.length]);
 
   const chooseFolder = async () => {
     const selected = await open({ directory: true, multiple: false, title: "Choose a simulation folder" });
@@ -294,7 +300,7 @@ export default function App() {
               <div><span className="eyebrow">ENGINE OUTPUT</span><strong>Runtime log</strong></div>
               <span className="mono">{runtime.outputDirectory || runtime.phase}</span>
             </div>
-            <pre>{runtime.logs.length ? runtime.logs.join("\n") : <span className="muted">// Build and run output will stream here.</span>}</pre>
+            <pre ref={consoleRef}>{runtime.logs.length ? runtime.logs.join("\n") : <span className="muted">// Build and run output will stream here.</span>}</pre>
           </section>
         </div>
 

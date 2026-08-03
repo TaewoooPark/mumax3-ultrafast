@@ -10,5 +10,5 @@ export const desktop = {
   startSimulation: (request: StartRequest) => invoke<RuntimeSnapshot>("start_simulation", { request }),
   stopSimulation: () => invoke<RuntimeSnapshot>("stop_simulation"),
   runtimeSnapshot: () => invoke<RuntimeSnapshot>("runtime_snapshot"),
-  guiSnapshot: (guiUrl: string) => invoke<GuiValues>("gui_snapshot", { guiUrl }),
+  guiSnapshot: () => invoke<GuiValues>("gui_snapshot"),
 };

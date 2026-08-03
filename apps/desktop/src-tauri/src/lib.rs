@@ -4,7 +4,6 @@ use std::{
     collections::{HashMap, VecDeque},
     env, fs,
     io::{BufRead, BufReader, Read},
-    net::TcpListener,
     path::{Component, Path, PathBuf},
     process::{Child, Command, Stdio},
     sync::{Arc, Mutex},
@@ -106,19 +105,19 @@ struct GuiCall {
 }
 
 fn find_repository_root() -> Result<PathBuf, String> {
-    if let Some(configured) = env::var_os("MUMAX3_ULTRAFAST_HOME").map(PathBuf::from) {
-        if configured.join("go.mod").is_file() && configured.join("cmd/mumax3").is_dir() {
-            return configured.canonicalize().map_err(|error| error.to_string());
-        }
+    if let Some(configured) = env::var_os("MUMAX3_ULTRAFAST_HOME").map(PathBuf::from)
+        && configured.join("go.mod").is_file()
+        && configured.join("cmd/mumax3").is_dir()
+    {
+        return configured.canonicalize().map_err(|error| error.to_string());
     }
 
-    if let Ok(current) = env::current_dir() {
-        if let Some(root) = current
+    if let Ok(current) = env::current_dir()
+        && let Some(root) = current
             .ancestors()
             .find(|path| path.join("go.mod").is_file() && path.join("cmd/mumax3").is_dir())
-        {
-            return Ok(root.to_path_buf());
-        }
+    {
+        return Ok(root.to_path_buf());
     }
 
     Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -184,13 +183,28 @@ fn save_script_document(
 
 fn push_log(shared: &Arc<Mutex<ProcessState>>, line: String) {
     if let Ok(mut state) = shared.lock() {
-        if line.contains("//starting GUI at") && state.phase == "starting" {
+        if let Some(gui_url) = line.strip_prefix("//starting GUI at ")
+            && let Ok(gui_url) = normalized_loopback_gui_url(gui_url.trim())
+        {
+            state.gui_url = gui_url;
+            state.render_url = format!("{}/render/m", state.gui_url);
             state.phase = "running".to_string();
         }
         if line.contains("//entering interactive mode") {
             state.phase = "completed".to_string();
         }
         state.logs.push_back(line);
+        while state.logs.len() > MAX_LOG_LINES {
+            state.logs.pop_front();
+        }
+    }
+}
+
+fn mark_runtime_failed(runtime: &DesktopRuntime, message: &str) {
+    if let Ok(mut state) = runtime.state.lock() {
+        state.phase = "failed".to_string();
+        state.last_error = message.to_string();
+        state.logs.push_back(format!("[wrapper] {message}"));
         while state.logs.len() > MAX_LOG_LINES {
             state.logs.pop_front();
         }
@@ -260,6 +274,27 @@ fn unix_millis() -> u128 {
         .as_millis()
 }
 
+fn normalized_loopback_gui_url(value: &str) -> Result<String, String> {
+    let parsed = reqwest::Url::parse(value).map_err(|error| error.to_string())?;
+    if parsed.scheme() != "http"
+        || parsed.host_str() != Some("127.0.0.1")
+        || parsed.port().is_none()
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || parsed.path() != "/"
+        || parsed.query().is_some()
+        || parsed.fragment().is_some()
+    {
+        return Err(
+            "The viewer URL must be an origin on the local loopback interface.".to_string(),
+        );
+    }
+    Ok(format!(
+        "http://127.0.0.1:{}",
+        parsed.port().expect("port was checked above")
+    ))
+}
+
 #[tauri::command]
 fn app_info(runtime: State<'_, DesktopRuntime>) -> AppInfo {
     AppInfo {
@@ -284,16 +319,27 @@ fn build_engine(runtime: State<'_, DesktopRuntime>) -> Result<BuildResult, Strin
             .push_back("[wrapper] Building the native Metal engine…".to_string());
     }
 
-    if let Some(parent) = runtime.binary_path.parent() {
-        fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+    if let Some(parent) = runtime.binary_path.parent()
+        && let Err(error) = fs::create_dir_all(parent)
+    {
+        let message = format!("Could not prepare the engine build directory: {error}");
+        mark_runtime_failed(&runtime, &message);
+        return Err(message);
     }
     let output = Command::new("go")
         .args(["build", "-o"])
         .arg(&runtime.binary_path)
         .arg("./cmd/mumax3")
         .current_dir(&runtime.repository_root)
-        .output()
-        .map_err(|error| format!("Could not start the Go compiler: {error}"))?;
+        .output();
+    let output = match output {
+        Ok(output) => output,
+        Err(error) => {
+            let message = format!("Could not start the Go compiler: {error}");
+            mark_runtime_failed(&runtime, &message);
+            return Err(message);
+        }
+    };
     let combined = format!(
         "{}{}",
         String::from_utf8_lossy(&output.stdout),
@@ -335,7 +381,7 @@ fn load_script(path: String) -> Result<ScriptDocument, String> {
     if !path.is_absolute() || !path.is_file() {
         return Err("Choose an existing .mx3 file.".to_string());
     }
-    if !path.extension().is_some_and(|extension| extension == "mx3") {
+    if path.extension().is_none_or(|extension| extension != "mx3") {
         return Err("Only .mx3 scripts can be opened.".to_string());
     }
     let canonical = path.canonicalize().map_err(|error| error.to_string())?;
@@ -386,29 +432,25 @@ fn start_simulation(
         .unwrap_or("simulation");
     let output_directory = working_directory.join(format!("{stem}-{}.out", unix_millis()));
 
-    let listener = TcpListener::bind(("127.0.0.1", 0))
-        .map_err(|error| format!("Could not reserve a local viewer port: {error}"))?;
-    let port = listener
-        .local_addr()
-        .map_err(|error| error.to_string())?
-        .port();
-    drop(listener);
-    let gui_url = format!("http://127.0.0.1:{port}");
-
     let mut command = Command::new(&runtime.binary_path);
     command
         .arg("-i=true")
         .arg("-openbrowser=false")
-        .arg(format!("-http=127.0.0.1:{port}"))
+        .arg("-http=127.0.0.1:0")
         .arg(format!("-o={}", output_directory.display()))
         .arg(&document.path)
         .current_dir(&working_directory)
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
-    let mut child = command
-        .spawn()
-        .map_err(|error| format!("Could not start mumax3-ultrafast: {error}"))?;
+    let mut child = match command.spawn() {
+        Ok(child) => child,
+        Err(error) => {
+            let message = format!("Could not start mumax3-ultrafast: {error}");
+            mark_runtime_failed(&runtime, &message);
+            return Err(message);
+        }
+    };
     let stdout = child.stdout.take();
     let stderr = child.stderr.take();
 
@@ -416,16 +458,13 @@ fn start_simulation(
         let mut state = runtime.state.lock().map_err(|error| error.to_string())?;
         state.child = Some(child);
         state.phase = "starting".to_string();
-        state.gui_url = gui_url.clone();
-        state.render_url = format!("{gui_url}/render/m");
+        state.gui_url.clear();
+        state.render_url.clear();
         state.output_directory = output_directory.to_string_lossy().into_owned();
         state.script_path = document.path.clone();
         state
             .logs
             .push_back(format!("[wrapper] Running {}", document.path));
-        state
-            .logs
-            .push_back(format!("[wrapper] Full viewer: {gui_url}"));
     }
     if let Some(stdout) = stdout {
         capture_output(stdout, Arc::clone(&runtime.state), "");
@@ -461,16 +500,18 @@ fn runtime_snapshot(runtime: State<'_, DesktopRuntime>) -> Result<RuntimeSnapsho
 }
 
 #[tauri::command]
-async fn gui_snapshot(gui_url: String) -> Result<HashMap<String, Value>, String> {
-    let parsed_url = reqwest::Url::parse(&gui_url).map_err(|error| error.to_string())?;
-    if parsed_url.scheme() != "http"
-        || parsed_url.host_str() != Some("127.0.0.1")
-        || parsed_url.port().is_none()
-    {
-        return Err("The viewer URL must use the local loopback interface.".to_string());
-    }
+async fn gui_snapshot(
+    runtime: State<'_, DesktopRuntime>,
+) -> Result<HashMap<String, Value>, String> {
+    let gui_url = runtime
+        .state
+        .lock()
+        .map_err(|error| error.to_string())?
+        .gui_url
+        .clone();
+    let gui_url = normalized_loopback_gui_url(&gui_url)?;
     let calls = reqwest::Client::new()
-        .post(parsed_url)
+        .post(gui_url)
         .timeout(Duration::from_millis(900))
         .header("content-type", "application/x-www-form-urlencoded")
         .body("id=mumax3-ultrafast-desktop")
@@ -539,7 +580,10 @@ pub fn run() {
             gui_snapshot,
         ])
         .on_window_event(|window, event| {
-            if matches!(event, WindowEvent::Destroyed) {
+            if matches!(
+                event,
+                WindowEvent::CloseRequested { .. } | WindowEvent::Destroyed
+            ) {
                 stop_child(&window.state::<DesktopRuntime>());
             }
         })
@@ -592,8 +636,24 @@ mod tests {
             &state,
             "//starting GUI at http://127.0.0.1:35367".to_string(),
         );
-        assert_eq!(state.lock().unwrap().phase, "running");
+        {
+            let state = state.lock().unwrap();
+            assert_eq!(state.phase, "running");
+            assert_eq!(state.gui_url, "http://127.0.0.1:35367");
+            assert_eq!(state.render_url, "http://127.0.0.1:35367/render/m");
+        }
         push_log(&state, "//entering interactive mode".to_string());
         assert_eq!(state.lock().unwrap().phase, "completed");
+    }
+
+    #[test]
+    fn viewer_urls_are_confined_to_a_loopback_origin() {
+        assert_eq!(
+            normalized_loopback_gui_url("http://127.0.0.1:35367").unwrap(),
+            "http://127.0.0.1:35367"
+        );
+        assert!(normalized_loopback_gui_url("http://example.com:35367").is_err());
+        assert!(normalized_loopback_gui_url("http://127.0.0.1:35367/admin").is_err());
+        assert!(normalized_loopback_gui_url("http://127.0.0.1:35367?next=/").is_err());
     }
 }
