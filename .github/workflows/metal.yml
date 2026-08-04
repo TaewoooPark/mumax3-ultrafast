@@ -37,10 +37,12 @@ jobs:
       - name: Verify license notices
         run: make check-licenses
 
-      - name: Verify the binary-first macOS installer
+      - name: Verify the macOS installers
         run: |
           bash -n install-macos.sh
           bash install-macos.sh --help >/dev/null
+          bash -n install-app-macos.sh
+          bash install-app-macos.sh --help >/dev/null
           fixture=$(mktemp -d "${RUNNER_TEMP}/mumax3-installer.XXXXXX")
           trap 'rm -rf "$fixture"' EXIT
           mkdir -p "$fixture/release" "$fixture/home" "$fixture/bin"
@@ -145,11 +147,19 @@ jobs:
           cargo test --manifest-path src-tauri/Cargo.toml --locked
           cargo clippy --manifest-path src-tauri/Cargo.toml --locked --all-targets -- -D warnings
 
-      - name: Build and inspect the unsigned app bundle
-        working-directory: apps/desktop
+      - name: Build, install, and inspect the local-source app bundle
         run: |
-          pnpm tauri build --bundles app
-          app_path='src-tauri/target/release/bundle/macos/mumax3 ultrafast.app'
+          fixture=$(mktemp -d "${RUNNER_TEMP}/mumax3-app-installer.XXXXXX")
+          trap 'rm -rf "$fixture"' EXIT
+          mkdir -p "$fixture/Applications"
+          MUMAX3_APP_CACHE_DIR="$fixture/cache" \
+            bash install-app-macos.sh \
+              --version ci-test \
+              --source-dir "$GITHUB_WORKSPACE" \
+              --install-dir "$fixture/Applications" \
+              --skip-engine \
+              --no-open
+          app_path="$fixture/Applications/mumax3 ultrafast.app"
           executable_name=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' \
             "$app_path/Contents/Info.plist")
           executable="$app_path/Contents/MacOS/$executable_name"
@@ -163,10 +173,15 @@ jobs:
           test -s "$app_path/Contents/Resources/licenses/NOTICE"
           test -s "$app_path/Contents/Resources/licenses/THIRD_PARTY_NOTICES.md"
           test -s "$app_path/Contents/Resources/licenses/DESKTOP_NOTICE"
+          test "$(cat "$app_path/Contents/Resources/source-install-version")" = "ci-test"
+          codesign --verify --deep --strict --verbose=2 "$app_path"
           if strings "$executable" | grep -F "$GITHUB_WORKSPACE"; then
             echo "The desktop app embeds the CI checkout path" >&2
             exit 1
           fi
+          bash install-app-macos.sh \
+            --install-dir "$fixture/Applications" --uninstall
+          test ! -e "$app_path"
 
   gpu:
     name: GPU numerical regression and benchmarks

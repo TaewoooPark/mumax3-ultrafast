@@ -1,5 +1,9 @@
 # mumax³ ultrafast desktop
 
+<p align="center">
+  <img src="./src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon" width="112">
+</p>
+
 This directory contains the initial lightweight desktop workspace for
 `mumax3-ultrafast`. It deliberately keeps the existing mumax³ engine, `.mx3`
 language, output directories, and HTTP viewer intact. The wrapper only manages
@@ -20,6 +24,39 @@ the user-facing workflow around them.
 
 Every run receives a unique timestamped `.out` directory. Existing result
 directories are never cleaned or overwritten by the desktop application.
+
+## Local source installation
+
+The engine remains the default standalone product. To add the optional app
+without an Apple Developer Program membership, run this command on Apple
+Silicon with macOS 14 or newer:
+
+```sh
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)"
+```
+
+The installer checks out the latest tagged release, keeps its Node.js, pnpm,
+Rust, dependency, and compiler caches under
+`~/Library/Caches/mumax3-ultrafast/source-build`, builds and ad-hoc signs the
+Tauri bundle locally, installs it to `~/Applications/mumax3 ultrafast.app`, and
+installs the matching standalone engine through the verified binary-first
+engine installer. It does not modify a global Node.js, pnpm, or Rust setup.
+The first source build can take several minutes; subsequent runs reuse the
+private compiler and dependency caches.
+
+Apple Command Line Tools are the only system build prerequisite. If they are
+absent, macOS opens its installer; finish that prompt and run the command again.
+Re-run the same command for an update. Remove only the application with:
+
+```sh
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)" -- --uninstall
+```
+
+Useful direct options are `--version TAG`, `--install-dir DIR`, `--source-dir
+DIR`, `--skip-engine`, and `--no-open`. The local build is intentionally
+identified as ad-hoc signed rather than Apple-notarized; managed Macs can still
+reject it. A signed and notarized DMG, when attached to a GitHub Release,
+remains the faster distribution path.
 
 ## Development
 

@@ -178,9 +178,25 @@ OOMMF도 같은 8390만 셀에 도달합니다. 다만 그 크기에서 mumax3-u
 
 ### 선택 사항: 데스크톱 앱
 
+<p align="center">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="흰색 박스 위에 엑스트라 볼드 산세리프 m과 위첨자 3을 배치한 mumax3 ultrafast 데스크톱 앱 아이콘." width="112">
+</p>
+
 위에서 설치하는 `mumax3-ultrafast` 엔진과 명령줄 사용 방식이 기본이며, macOS 데스크톱 앱은 그 위에 선택적으로 더하는 인터페이스입니다. `.mx3` 파일을 기준으로 삼으면서 편집기, 작업 폴더 선택, 원클릭 실행, 실시간 자화와 솔버 수치, 실행 로그, 통합 3D OVF 결과 뷰어를 제공합니다.
 
-[GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases)에 `mumax3-ultrafast-app-darwin-arm64.dmg`가 포함되어 있다면, 그 자산이 선택형으로 설치할 수 있는 서명·공증된 앱입니다. DMG가 없는 릴리스에는 설치 가능한 앱이 제공되지 않으므로 [`apps/desktop/README.md`](apps/desktop/README.md)의 개발 절차를 사용하세요.
+Apple Developer Program 가입 없이 선택형 앱을 이 Mac에서 직접 빌드하고 설치할 수 있습니다.
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)"
+```
+
+설치기는 최신 태그 릴리스를 찾고 `~/Library/Caches/mumax3-ultrafast` 아래에 전용 Node.js·pnpm·Rust 도구를 준비한 다음, 이 Mac에서 앱을 빌드하고 로컬 ad-hoc 서명을 적용합니다. 완성된 앱은 `~/Applications/mumax3 ultrafast.app`에 저장되며 같은 버전의 독립형 엔진도 함께 설치됩니다. 첫 소스 빌드는 몇 분 걸릴 수 있지만 이후에는 전용 캐시를 재사용합니다. Apple Command Line Tools가 없다면 시스템 설치 창을 완료한 뒤 같은 명령을 다시 실행하세요. 업데이트할 때도 같은 명령을 다시 실행하면 됩니다. 엔진·빌드 캐시·시뮬레이션 파일은 보존하고 앱만 제거하려면 다음 명령을 사용합니다.
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)" -- --uninstall
+```
+
+이 로컬 소스 빌드 앱은 Apple 공증 앱이 아니므로 기관에서 관리하는 Mac에서는 제한될 수 있습니다. [GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases)에 `mumax3-ultrafast-app-darwin-arm64.dmg`가 포함되어 있다면 그 자산이 더 빠른 서명·공증 설치 경로입니다. 옵션과 개발 절차는 [`apps/desktop/README.md`](apps/desktop/README.md)를 참고하세요.
 
 <table>
   <tr>

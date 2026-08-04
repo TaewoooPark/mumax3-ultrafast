@@ -178,9 +178,25 @@ OOMMF も同じ 8390 万に到達します。ただしそのサイズにおい�
 
 ### オプション：デスクトップアプリ
 
+<p align="center">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="白い正方形に極太サンセリフの m と上付きの 3 を配置した mumax3 ultrafast デスクトップアプリのアイコン。" width="112">
+</p>
+
 上記の `mumax3-ultrafast` エンジンとコマンドライン操作が基本のインストールであり、macOS デスクトップアプリはその上に任意で追加するインターフェースです。`.mx3` ファイルを正本としたまま、エディタ、作業フォルダの明示的な選択、ワンクリック実行、リアルタイムの磁化とソルバ指標、実行ログ、統合 3D OVF 結果ビューアを利用できます。
 
-[GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) に `mumax3-ultrafast-app-darwin-arm64.dmg` が含まれている場合、それが任意で導入できる署名・公証済みのアプリです。DMG のないリリースではインストール可能なアプリは提供されないため、[`apps/desktop/README.md`](apps/desktop/README.md) の開発手順を利用してください。
+Apple Developer Program に加入せず、オプションアプリをこの Mac 上で直接ビルドしてインストールできます。
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)"
+```
+
+インストーラは最新のタグ付きリリースを解決し、`~/Library/Caches/mumax3-ultrafast` 配下に専用の Node.js・pnpm・Rust ツールを用意します。その後、この Mac でアプリをビルドしてローカルの ad-hoc 署名を付け、`~/Applications/mumax3 ultrafast.app` に配置し、同じリリースの独立エンジンもインストールします。最初のソースビルドには数分かかる場合がありますが、以後は専用キャッシュを再利用します。Apple Command Line Tools がない場合は、システムのインストール画面を完了してから同じコマンドを再実行してください。更新時も同じコマンドを再実行します。エンジン、ビルドキャッシュ、シミュレーションファイルを残してアプリだけを削除するには、次を実行します。
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)" -- --uninstall
+```
+
+このローカルソースビルドは Apple の公証を受けたアプリではないため、管理対象の Mac では制限される場合があります。[GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) に `mumax3-ultrafast-app-darwin-arm64.dmg` が含まれている場合は、そちらがより速い署名・公証済みのインストール経路です。オプションと開発手順は [`apps/desktop/README.md`](apps/desktop/README.md) を参照してください。
 
 <table>
   <tr>

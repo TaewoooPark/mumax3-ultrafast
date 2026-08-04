@@ -178,9 +178,25 @@ Open a new Terminal afterwards so the updated path is loaded.
 
 ### Optional desktop app
 
+<p align="center">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon: an extra-bold sans-serif m with a superscript 3 on a white square." width="112">
+</p>
+
 The `mumax3-ultrafast` engine and command-line workflow remain the primary installation above; the macOS desktop app is an optional interface on top. It keeps `.mx3` files as the source of truth while adding an editor, explicit working-folder selection, one-click runs, live magnetization and solver metrics, runtime logs, and an integrated 3D OVF result viewer.
 
-When a [GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) includes `mumax3-ultrafast-app-darwin-arm64.dmg`, that asset is the optional signed and notarized app installer. A release without the DMG does not provide an installable app; use the [`apps/desktop/README.md`](apps/desktop/README.md) development procedure instead.
+Build and install the optional app locally, without an Apple Developer Program membership:
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)"
+```
+
+The installer resolves the latest tagged release, prepares private Node.js, pnpm, and Rust tooling under `~/Library/Caches/mumax3-ultrafast`, builds and ad-hoc signs the app on this Mac, installs it as `~/Applications/mumax3 ultrafast.app`, and installs the matching standalone engine. The first source build can take several minutes; later builds reuse the private cache. If Apple Command Line Tools are missing, finish the system installation prompt and run the command again. Re-run the same command to update. To remove only the app while preserving the engine, build cache, and simulation files:
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)" -- --uninstall
+```
+
+This local-source app is not Apple-notarized and may be restricted on managed Macs. When a [GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) includes `mumax3-ultrafast-app-darwin-arm64.dmg`, that asset is the faster signed and notarized installation path. See [`apps/desktop/README.md`](apps/desktop/README.md) for options and the development workflow.
 
 <table>
   <tr>

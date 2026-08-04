@@ -178,9 +178,25 @@ OOMMF 也能达到同样的 8390 万，但在这个规模上 mumax3-ultrafast **
 
 ### 可选：桌面应用
 
+<p align="center">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="mumax3 ultrafast 桌面应用图标：白色方框中央为特粗无衬线 m 与上标 3。" width="112">
+</p>
+
 上方安装的 `mumax3-ultrafast` 引擎与命令行工作流仍是默认方案；macOS 桌面应用是在其上按需安装的可选界面。它继续以 `.mx3` 文件为唯一依据，同时提供编辑器、明确的工作文件夹选择、一键运行、实时磁化与求解器指标、运行日志，以及集成的 3D OVF 结果查看器。
 
-如果某个 [GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) 包含 `mumax3-ultrafast-app-darwin-arm64.dmg`，该文件就是可选安装的已签名并经过公证的应用。没有 DMG 的 Release 不提供可安装的应用，请改用 [`apps/desktop/README.md`](apps/desktop/README.md) 中的开发流程。
+无需加入 Apple Developer Program，也可以直接在这台 Mac 上构建并安装可选应用。
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)"
+```
+
+安装程序会解析最新的带标签 Release，在 `~/Library/Caches/mumax3-ultrafast` 下准备独立的 Node.js、pnpm 与 Rust 工具，然后在本机完成构建和本地 ad-hoc 签名，将应用安装为 `~/Applications/mumax3 ultrafast.app`，并安装同一版本的独立引擎。首次源码构建可能需要几分钟，之后会复用独立缓存。如果尚未安装 Apple Command Line Tools，请先完成系统弹出的安装窗口，再重新运行同一命令。更新时也只需重新运行该命令。若只想删除应用并保留引擎、构建缓存和模拟文件，请运行：
+
+```bash
+/bin/bash -c "$(/usr/bin/curl -fsSL https://raw.githubusercontent.com/TaewoooPark/mumax3-ultrafast/main/install-app-macos.sh)" -- --uninstall
+```
+
+这个本地源码构建并未经过 Apple 公证，因此在受机构管理的 Mac 上可能受到限制。如果 [GitHub Release](https://github.com/TaewoooPark/mumax3-ultrafast/releases) 中包含 `mumax3-ultrafast-app-darwin-arm64.dmg`，该文件是更快捷的已签名、公证安装方式。选项与开发流程见 [`apps/desktop/README.md`](apps/desktop/README.md)。
 
 <table>
   <tr>
