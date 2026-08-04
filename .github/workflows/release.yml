@@ -16,7 +16,7 @@ env:
 jobs:
   engine:
     name: Publish standalone engine
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     timeout-minutes: 30
     permissions:
       attestations: write
@@ -49,7 +49,7 @@ jobs:
           fi
           test "$(package/mumax3 -ultrafast-probe)" = \
             "mumax3-ultrafast desktop-api=1 backend=metal"
-          package/mumax3 -test
+          test "$(lipo -archs package/mumax3)" = "arm64"
           cp LICENSE NOTICE THIRD_PARTY_NOTICES.md package/
 
       - name: Package and checksum the engine
