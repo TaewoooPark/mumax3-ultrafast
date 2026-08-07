@@ -179,7 +179,7 @@ OOMMF도 같은 8390만 셀에 도달합니다. 다만 그 크기에서 mumax3-u
 ### 선택 사항: 데스크톱 앱
 
 <p align="center">
-  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="흰색 박스 위에 엑스트라 볼드 산세리프 m과 위첨자 3을 배치한 mumax3 ultrafast 데스크톱 앱 아이콘." width="112">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="흰색 박스 위에 엑스트라 볼드 산세리프 m과 간격을 둔 위첨자 3을 시각적으로 중앙 정렬한 mumax3 ultrafast 데스크톱 앱 아이콘." width="112">
 </p>
 
 위에서 설치하는 `mumax3-ultrafast` 엔진과 명령줄 사용 방식이 기본이며, macOS 데스크톱 앱은 그 위에 선택적으로 더하는 인터페이스입니다. `.mx3` 파일을 기준으로 삼으면서 편집기, 작업 폴더 선택, 원클릭 실행, 실시간 자화와 솔버 수치, 실행 로그, 통합 3D OVF 결과 뷰어를 제공합니다.

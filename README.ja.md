@@ -179,7 +179,7 @@ OOMMF も同じ 8390 万に到達します。ただしそのサイズにおい�
 ### オプション：デスクトップアプリ
 
 <p align="center">
-  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="白い正方形に極太サンセリフの m と上付きの 3 を配置した mumax3 ultrafast デスクトップアプリのアイコン。" width="112">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="白い正方形に極太サンセリフの m と十分な間隔を空けた上付きの 3 を視覚的に中央配置した mumax3 ultrafast デスクトップアプリのアイコン。" width="112">
 </p>
 
 上記の `mumax3-ultrafast` エンジンとコマンドライン操作が基本のインストールであり、macOS デスクトップアプリはその上に任意で追加するインターフェースです。`.mx3` ファイルを正本としたまま、エディタ、作業フォルダの明示的な選択、ワンクリック実行、リアルタイムの磁化とソルバ指標、実行ログ、統合 3D OVF 結果ビューアを利用できます。

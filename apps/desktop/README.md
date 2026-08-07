@@ -1,7 +1,7 @@
 # mumax³ ultrafast desktop
 
 <p align="center">
-  <img src="./src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon" width="112">
+  <img src="./src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon with a clearly separated superscript 3" width="112">
 </p>
 
 This directory contains the initial lightweight desktop workspace for
