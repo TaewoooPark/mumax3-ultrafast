@@ -783,9 +783,48 @@ fn current_output_directory(runtime: &DesktopRuntime) -> Result<PathBuf, String>
 }
 
 fn ovf_quantity(file_name: &str) -> String {
-    let stem = file_name.strip_suffix(".ovf").unwrap_or(file_name);
+    let stem = Path::new(file_name)
+        .file_stem()
+        .and_then(|value| value.to_str())
+        .unwrap_or(file_name);
     let quantity = stem.trim_end_matches(|character: char| character.is_ascii_digit());
     quantity.trim_end_matches(['_', '-']).to_string()
+}
+
+fn result_set_for_directory(output_directory: &Path) -> Result<ResultSet, String> {
+    if !output_directory.is_dir() {
+        return Err(format!(
+            "The result folder does not exist: {}",
+            output_directory.display()
+        ));
+    }
+    let mut frames = fs::read_dir(output_directory)
+        .map_err(|error| format!("Could not read {}: {error}", output_directory.display()))?
+        .filter_map(|entry| entry.ok())
+        .filter_map(|entry| {
+            let path = entry.path();
+            let is_ovf = path
+                .extension()
+                .and_then(|extension| extension.to_str())
+                .is_some_and(|extension| extension.eq_ignore_ascii_case("ovf"));
+            if !is_ovf || !path.is_file() {
+                return None;
+            }
+            let file_name = path.file_name()?.to_str()?.to_string();
+            let quantity = ovf_quantity(&file_name);
+            let size_bytes = entry.metadata().ok()?.len();
+            Some(ResultFrameInfo {
+                file_name,
+                quantity,
+                size_bytes,
+            })
+        })
+        .collect::<Vec<_>>();
+    frames.sort_by(|left, right| left.file_name.cmp(&right.file_name));
+    Ok(ResultSet {
+        output_directory: output_directory.to_string_lossy().into_owned(),
+        frames,
+    })
 }
 
 #[tauri::command]
@@ -1049,35 +1088,46 @@ async fn gui_snapshot(
 }
 
 #[tauri::command]
+fn open_result_folder(
+    path: String,
+    runtime: State<'_, DesktopRuntime>,
+) -> Result<ResultSet, String> {
+    let requested = PathBuf::from(path);
+    if !requested.is_absolute() {
+        return Err("Choose an existing OVF result folder.".to_string());
+    }
+    let output_directory = requested
+        .canonicalize()
+        .map_err(|error| format!("Could not open {}: {error}", requested.display()))?;
+    let results = result_set_for_directory(&output_directory)?;
+    if results.frames.is_empty() {
+        return Ok(results);
+    }
+
+    {
+        let mut state = runtime.state.lock().map_err(|error| error.to_string())?;
+        if state.child.is_some() {
+            return Err(
+                "Stop the active simulation before opening another OVF folder.".to_string(),
+            );
+        }
+        state.output_directory = results.output_directory.clone();
+    }
+    push_log(
+        &runtime.state,
+        format!(
+            "[wrapper] Opened {} OVF frames from {}",
+            results.frames.len(),
+            output_directory.display()
+        ),
+    );
+    Ok(results)
+}
+
+#[tauri::command]
 fn list_result_frames(runtime: State<'_, DesktopRuntime>) -> Result<ResultSet, String> {
     let output_directory = current_output_directory(&runtime)?;
-    let mut frames = fs::read_dir(&output_directory)
-        .map_err(|error| error.to_string())?
-        .filter_map(|entry| entry.ok())
-        .filter_map(|entry| {
-            let path = entry.path();
-            let is_ovf = path
-                .extension()
-                .and_then(|extension| extension.to_str())
-                .is_some_and(|extension| extension.eq_ignore_ascii_case("ovf"));
-            if !is_ovf || !path.is_file() {
-                return None;
-            }
-            let file_name = path.file_name()?.to_str()?.to_string();
-            let quantity = ovf_quantity(&file_name);
-            let size_bytes = entry.metadata().ok()?.len();
-            Some(ResultFrameInfo {
-                file_name,
-                quantity,
-                size_bytes,
-            })
-        })
-        .collect::<Vec<_>>();
-    frames.sort_by(|left, right| left.file_name.cmp(&right.file_name));
-    Ok(ResultSet {
-        output_directory: output_directory.to_string_lossy().into_owned(),
-        frames,
-    })
+    result_set_for_directory(&output_directory)
 }
 
 #[tauri::command]
@@ -1162,6 +1212,7 @@ pub fn run() {
             stop_simulation,
             runtime_snapshot,
             gui_snapshot,
+            open_result_folder,
             list_result_frames,
             load_result_frame,
         ])
@@ -1328,7 +1379,33 @@ mod tests {
     fn ovf_frame_names_are_grouped_by_quantity() {
         assert_eq!(ovf_quantity("m000010.ovf"), "m");
         assert_eq!(ovf_quantity("B_demag-0012.ovf"), "B_demag");
+        assert_eq!(ovf_quantity("M000010.OVF"), "M");
         assert_eq!(ovf_quantity("final.ovf"), "final");
+    }
+
+    #[test]
+    fn result_folders_discover_only_direct_ovf_files_in_sorted_order() {
+        let directory = env::temp_dir().join(format!(
+            "mumax3-ultrafast-result-folder-{}-{}",
+            std::process::id(),
+            unix_millis()
+        ));
+        let nested = directory.join("nested");
+        fs::create_dir_all(&nested).unwrap();
+        fs::write(directory.join("m000010.ovf"), b"frame-ten").unwrap();
+        fs::write(directory.join("m000002.ovf"), b"frame-two").unwrap();
+        fs::write(directory.join("notes.txt"), b"not a frame").unwrap();
+        fs::write(nested.join("ignored.ovf"), b"nested frame").unwrap();
+
+        let canonical = directory.canonicalize().unwrap();
+        let result = result_set_for_directory(&canonical).unwrap();
+        assert_eq!(result.output_directory, canonical.to_string_lossy());
+        assert_eq!(result.frames.len(), 2);
+        assert_eq!(result.frames[0].file_name, "m000002.ovf");
+        assert_eq!(result.frames[1].file_name, "m000010.ovf");
+        assert!(result.frames.iter().all(|frame| frame.quantity == "m"));
+
+        fs::remove_dir_all(directory).unwrap();
     }
 
     #[test]

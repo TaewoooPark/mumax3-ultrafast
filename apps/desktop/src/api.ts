@@ -11,6 +11,7 @@ export const desktop = {
   stopSimulation: () => invoke<RuntimeSnapshot>("stop_simulation"),
   runtimeSnapshot: () => invoke<RuntimeSnapshot>("runtime_snapshot"),
   guiSnapshot: () => invoke<GuiValues>("gui_snapshot"),
+  openResultFolder: (path: string) => invoke<ResultSet>("open_result_folder", { path }),
   listResultFrames: () => invoke<ResultSet>("list_result_frames"),
   loadResultFrame: (fileName: string) => invoke<VectorFrame>("load_result_frame", { fileName }),
 };

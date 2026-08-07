@@ -182,7 +182,7 @@ OOMMF 也能达到同样的 8390 万，但在这个规模上 mumax3-ultrafast **
   <img src="./apps/desktop/src-tauri/icons/icon.png" alt="mumax3 ultrafast 桌面应用图标：白色方框中央为特粗无衬线 m 与留有清晰间距的上标 3，并经过视觉居中。" width="112">
 </p>
 
-上方安装的 `mumax3-ultrafast` 引擎与命令行工作流仍是默认方案；macOS 桌面应用是在其上按需安装的可选界面。它继续以 `.mx3` 文件为唯一依据，同时提供编辑器、明确的工作文件夹选择、一键运行、实时磁化与求解器指标、运行日志，以及集成的 3D OVF 结果查看器。
+上方安装的 `mumax3-ultrafast` 引擎与命令行工作流仍是默认方案；macOS 桌面应用是在其上按需安装的可选界面。它继续以 `.mx3` 文件为唯一依据，同时提供编辑器、明确的工作文件夹选择、一键运行、实时磁化与求解器指标、运行日志，以及集成的 3D OVF 结果查看器。通过 Live Magnetization 中的 **Open OVF folder**，还可以直接渲染在应用外生成的结果；请选择直接包含 `.ovf` 文件的文件夹。
 
 无需加入 Apple Developer Program，也可以直接在这台 Mac 上构建并安装可选应用。
 

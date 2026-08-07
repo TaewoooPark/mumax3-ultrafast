@@ -21,6 +21,10 @@ the user-facing workflow around them.
 7. After the script completes, select **View result** to open the integrated 3D
    OVF viewer. Rotate, pan, zoom, recolor, switch glyph styles, and play saved
    field frames without keeping the simulation process alive.
+8. To inspect results generated elsewhere, select **Open OVF folder** in Live
+   Magnetization and choose the folder that directly contains the `.ovf` files.
+   The result workspace opens automatically; an empty selection prompts for the
+   correct folder instead.
 
 Every run receives a unique timestamped `.out` directory. Existing result
 directories are never cleaned or overwritten by the desktop application.
@@ -118,7 +122,8 @@ is recorded in [`NOTICE`](NOTICE).
 - GUI metric requests reject non-loopback URLs.
 - Script names cannot contain parent or nested directory components.
 - The wrapper writes only to the working folder selected by the user.
-- Result loading is confined to OVF files inside the current run directory.
+- Result loading is confined to OVF files inside the active run directory or a
+  directory explicitly selected through the native folder picker.
 - Engine stdin is closed and all stdout and stderr are captured for display.
 - Completed simulations exit normally; closing the application terminates an
   active managed simulation process.

@@ -182,7 +182,7 @@ Open a new Terminal afterwards so the updated path is loaded.
   <img src="./apps/desktop/src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon: an extra-bold sans-serif m and a clearly separated superscript 3, optically centered on a white square." width="112">
 </p>
 
-The `mumax3-ultrafast` engine and command-line workflow remain the primary installation above; the macOS desktop app is an optional interface on top. It keeps `.mx3` files as the source of truth while adding an editor, explicit working-folder selection, one-click runs, live magnetization and solver metrics, runtime logs, and an integrated 3D OVF result viewer.
+The `mumax3-ultrafast` engine and command-line workflow remain the primary installation above; the macOS desktop app is an optional interface on top. It keeps `.mx3` files as the source of truth while adding an editor, explicit working-folder selection, one-click runs, live magnetization and solver metrics, runtime logs, and an integrated 3D OVF result viewer. **Open OVF folder** in Live Magnetization can also render results created outside the app; choose the folder that directly contains the `.ovf` files.
 
 Build and install the optional app locally, without an Apple Developer Program membership:
 

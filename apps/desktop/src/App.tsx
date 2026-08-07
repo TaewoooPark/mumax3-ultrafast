@@ -161,6 +161,62 @@ export default function App() {
     if (typeof selected === "string") setWorkingDirectory(selected);
   };
 
+  const openResultFolder = async () => {
+    setBusyAction("open-results");
+    let defaultPath = workingDirectory || undefined;
+    try {
+      while (true) {
+        const selected = await open({
+          directory: true,
+          multiple: false,
+          title: "Choose a folder containing OVF files",
+          defaultPath,
+        });
+        if (typeof selected !== "string") return;
+        defaultPath = selected;
+
+        try {
+          const results = await desktop.openResultFolder(selected);
+          if (!results.frames.length) {
+            setMessage("No OVF files were found in the selected folder.");
+            const retry = await confirm(
+              "No .ovf files were found in this folder. Choose the folder that directly contains the OVF files.",
+              {
+                title: "OVF folder required",
+                kind: "warning",
+                okLabel: "Choose another folder",
+                cancelLabel: "Cancel",
+              },
+            );
+            if (!retry) return;
+            continue;
+          }
+
+          discoveredOutputRef.current = results.outputDirectory;
+          setResultSet(results);
+          setPreviewReady(false);
+          setMessage(`Opened ${results.frames.length} OVF frames from ${results.outputDirectory}`);
+          setShowResults(true);
+          return;
+        } catch (error) {
+          setMessage(`Could not open the OVF folder: ${String(error)}`);
+          const retry = await confirm(
+            `The selected folder could not be opened as an OVF result folder.\n\n${String(error)}\n\nChoose another folder?`,
+            {
+              title: "Could not open OVF folder",
+              kind: "error",
+              okLabel: "Choose another folder",
+              cancelLabel: "Cancel",
+            },
+          );
+          if (!retry) return;
+        }
+      }
+    } finally {
+      setBusyAction("");
+    }
+  };
+
   const openScript = async () => {
     if (dirty) {
       const discard = await confirm("Discard the unsaved editor changes and open another script?", {
@@ -329,7 +385,12 @@ export default function App() {
           <section className="preview-panel glass">
             <div className="panel-heading">
               <div><span className="eyebrow">LIVE MAGNETIZATION</span><strong>m · vector field</strong></div>
-              <span className={`live-state ${runtime.viewerAvailable ? "active" : ""}`}><i /> {runtime.viewerAvailable ? runtime.phase === "completed" ? "Complete" : "Live" : "Waiting"}</span>
+              <span className="preview-actions">
+                <GlassButton disabled={actionBusy || runtime.processAlive} onClick={() => void openResultFolder()}>
+                  {busyAction === "open-results" ? "Opening…" : "Open OVF folder"}
+                </GlassButton>
+                <span className={`live-state ${runtime.viewerAvailable ? "active" : ""}`}><i /> {runtime.viewerAvailable ? runtime.phase === "completed" ? "Complete" : "Live" : "Waiting"}</span>
+              </span>
             </div>
             <div className={`preview-stage ${previewReady && renderSource ? "ready" : ""}`}>
               {renderSource && <img src={renderSource} alt="Live mumax3 magnetization" onLoad={() => setPreviewReady(true)} onError={() => setPreviewReady(false)} />}
@@ -344,7 +405,7 @@ export default function App() {
                 <div className="preview-empty">
                   <div className="field-orb"><span /><span /><span /></div>
                   <strong>{runtime.viewerAvailable ? "Preparing the first field frame" : "Your simulation will appear here"}</strong>
-                  <p>{runtime.viewerAvailable ? "The Metal renderer is warming up." : engineAvailable ? "Choose a folder, then run the script from the editor." : "Install the standalone mumax3-ultrafast engine, then reopen the app."}</p>
+                  <p>{runtime.viewerAvailable ? "The Metal renderer is warming up." : engineAvailable ? "Run a script from the editor or open an existing OVF folder." : "Open an existing OVF folder, or install the standalone engine to run simulations."}</p>
                 </div>
               )}
             </div>

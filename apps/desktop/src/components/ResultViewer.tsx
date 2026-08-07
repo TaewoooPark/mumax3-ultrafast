@@ -143,7 +143,7 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
     const selected = frames[frameIndex];
     if (!selected) {
       setLoading(false);
-      setError("No OVF frames were produced by this simulation.");
+      setError("No OVF frames are available in this result folder.");
       return;
     }
     const cached = frameCacheRef.current.get(selected.fileName);
