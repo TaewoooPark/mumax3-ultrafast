@@ -20,7 +20,9 @@ the user-facing workflow around them.
 6. Watch the live magnetization, solver values, and process output.
 7. After the script completes, select **View result** to open the integrated 3D
    OVF viewer. Rotate, pan, zoom, recolor, switch glyph styles, and play saved
-   field frames without keeping the simulation process alive.
+   field frames without keeping the simulation process alive. Projection colors
+   map a selected X, Y, or Z spin component from −1 to +1 between two editable
+   endpoints, initially white to black.
 8. To inspect results generated elsewhere, select **Open OVF folder** in Live
    Magnetization and choose the folder that directly contains the `.ovf` files.
    The result workspace opens automatically; an empty selection prompts for the
@@ -111,7 +113,7 @@ files or other commands in that directory.
 - A streaming Rust parser reads OVF Text, Binary 4, and Binary 8 results and
   samples large meshes to a bounded glyph count.
 - Three.js renders result frames as interactive arrows or cuboids with
-  direction and magnitude color modes.
+  customizable X/Y/Z projection maps plus direction and magnitude color modes.
 
 The visual tokens are adapted from Harness Router under Apache-2.0. Attribution
 is recorded in [`NOTICE`](NOTICE).

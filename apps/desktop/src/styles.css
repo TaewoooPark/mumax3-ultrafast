@@ -208,9 +208,23 @@ button:disabled { opacity: .4; cursor: not-allowed !important; }
 .segmented-control { padding: 3px; display: grid; grid-template-columns: 1fr 1fr; border: 1px solid rgba(20,20,20,.07); border-radius: 11px; background: rgba(240,240,240,.58); }
 .segmented-control button { min-height: 28px; border: 0; border-radius: 8px; background: transparent; color: #888; font-size: 8px; cursor: pointer; }
 .segmented-control button.active { background: rgba(255,255,255,.94); box-shadow: 0 2px 8px rgba(0,0,0,.06); color: #333; font-weight: 650; }
+.color-mode-control, .projection-axis-control { grid-template-columns: repeat(3, 1fr); }
 .color-legend { height: 9px; display: grid; grid-template-columns: repeat(3, 1fr); overflow: hidden; border: 1px solid rgba(20,20,20,.05); border-radius: 999px; }
 .color-legend.direction { background: linear-gradient(90deg, #f24b4b, #5cd85a, #4b7ff2, #f24b4b); }
 .color-legend.magnitude { background: linear-gradient(90deg, #365acb, #47d4b0, #ffd84b, #ef4545); }
+.projection-map { display: grid; gap: 8px; }
+.projection-map-heading { display: flex; align-items: baseline; justify-content: space-between; color: #8b8b8b; font-size: 8px; }
+.projection-map-heading strong { color: #555; font: 650 9px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.projection-map-heading sub { font-size: 7px; }
+.color-map-editor { display: grid; grid-template-columns: 29px minmax(0, 1fr) 29px; align-items: end; gap: 6px; }
+.color-stop { display: grid !important; grid-template-columns: 1fr !important; justify-items: center; gap: 4px !important; color: #777 !important; font: 650 7px ui-monospace, SFMono-Regular, Menlo, monospace !important; }
+.color-stop input[type="color"] { width: 27px; height: 27px; padding: 2px; border: 1px solid rgba(20,20,20,.12); border-radius: 8px; background: rgba(255,255,255,.85); cursor: pointer; }
+.color-stop input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+.color-stop input[type="color"]::-webkit-color-swatch { border: 0; border-radius: 5px; }
+.projection-gradient { height: 9px; margin-bottom: 9px; border: 1px solid rgba(20,20,20,.11); border-radius: 999px; box-shadow: inset 0 1px 1px rgba(0,0,0,.05); }
+.color-map-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.color-map-actions button { min-height: 25px; border: 1px solid rgba(20,20,20,.08); border-radius: 8px; background: rgba(255,255,255,.68); color: #777; font-size: 7px; cursor: pointer; }
+.projection-map-note { margin: -1px 0 0; color: #aaa; font: 7px ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center; }
 .camera-controls > div { display: grid; grid-template-columns: repeat(3, 1fr) 1.5fr; gap: 5px; }
 .camera-controls button { min-height: 28px; border: 1px solid rgba(20,20,20,.08); border-radius: 8px; background: rgba(255,255,255,.67); color: #666; font-size: 8px; cursor: pointer; }
 .camera-controls p { margin: 0; color: #aaa; font-size: 7px; line-height: 1.55; }

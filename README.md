@@ -182,7 +182,7 @@ Open a new Terminal afterwards so the updated path is loaded.
   <img src="./apps/desktop/src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon: an extra-bold sans-serif m and a clearly separated superscript 3, optically centered on a white square." width="112">
 </p>
 
-The `mumax3-ultrafast` engine and command-line workflow remain the primary installation above; the macOS desktop app is an optional interface on top. It keeps `.mx3` files as the source of truth while adding an editor, explicit working-folder selection, one-click runs, live magnetization and solver metrics, runtime logs, and an integrated 3D OVF result viewer. **Open OVF folder** in Live Magnetization can also render results created outside the app; choose the folder that directly contains the `.ovf` files.
+The `mumax3-ultrafast` engine and command-line workflow remain the primary installation above; the macOS desktop app is an optional interface on top. It keeps `.mx3` files as the source of truth while adding an editor, explicit working-folder selection, one-click runs, live magnetization and solver metrics, runtime logs, and an integrated 3D OVF result viewer. **Open OVF folder** in Live Magnetization can also render results created outside the app; choose the folder that directly contains the `.ovf` files. In the result viewer, **Projection** maps a selected X, Y, or Z spin component from −1 to +1 along an editable two-color line (white to black by default); Direction and Magnitude palettes remain available.
 
 Build and install the optional app locally, without an Apple Developer Program membership:
 
@@ -208,7 +208,7 @@ This local-source app is not Apple-notarized and may be restricted on managed Ma
     <td width="50%" valign="top"><img src="./docs/app/result-viewer-overview.png" alt="Interactive 3D overview of an OVF vector field." width="100%"><br><sub><b>3D vector field</b> — rotate, pan, zoom, recolor, and play the result.</sub></td>
   </tr>
   <tr>
-    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="Close-up of colored vector arrows in the 3D result viewer." width="100%"><br><sub><b>Detail view</b> — switch glyph styles and direction or magnitude colors.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="Close-up of colored vector arrows in the 3D result viewer." width="100%"><br><sub><b>Detail view</b> — switch glyph styles or map an X/Y/Z spin projection onto any two endpoint colors.</sub></td>
     <td width="50%" valign="top"><img src="./docs/app/result-viewer-top-view.png" alt="Top view of an OVF vector field in the desktop result viewer." width="100%"><br><sub><b>Top view</b> — inspect the texture in the simulation plane.</sub></td>
   </tr>
 </table>
