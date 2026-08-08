@@ -179,10 +179,10 @@ OOMMF도 같은 8390만 셀에 도달합니다. 다만 그 크기에서 mumax3-u
 ### 선택 사항: 데스크톱 앱
 
 <p align="center">
-  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="흰색 박스 위에 엑스트라 볼드 산세리프 m과 위첨자 3을 배치한 mumax3 ultrafast 데스크톱 앱 아이콘." width="112">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="흰색 박스 위에 엑스트라 볼드 산세리프 m과 간격을 둔 위첨자 3을 시각적으로 중앙 정렬한 mumax3 ultrafast 데스크톱 앱 아이콘." width="112">
 </p>
 
-위에서 설치하는 `mumax3-ultrafast` 엔진과 명령줄 사용 방식이 기본이며, macOS 데스크톱 앱은 그 위에 선택적으로 더하는 인터페이스입니다. `.mx3` 파일을 기준으로 삼으면서 편집기, 작업 폴더 선택, 원클릭 실행, 실시간 자화와 솔버 수치, 실행 로그, 통합 3D OVF 결과 뷰어를 제공합니다.
+위에서 설치하는 `mumax3-ultrafast` 엔진과 명령줄 사용 방식이 기본이며, macOS 데스크톱 앱은 그 위에 선택적으로 더하는 인터페이스입니다. `.mx3` 파일을 기준으로 삼으면서 편집기, 작업 폴더 선택, 원클릭 실행, 실시간 자화와 솔버 수치, 실행 로그, 통합 3D OVF 결과 뷰어를 제공합니다. Live Magnetization의 **Open OVF folder**를 사용하면 앱 밖에서 만든 결과도 바로 렌더링할 수 있습니다. `.ovf` 파일이 직접 들어 있는 폴더를 선택하면 됩니다. 결과 뷰어의 **Projection**에서는 X·Y·Z 스핀 성분 중 하나를 골라 −1부터 +1까지의 컬러맵 양 끝색을 직접 지정할 수 있으며 기본값은 흰색→검정색입니다. 기존 Direction·Magnitude 팔레트도 그대로 사용할 수 있습니다.
 
 Apple Developer Program 가입 없이 선택형 앱을 이 Mac에서 직접 빌드하고 설치할 수 있습니다.
 
@@ -208,7 +208,7 @@ Apple Developer Program 가입 없이 선택형 앱을 이 Mac에서 직접 빌�
     <td width="50%" valign="top"><img src="./docs/app/result-viewer-overview.png" alt="OVF 벡터장의 대화형 3D 전체 보기." width="100%"><br><sub><b>3D 벡터장</b> — 결과를 회전·이동·확대·색상 변경·재생합니다.</sub></td>
   </tr>
   <tr>
-    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="3D 결과 뷰어에 표시된 색상 벡터 화살표의 확대 화면." width="100%"><br><sub><b>세부 보기</b> — 글리프 형태와 방향·크기 색상 모드를 전환합니다.</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="3D 결과 뷰어에 표시된 색상 벡터 화살표의 확대 화면." width="100%"><br><sub><b>세부 보기</b> — 글리프를 바꾸거나 X/Y/Z 스핀 투영값을 원하는 두 끝색에 매핑합니다.</sub></td>
     <td width="50%" valign="top"><img src="./docs/app/result-viewer-top-view.png" alt="데스크톱 결과 뷰어에 표시된 OVF 벡터장의 상단 보기." width="100%"><br><sub><b>상단 보기</b> — 시뮬레이션 평면의 텍스처를 살펴봅니다.</sub></td>
   </tr>
 </table>

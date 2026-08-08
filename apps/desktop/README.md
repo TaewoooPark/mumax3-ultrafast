@@ -1,7 +1,7 @@
 # mumax³ ultrafast desktop
 
 <p align="center">
-  <img src="./src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon" width="112">
+  <img src="./src-tauri/icons/icon.png" alt="mumax3 ultrafast desktop app icon with a clearly separated superscript 3" width="112">
 </p>
 
 This directory contains the initial lightweight desktop workspace for
@@ -20,7 +20,13 @@ the user-facing workflow around them.
 6. Watch the live magnetization, solver values, and process output.
 7. After the script completes, select **View result** to open the integrated 3D
    OVF viewer. Rotate, pan, zoom, recolor, switch glyph styles, and play saved
-   field frames without keeping the simulation process alive.
+   field frames without keeping the simulation process alive. Projection colors
+   map a selected X, Y, or Z spin component from −1 to +1 between two editable
+   endpoints, initially white to black.
+8. To inspect results generated elsewhere, select **Open OVF folder** in Live
+   Magnetization and choose the folder that directly contains the `.ovf` files.
+   The result workspace opens automatically; an empty selection prompts for the
+   correct folder instead.
 
 Every run receives a unique timestamped `.out` directory. Existing result
 directories are never cleaned or overwritten by the desktop application.
@@ -107,7 +113,7 @@ files or other commands in that directory.
 - A streaming Rust parser reads OVF Text, Binary 4, and Binary 8 results and
   samples large meshes to a bounded glyph count.
 - Three.js renders result frames as interactive arrows or cuboids with
-  direction and magnitude color modes.
+  customizable X/Y/Z projection maps plus direction and magnitude color modes.
 
 The visual tokens are adapted from Harness Router under Apache-2.0. Attribution
 is recorded in [`NOTICE`](NOTICE).
@@ -118,7 +124,8 @@ is recorded in [`NOTICE`](NOTICE).
 - GUI metric requests reject non-loopback URLs.
 - Script names cannot contain parent or nested directory components.
 - The wrapper writes only to the working folder selected by the user.
-- Result loading is confined to OVF files inside the current run directory.
+- Result loading is confined to OVF files inside the active run directory or a
+  directory explicitly selected through the native folder picker.
 - Engine stdin is closed and all stdout and stderr are captured for display.
 - Completed simulations exit normally; closing the application terminates an
   active managed simulation process.

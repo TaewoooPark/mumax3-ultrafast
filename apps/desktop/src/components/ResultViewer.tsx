@@ -6,7 +6,8 @@ import type { ResultSet, VectorFrame } from "../types";
 import { GlassButton } from "./GlassPrimitives";
 
 type GlyphMode = "arrows" | "cuboids";
-type ColorMode = "direction" | "magnitude";
+type ColorMode = "projection" | "direction" | "magnitude";
+type ProjectionAxis = "x" | "y" | "z";
 
 interface SceneRuntime {
   renderer: THREE.WebGLRenderer;
@@ -32,7 +33,32 @@ function disposeGroup(group: THREE.Group) {
   });
 }
 
-function glyphColor(color: THREE.Color, mode: ColorMode, vector: THREE.Vector3, magnitude: number, maxMagnitude: number) {
+function projectionComponent(vector: THREE.Vector3, axis: ProjectionAxis) {
+  if (axis === "x") return vector.x;
+  // The renderer maps simulation Y to scene Z and simulation Z to scene Y.
+  if (axis === "y") return vector.z;
+  return vector.y;
+}
+
+function glyphColor(
+  color: THREE.Color,
+  mode: ColorMode,
+  vector: THREE.Vector3,
+  magnitude: number,
+  maxMagnitude: number,
+  projectionAxis: ProjectionAxis,
+  projectionStart: THREE.RGB,
+  projectionEnd: THREE.RGB,
+) {
+  if (mode === "projection") {
+    const normalized = THREE.MathUtils.clamp((projectionComponent(vector, projectionAxis) + 1) / 2, 0, 1);
+    return color.setRGB(
+      THREE.MathUtils.lerp(projectionStart.r, projectionEnd.r, normalized),
+      THREE.MathUtils.lerp(projectionStart.g, projectionEnd.g, normalized),
+      THREE.MathUtils.lerp(projectionStart.b, projectionEnd.b, normalized),
+      THREE.SRGBColorSpace,
+    );
+  }
   if (mode === "magnitude") {
     const normalized = maxMagnitude > 0 ? Math.min(1, magnitude / maxMagnitude) : 0;
     color.setHSL(0.64 - normalized * 0.64, 0.84, 0.52);
@@ -64,7 +90,10 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
   const [playing, setPlaying] = useState(false);
   const [fps, setFps] = useState(10);
   const [glyphMode, setGlyphMode] = useState<GlyphMode>("arrows");
-  const [colorMode, setColorMode] = useState<ColorMode>("direction");
+  const [colorMode, setColorMode] = useState<ColorMode>("projection");
+  const [projectionAxis, setProjectionAxis] = useState<ProjectionAxis>("x");
+  const [projectionStart, setProjectionStart] = useState("#ffffff");
+  const [projectionEnd, setProjectionEnd] = useState("#000000");
   const [glyphScale, setGlyphScale] = useState(1);
 
   useEffect(() => {
@@ -88,11 +117,11 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
     controls.minDistance = 0.18;
     controls.maxDistance = 12;
 
-    scene.add(new THREE.HemisphereLight(0xffffff, 0x6d6d6d, 2.4));
-    const keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x6d6d6d, 0.65));
+    const keyLight = new THREE.DirectionalLight(0xffffff, 0.7);
     keyLight.position.set(-2, 4, 3);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0xbfd5ff, 1.1);
+    const rimLight = new THREE.DirectionalLight(0xbfd5ff, 0.3);
     rimLight.position.set(3, 1, -4);
     scene.add(rimLight);
 
@@ -143,7 +172,7 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
     const selected = frames[frameIndex];
     if (!selected) {
       setLoading(false);
-      setError("No OVF frames were produced by this simulation.");
+      setError("No OVF frames are available in this result folder.");
       return;
     }
     const cached = frameCacheRef.current.get(selected.fileName);
@@ -215,7 +244,7 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
     );
     group.add(outline);
 
-    const material = new THREE.MeshStandardMaterial({ roughness: 0.45, metalness: 0.06 });
+    const material = new THREE.MeshStandardMaterial({ roughness: 0.52, metalness: 0.03 });
     const up = new THREE.Vector3(0, 1, 0);
     const direction = new THREE.Vector3();
     const point = new THREE.Vector3();
@@ -224,6 +253,8 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
     const matrix = new THREE.Matrix4();
     const scale = new THREE.Vector3(1, 1, 1);
     const color = new THREE.Color();
+    const projectionStartColor = new THREE.Color(projectionStart).getRGB({ r: 0, g: 0, b: 0 }, THREE.SRGBColorSpace);
+    const projectionEndColor = new THREE.Color(projectionEnd).getRGB({ r: 0, g: 0, b: 0 }, THREE.SRGBColorSpace);
 
     let shaft: THREE.InstancedMesh | null = null;
     let head: THREE.InstancedMesh | null = null;
@@ -269,7 +300,16 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
       if (magnitude === 0) continue;
       direction.normalize();
       quaternion.setFromUnitVectors(up, direction);
-      glyphColor(color, colorMode, direction, magnitude, frame.magnitudeMax);
+      glyphColor(
+        color,
+        colorMode,
+        direction,
+        magnitude,
+        frame.magnitudeMax,
+        projectionAxis,
+        projectionStartColor,
+        projectionEndColor,
+      );
 
       if (shaft && head) {
         center.copy(point).addScaledVector(direction, -headLength * 0.5);
@@ -296,7 +336,7 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
       cuboid.instanceMatrix.needsUpdate = true;
       if (cuboid.instanceColor) cuboid.instanceColor.needsUpdate = true;
     }
-  }, [colorMode, frame, glyphMode, glyphScale]);
+  }, [colorMode, frame, glyphMode, glyphScale, projectionAxis, projectionEnd, projectionStart]);
 
   const setView = (axis: "x" | "y" | "z" | "reset") => {
     const runtime = sceneRuntimeRef.current;
@@ -376,11 +416,81 @@ export function ResultViewer({ resultSet, onBack }: ResultViewerProps) {
 
           <div className="control-section">
             <span className="eyebrow">COLORS</span>
-            <div className="segmented-control">
+            <div className="segmented-control color-mode-control">
+              <button className={colorMode === "projection" ? "active" : ""} type="button" onClick={() => setColorMode("projection")}>Projection</button>
               <button className={colorMode === "direction" ? "active" : ""} type="button" onClick={() => setColorMode("direction")}>Direction</button>
               <button className={colorMode === "magnitude" ? "active" : ""} type="button" onClick={() => setColorMode("magnitude")}>Magnitude</button>
             </div>
-            <div className={`color-legend ${colorMode}`}><span /><span /><span /></div>
+            {colorMode === "projection" ? (
+              <div className="projection-map">
+                <div className="projection-map-heading">
+                  <span>Projection axis</span>
+                  <strong>m<sub>{projectionAxis}</sub></strong>
+                </div>
+                <div className="segmented-control projection-axis-control">
+                  {(["x", "y", "z"] as ProjectionAxis[]).map((axis) => (
+                    <button
+                      aria-label={`Use ${axis.toUpperCase()} projection`}
+                      className={projectionAxis === axis ? "active" : ""}
+                      key={axis}
+                      type="button"
+                      onClick={() => setProjectionAxis(axis)}
+                    >
+                      {axis.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <div className="color-map-editor">
+                  <label className="color-stop">
+                    <span>−{projectionAxis.toUpperCase()}</span>
+                    <input
+                      aria-label={`Negative ${projectionAxis.toUpperCase()} color`}
+                      type="color"
+                      value={projectionStart}
+                      onChange={(event) => setProjectionStart(event.target.value)}
+                    />
+                  </label>
+                  <div
+                    aria-label={`${projectionStart} to ${projectionEnd} projection color map`}
+                    className="projection-gradient"
+                    role="img"
+                    style={{ background: `linear-gradient(90deg, ${projectionStart}, ${projectionEnd})` }}
+                  />
+                  <label className="color-stop">
+                    <span>+{projectionAxis.toUpperCase()}</span>
+                    <input
+                      aria-label={`Positive ${projectionAxis.toUpperCase()} color`}
+                      type="color"
+                      value={projectionEnd}
+                      onChange={(event) => setProjectionEnd(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="color-map-actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProjectionStart(projectionEnd);
+                      setProjectionEnd(projectionStart);
+                    }}
+                  >
+                    Swap ends
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProjectionStart("#ffffff");
+                      setProjectionEnd("#000000");
+                    }}
+                  >
+                    Reset B/W
+                  </button>
+                </div>
+                <p className="projection-map-note">−1 → +1 · linear interpolation</p>
+              </div>
+            ) : (
+              <div className={`color-legend ${colorMode}`}><span /><span /><span /></div>
+            )}
           </div>
 
           <div className="control-section camera-controls">

@@ -179,10 +179,10 @@ OOMMF も同じ 8390 万に到達します。ただしそのサイズにおい�
 ### オプション：デスクトップアプリ
 
 <p align="center">
-  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="白い正方形に極太サンセリフの m と上付きの 3 を配置した mumax3 ultrafast デスクトップアプリのアイコン。" width="112">
+  <img src="./apps/desktop/src-tauri/icons/icon.png" alt="白い正方形に極太サンセリフの m と十分な間隔を空けた上付きの 3 を視覚的に中央配置した mumax3 ultrafast デスクトップアプリのアイコン。" width="112">
 </p>
 
-上記の `mumax3-ultrafast` エンジンとコマンドライン操作が基本のインストールであり、macOS デスクトップアプリはその上に任意で追加するインターフェースです。`.mx3` ファイルを正本としたまま、エディタ、作業フォルダの明示的な選択、ワンクリック実行、リアルタイムの磁化とソルバ指標、実行ログ、統合 3D OVF 結果ビューアを利用できます。
+上記の `mumax3-ultrafast` エンジンとコマンドライン操作が基本のインストールであり、macOS デスクトップアプリはその上に任意で追加するインターフェースです。`.mx3` ファイルを正本としたまま、エディタ、作業フォルダの明示的な選択、ワンクリック実行、リアルタイムの磁化とソルバ指標、実行ログ、統合 3D OVF 結果ビューアを利用できます。Live Magnetization の **Open OVF folder** を使えば、アプリ外で作成した結果も直接レンダリングできます。`.ovf` ファイルが直接入っているフォルダを選択してください。結果ビューアの **Projection** では X・Y・Z のスピン成分を選び、−1 から +1 までを結ぶカラーマップの両端色を自由に指定できます（既定は白→黒）。従来の Direction・Magnitude パレットも利用できます。
 
 Apple Developer Program に加入せず、オプションアプリをこの Mac 上で直接ビルドしてインストールできます。
 
@@ -208,7 +208,7 @@ Apple Developer Program に加入せず、オプションアプリをこの Mac 
     <td width="50%" valign="top"><img src="./docs/app/result-viewer-overview.png" alt="OVF ベクトル場の対話的な 3D 全体表示。" width="100%"><br><sub><b>3D ベクトル場</b> — 結果を回転、移動、ズーム、色変更、再生します。</sub></td>
   </tr>
   <tr>
-    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="3D 結果ビューアに表示された色付きベクトル矢印の拡大画面。" width="100%"><br><sub><b>詳細表示</b> — グリフ形状と方向・大きさの色モードを切り替えます。</sub></td>
+    <td width="50%" valign="top"><img src="./docs/app/result-viewer-close-up.png" alt="3D 結果ビューアに表示された色付きベクトル矢印の拡大画面。" width="100%"><br><sub><b>詳細表示</b> — グリフを切り替え、X/Y/Z スピン投影を任意の 2 色へマッピングします。</sub></td>
     <td width="50%" valign="top"><img src="./docs/app/result-viewer-top-view.png" alt="デスクトップ結果ビューアに表示された OVF ベクトル場の上面表示。" width="100%"><br><sub><b>上面表示</b> — シミュレーション平面のテクスチャを確認します。</sub></td>
   </tr>
 </table>
